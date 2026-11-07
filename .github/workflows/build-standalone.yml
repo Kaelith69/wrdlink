@@ -1,0 +1,38 @@
+name: Build standalone WRDLINK package
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "standalone/**"
+      - ".github/workflows/build-standalone.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify original dictionary
+        run: |
+          python - <<'PY'
+          import re
+          text = open("standalone/dictionary.js", encoding="utf-8").read()
+          words = re.findall(r"'([A-Z]{4})'", text)
+          assert len(words) == 3889, f"Expected 3889 words, got {len(words)}"
+          assert len(set(words)) == 3889, "Dictionary contains duplicates"
+          print(f"Verified {len(words)} unique dictionary entries")
+          PY
+      - name: Package standalone game
+        run: |
+          cd standalone
+          zip -r ../wrdlink-standalone.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wrdlink-standalone
+          path: wrdlink-standalone.zip
+          if-no-files-found: error
+          retention-days: 30
