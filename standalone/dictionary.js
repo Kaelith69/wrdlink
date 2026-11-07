@@ -1,4 +1,4 @@
-/* Exact four-letter word dictionary extracted from WRDLINK source. */
+/* Exact 3,889 word dictionary extracted from WRDLINK source. */
 window.WRDLINK_DICTIONARY = new Set([
   'AAHS', 'AALS', 'ABAS', 'ABBE', 'ABED', 'ABET', 'ABLE', 'ABLY', 'ABOS', 'ABRI', 'ABUT', 'ABYE',
   'ABYS', 'ACED', 'ACES', 'ACHE', 'ACHY', 'ACID', 'ACME', 'ACNE', 'ACRE', 'ACTA', 'ACTS', 'ACYL',
