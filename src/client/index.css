@@ -219,3 +219,75 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--action); ou
   .loading-tile:first-child { background: var(--accent); border-color: var(--accent); color: #0B0F19; }
   .completion-score, .celebration-spark { animation: none; }
 }
+
+/* Devvit campaign controls and accessible feedback. */
+:root[data-theme='light'] {
+  --background: #f4f5f1;
+  --surface: #ffffff;
+  --surface-raised: #e8eee9;
+  --text: #172321;
+  --muted: #62716d;
+  --line: #d5dfd9;
+  --teal: #0d8b70;
+  --teal-hover: #08765e;
+  --action: #087e66;
+  --accent: #0d8b70;
+  --accent-hover: #08765e;
+  --target: #c38a18;
+  --positive: #087e66;
+  --negative: #b33f47;
+  --success-surface: #e2f3eb;
+  --error-surface: #f8e7e8;
+  --disabled: #aab8b1;
+}
+.header-tools { gap: 9px; }
+.theme-toggle {
+  display: grid; width: 36px; height: 36px; place-items: center;
+  border: 1px solid var(--line); border-radius: 9px;
+  background: var(--surface); color: var(--action); cursor: pointer;
+  font-size: 18px; transition: background-color 160ms ease, transform 160ms ease;
+}
+.theme-toggle:hover { background: var(--surface-raised); transform: translateY(-1px); }
+.header-hint-button {
+  display: inline-flex; min-width: 58px; height: 40px; align-items: center;
+  justify-content: center; gap: 6px; padding: 0 9px;
+  border: 1px solid var(--line); border-radius: 9px;
+  background: var(--surface-raised); color: var(--action);
+  font-weight: 800; cursor: pointer;
+  transition: transform 150ms ease, opacity 150ms ease, border-color 150ms ease;
+}
+.header-hint-button:hover:not(:disabled) { border-color: var(--accent); transform: translateY(-1px); }
+.header-hint-button:disabled { cursor: not-allowed; opacity: .45; }
+.header-hint-cost { font-size: 12px; font-variant-numeric: tabular-nums; }
+.hint-confirmation {
+  width: min(100%, 410px); margin: 14px auto 0; padding: 18px;
+  border: 1px solid var(--line); border-radius: 12px;
+  background: var(--surface-raised); color: var(--text);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 22%); animation: message-in 180ms ease both;
+}
+.hint-confirmation[hidden] { display: none; }
+.hint-confirmation h2 { margin: 0 0 7px; font-size: 20px; }
+.hint-confirmation > p { margin: 0 0 12px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.hint-confirm-cost, .hint-confirm-balance {
+  display: flex; justify-content: space-between; gap: 10px; padding: 9px 0;
+  border-bottom: 1px solid var(--line); font-size: 12px;
+}
+.hint-confirm-cost strong { color: var(--negative); font-size: 18px; }
+.hint-confirm-balance strong { color: var(--positive); font-size: 18px; }
+.hint-confirm-actions { display: grid; grid-template-columns: 1fr 1.2fr; gap: 8px; margin-top: 14px; }
+.hint-confirm-actions button { min-height: 42px; }
+.finish-score { color: var(--positive); font-size: 20px; font-weight: 800; }
+@media (max-width: 460px) {
+  .game-header { grid-template-columns: 1fr auto auto; gap: 5px; padding-inline: 9px; }
+  .header-context { display: none; }
+  .header-tools { gap: 5px; }
+  .header-count { gap: 6px; font-size: 10px; }
+  .theme-toggle { width: 32px; height: 32px; }
+  .header-hint-button { min-width: 48px; height: 36px; padding-inline: 5px; }
+  .game-workspace { padding-top: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle, .header-hint-button, .hint-confirmation {
+    animation: none !important; transition: none !important;
+  }
+}

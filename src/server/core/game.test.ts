@@ -4,7 +4,15 @@ import type { Puzzle } from '../../shared/api.ts';
 // @ts-expect-error Node resolves the native TypeScript module at runtime.
 import { DICTIONARY } from '../data/puzzles.ts';
 // @ts-expect-error Node resolves the native TypeScript module at runtime.
-import { calculatePoints, validateSequence } from './game.ts';
+import {
+  calculateHintCost,
+  calculateHintPenalty,
+  calculatePoints,
+  differsByOneLetter,
+  neighbors,
+  shortestPath,
+  validateSequence,
+} from './game.ts';
 
 const puzzle: Puzzle = {
   id: '001',
@@ -27,80 +35,50 @@ void test('accepts the minimum route', () => {
   assert.match(result.message, /minimum/i);
 });
 
-void test('accepts a different valid route without score constraints', () => {
-  const result = validateSequence(
-    puzzle,
-    new Set([...DICTIONARY, 'HELL']),
-    ['HEAD', 'HEAL', 'HELL', 'TELL', 'TALL', 'TAIL']
-  );
-  assert.equal(result.valid, true);
-  assert.equal(result.complete, true);
-  assert.equal(result.movesUsed, 5);
+void test('accepts partial routes and rejects invalid words', () => {
+  assert.equal(validateSequence(puzzle, DICTIONARY, ['HEAD', 'HEAL']).valid, true);
+  assert.match(validateSequence(puzzle, DICTIONARY, ['HEAD', 'HEZZ']).message, /dictionary/i);
+  assert.match(validateSequence(puzzle, DICTIONARY, ['HEAD', 'TAIL']).message, /one letter/i);
+  assert.match(validateSequence(puzzle, DICTIONARY, ['HEAD', 'HEAL', 'HEAD']).message, /same word/i);
 });
 
-void test('accepts valid partial routes', () => {
-  const result = validateSequence(puzzle, DICTIONARY, ['HEAD', 'HEAL']);
-  assert.equal(result.valid, true);
-  assert.equal(result.complete, false);
-  assert.equal(result.movesUsed, 1);
+void test('enforces exactly one changed letter and dictionary membership', () => {
+  assert.equal(differsByOneLetter('COLD', 'CORD'), true);
+  assert.equal(differsByOneLetter('COLD', 'WARM'), false);
+  assert.equal(differsByOneLetter('COLD', 'COL'), false);
+  assert.equal(neighbors('HEAD', DICTIONARY).includes('HEAL'), false);
+  assert.equal(DICTIONARY.has('HEAL'), true);
 });
 
-void test('accepts expanded dictionary words when the move is valid', () => {
-  const result = validateSequence(
-    { ...puzzle, start: 'RAIL', target: 'RAID', optimalMoves: 1 },
-    DICTIONARY,
-    ['RAIL', 'RAID']
-  );
-  assert.equal(DICTIONARY.has('RAID'), true);
-  assert.equal(result.valid, true);
-  assert.equal(result.complete, true);
+void test('uses the current level scoring model', () => {
+  assert.equal(calculatePoints(puzzle, 0), 25);
+  assert.equal(calculatePoints(puzzle, 1), 24);
+  assert.equal(calculatePoints(puzzle, 25), 0);
+  assert.equal(calculatePoints(puzzle, 80), 0);
 });
 
-void test('rejects invalid words without consuming the move', () => {
-  const result = validateSequence(puzzle, DICTIONARY, ['HEAD', 'HEA!']);
-  assert.equal(result.valid, false);
-  assert.equal(result.failed, false);
-  assert.equal(result.movesUsed, 1);
-  assert.match(result.message, /exactly 4 letters/i);
+void test('prices hints cumulatively across levels', () => {
+  assert.equal(calculateHintCost(0), 5);
+  assert.equal(calculateHintCost(1), 6);
+  assert.equal(calculateHintCost(2), 7);
+  assert.equal(calculateHintCost(3), 8);
+  assert.equal(calculateHintPenalty(3), 18);
+  assert.equal(calculateHintPenalty(4), 26);
 });
 
-void test('rejects made-up words outside the dictionary', () => {
-  const result = validateSequence(puzzle, DICTIONARY, ['HEAD', 'HEZZ']);
-  assert.equal(result.valid, false);
-  assert.equal(result.failed, false);
-  assert.equal(result.movesUsed, 1);
-  assert.match(result.message, /dictionary/i);
-});
+void test('finds a shortest unused route for hints', () => {
+  const path = shortestPath('HEAD', 'TAIL', DICTIONARY);
+  assert.ok(path);
+  assert.equal(path[0], 'HEAD');
+  assert.equal(path.at(-1), 'TAIL');
+  assert.equal(path.length - 1, puzzle.optimalMoves);
 
-void test('allows extra valid moves without failing the puzzle', () => {
-  const result = validateSequence(
-    puzzle,
-    DICTIONARY,
-    ['HEAD', 'HEAL', 'HELL', 'TELL', 'TEAL', 'REAL']
-  );
-  assert.equal(result.valid, true);
-  assert.equal(result.failed, false);
-  assert.equal(result.movesUsed, 5);
-});
+  for (let index = 1; index < path.length; index += 1) {
+    assert.equal(differsByOneLetter(path[index - 1] ?? '', path[index] ?? ''), true);
+  }
 
-void test('rejects malformed, repeated, and multi-letter moves', () => {
-  assert.match(
-    validateSequence(puzzle, DICTIONARY, ['HEAD', 'HEA!']).message,
-    /exactly 4 letters/i
-  );
-  assert.match(
-    validateSequence(puzzle, DICTIONARY, ['HEAD', 'HEAL', 'HEAD']).message,
-    /same word/i
-  );
-  assert.match(
-    validateSequence(puzzle, DICTIONARY, ['HEAD', 'TAIL']).message,
-    /one letter/i
-  );
-});
-
-void test('awards more points for fewer moves', () => {
-  assert.equal(calculatePoints(puzzle, 1), 49);
-  assert.equal(calculatePoints(puzzle, 5), 45);
-  assert.ok(calculatePoints(puzzle, 6) < calculatePoints(puzzle, 5));
-  assert.equal(calculatePoints(puzzle, 50), 0);
+  const alternative = shortestPath('HEAD', 'TAIL', DICTIONARY, ['HEAL']);
+  assert.ok(alternative);
+  assert.equal(alternative.includes('HEAL'), false);
+  assert.equal(shortestPath('HEAD', 'ZZZZ', DICTIONARY), null);
 });

@@ -5,8 +5,7 @@ import type { CSSProperties, FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { InitResponse, MoveValidationResponse, Puzzle } from '../shared/api';
 
-type GameStatus = 'playing' | 'won' | 'lost' | 'error';
-let fallbackSessionId = '';
+type GameStatus = 'playing' | 'won' | 'error';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -26,33 +25,31 @@ function getSessionId(): string {
     return created;
   } catch (error) {
     console.error('WRDLINK browser session storage is unavailable:', error);
-    if (!fallbackSessionId) fallbackSessionId = createId();
-    return fallbackSessionId;
+    return typeof crypto.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   }
 }
 
 function isInitResponse(value: unknown): value is InitResponse {
-  if (!isRecord(value) || !('puzzle' in value)) return false;
-  const puzzle = value.puzzle;
-  return isRecord(puzzle) && 'id' in puzzle &&
-    'start' in puzzle && 'target' in puzzle && 'wordLength' in puzzle &&
-    'optimalMoves' in puzzle &&
-    typeof puzzle.id === 'string' && typeof puzzle.start === 'string' &&
-    typeof puzzle.target === 'string' && typeof puzzle.wordLength === 'number' &&
-    typeof puzzle.optimalMoves === 'number' &&
-    typeof value.sessionId === 'string' &&
-    typeof value.gameScore === 'number' &&
-    typeof value.level === 'number';
+  if (!isRecord(value) || !isRecord(value.puzzle)) return false;
+  return typeof value.puzzle.id === 'string' && typeof value.puzzle.title === 'string' &&
+    typeof value.puzzle.start === 'string' && typeof value.puzzle.target === 'string' &&
+    typeof value.puzzle.wordLength === 'number' && typeof value.puzzle.optimalMoves === 'number' &&
+    typeof value.sessionId === 'string' && typeof value.gameScore === 'number' &&
+    typeof value.level === 'number' && Array.isArray(value.words) &&
+    value.words.every((word) => typeof word === 'string') &&
+    typeof value.hintsUsed === 'number' && typeof value.movesUsed === 'number' &&
+    typeof value.completed === 'boolean';
 }
 
-function isValidationResponse(value: unknown): value is MoveValidationResponse {
-  return isRecord(value) && 'valid' in value &&
-    'complete' in value && 'message' in value && 'movesUsed' in value &&
-    typeof value.valid === 'boolean' &&
+function isMoveResponse(value: unknown): value is MoveValidationResponse {
+  return isRecord(value) && typeof value.valid === 'boolean' &&
     typeof value.complete === 'boolean' && typeof value.message === 'string' &&
     typeof value.movesUsed === 'number' && typeof value.pointsAwarded === 'number' &&
-    typeof value.gameScore === 'number' &&
-    typeof value.reset === 'boolean' && typeof value.failed === 'boolean';
+    typeof value.gameScore === 'number' && Array.isArray(value.words) &&
+    value.words.every((word) => typeof word === 'string') &&
+    typeof value.level === 'number' && typeof value.hintsUsed === 'number';
 }
 
 function Word({ word, target = false }: { word: string; target?: boolean }) {
@@ -91,37 +88,60 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [level, setLevel] = useState(1);
-  const [gameScore, setGameScore] = useState(0);
+  const [gameScore, setGameScore] = useState(25);
+  const [hintsUsed, setHintsUsed] = useState(0);
   const [celebrationPoints, setCelebrationPoints] = useState<number | null>(null);
+  const [hintConfirmation, setHintConfirmation] = useState(false);
+  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
   const celebrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionId = useMemo(() => getSessionId(), []);
 
-  function commitPuzzle(data: InitResponse) {
+  const movesUsed = words.length - 1;
+  const nextHintCost = 5 + hintsUsed;
+  const hintTotalCost = nextHintCost + 1;
+
+  useEffect(() => {
+    let selected: 'dark' | 'light' = 'dark';
+    try {
+      const stored = window.localStorage.getItem('wrdlink-theme');
+      if (stored === 'dark' || stored === 'light') selected = stored;
+    } catch (error) {
+      console.warn('WRDLINK theme storage is unavailable:', error);
+    }
+    setTheme(selected);
+    document.documentElement.dataset.theme = selected;
+  }, []);
+
+  const commitPuzzle = (data: InitResponse) => {
     const update = () => {
       setPuzzle(data.puzzle);
-      setWords([data.puzzle.start]);
+      setWords(data.words);
       setEntry('');
       setLevel(data.level);
       setGameScore(data.gameScore);
+      setHintsUsed(data.hintsUsed);
+      setStatus(data.completed ? 'won' : 'playing');
       setCelebrationPoints(null);
+      setHintConfirmation(false);
     };
     const startViewTransition = Reflect.get(document, 'startViewTransition');
-    if (typeof startViewTransition === 'function') {
-      startViewTransition.call(document, update);
-    } else {
-      update();
-    }
-  }
+    if (typeof startViewTransition === 'function') startViewTransition.call(document, update);
+    else update();
+  };
 
-  const loadPuzzle = useCallback(async (signal?: AbortSignal, newGame = false) => {
-    await Promise.resolve();
+  const loadPuzzle = useCallback(async (
+    signal?: AbortSignal,
+    options: { newGame?: boolean; nextLevel?: boolean } = {}
+  ) => {
     if (signal?.aborted) return;
     setLoading(true);
     setStatus('playing');
     setMessage('');
     try {
-      const newGameQuery = newGame ? '&newGame=true' : '';
-      const response = await fetch(`/api/init?sessionId=${encodeURIComponent(sessionId)}${newGameQuery}`, signal ? { signal } : undefined);
+      const query = new URLSearchParams({ sessionId });
+      if (options.newGame) query.set('newGame', 'true');
+      if (options.nextLevel) query.set('nextLevel', 'true');
+      const response = await fetch(`/api/init?${query.toString()}`, signal ? { signal } : undefined);
       if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
       const data: unknown = await response.json();
       if (!isInitResponse(data)) throw new Error('The puzzle response was invalid.');
@@ -145,12 +165,21 @@ export function App() {
     };
   }, [loadPuzzle]);
 
-  const movesUsed = words.length - 1;
-  async function startNewPuzzle() {
+  async function startNewGame() {
     if (busy) return;
     setBusy(true);
     try {
-      await loadPuzzle(undefined, true);
+      await loadPuzzle(undefined, { newGame: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function startNextLevel() {
+    if (busy || status !== 'won') return;
+    setBusy(true);
+    try {
+      await loadPuzzle(undefined, { nextLevel: true });
     } finally {
       setBusy(false);
     }
@@ -165,32 +194,25 @@ export function App() {
       setMessageType('error');
       return;
     }
+
     setBusy(true);
     setMessage('');
     try {
       const response = await fetch('/api/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, puzzleId: puzzle.id, words: [...words, candidate] }),
+        body: JSON.stringify({ sessionId, puzzleId: puzzle.id, word: candidate }),
       });
       if (!response.ok) throw new Error(`Validation failed with status ${response.status}`);
       const result: unknown = await response.json();
-      if (!isValidationResponse(result)) throw new Error('The validation response was invalid.');
-      if (!result.valid) {
-        if (result.failed) {
-          setWords([puzzle.start]);
-          setEntry('');
-          setStatus('lost');
-        }
-        setMessage(result.message);
-        setMessageType('error');
-        return;
-      }
-      setWords((previous) => [...previous, candidate]);
-      setEntry('');
+      if (!isMoveResponse(result)) throw new Error('The validation response was invalid.');
       setMessage(result.message);
-      setMessageType('info');
+      setMessageType(result.valid ? 'info' : 'error');
+      if (!result.valid) return;
+      setWords(result.words);
       setGameScore(result.gameScore);
+      setHintsUsed(result.hintsUsed);
+      setEntry('');
       if (result.complete) {
         setStatus('won');
         setCelebrationPoints(result.pointsAwarded);
@@ -205,6 +227,59 @@ export function App() {
       setBusy(false);
     }
   }
+
+  async function confirmHint() {
+    if (!puzzle || busy || status !== 'playing') return;
+    setHintConfirmation(false);
+    setBusy(true);
+    setMessage('');
+    try {
+      const response = await fetch('/api/hint', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, puzzleId: puzzle.id }),
+      });
+      if (!response.ok) throw new Error(`Hint failed with status ${response.status}`);
+      const result: unknown = await response.json();
+      if (!isRecord(result) || typeof result.valid !== 'boolean' ||
+          typeof result.complete !== 'boolean' || typeof result.message !== 'string' ||
+          !Array.isArray(result.words) || !result.words.every((word) => typeof word === 'string') ||
+          typeof result.gameScore !== 'number' || typeof result.hintsUsed !== 'number' ||
+          typeof result.pointsAwarded !== 'number') {
+        throw new Error('The hint response was invalid.');
+      }
+      setMessage(result.message);
+      setMessageType(result.valid ? 'info' : 'error');
+      if (result.valid) {
+        setWords(result.words);
+        setGameScore(result.gameScore);
+        setHintsUsed(result.hintsUsed);
+        if (result.complete) {
+          setStatus('won');
+          setCelebrationPoints(result.pointsAwarded);
+          if (celebrationTimer.current) clearTimeout(celebrationTimer.current);
+          celebrationTimer.current = setTimeout(() => setCelebrationPoints(null), 1800);
+        }
+      }
+    } catch (error) {
+      console.error('WRDLINK hint failed:', error);
+      setMessage('The hint could not be applied. Your points were not changed.');
+      setMessageType('error');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const toggleTheme = () => {
+    const next = theme === 'dark' ? 'light' : 'dark';
+    setTheme(next);
+    document.documentElement.dataset.theme = next;
+    try {
+      window.localStorage.setItem('wrdlink-theme', next);
+    } catch (error) {
+      console.warn('WRDLINK theme preference could not be saved:', error);
+    }
+  };
 
   if (loading) {
     return (
@@ -229,25 +304,48 @@ export function App() {
     <main className={`game-page ${celebrationPoints !== null ? 'is-celebrating' : ''}`}>
       <header className="game-header">
         <div className="wordmark" aria-label="WRDLINK">WRDLINK</div>
-        <div className="header-context">Lv {level}</div>
+        <div className="header-context">LV{level}</div>
         <div className="header-tools">
-          <div className="header-count"><span>{gameScore} pts</span><span>{movesUsed} moves</span></div>
+          <div className="header-count">
+            <span>{gameScore} pts</span>
+            <span>{movesUsed} moves</span>
+          </div>
+          <button
+            className="theme-toggle"
+            type="button"
+            onClick={toggleTheme}
+            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+          >
+            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
+          </button>
+          <button
+            className="header-hint-button"
+            type="button"
+            title={`Hint costs ${nextHintCost} points plus one move point`}
+            aria-label={`Use hint for ${hintTotalCost} total points`}
+            onClick={() => setHintConfirmation(true)}
+            disabled={busy || status !== 'playing' || gameScore < hintTotalCost}
+          >
+            <span aria-hidden="true">✦</span>
+            <span className="header-hint-cost">−{nextHintCost}</span>
+          </button>
         </div>
       </header>
 
       <div className="game-workspace" aria-live="polite">
-      {status === 'won' && celebrationPoints !== null && (
-        <div className="completion-celebration" role="status" aria-label={`Level ${level} complete. ${celebrationPoints} points awarded`}>
-          <span className="celebration-spark spark-one" />
-          <span className="celebration-spark spark-two" />
-          <div className="completion-score">
-            <span>Level {level} complete</span>
-            <strong>+{celebrationPoints} points</strong>
+        {status === 'won' && celebrationPoints !== null && (
+          <div className="completion-celebration" role="status" aria-label={`Level ${level} complete. ${celebrationPoints} points awarded`}>
+            <span className="celebration-spark spark-one" />
+            <span className="celebration-spark spark-two" />
+            <div className="completion-score">
+              <span>Level {level} complete</span>
+              <strong>+{celebrationPoints} points</strong>
+            </div>
+            <span className="celebration-spark spark-three" />
+            <span className="celebration-spark spark-four" />
           </div>
-          <span className="celebration-spark spark-three" />
-          <span className="celebration-spark spark-four" />
-        </div>
-      )}
+        )}
         <section className="route-panel" aria-label="Puzzle route">
           <div className="route-end">
             <span className="route-label">Start</span>
@@ -295,21 +393,40 @@ export function App() {
               </button>
             </form>
             {message && <p className={`game-message ${messageType}`} role={messageType === 'error' ? 'alert' : 'status'}>{message}</p>}
+
+            <section className="hint-confirmation" hidden={!hintConfirmation} aria-label="Confirm hint">
+              <h2>Use a hint?</h2>
+              <p>The next word on a shortest route will be submitted automatically.</p>
+              <div className="hint-confirm-cost">
+                <span>Hint price plus move</span>
+                <strong>{hintTotalCost} pts</strong>
+              </div>
+              <div className="hint-confirm-balance">
+                <span>Remaining score</span>
+                <strong>{Math.max(0, gameScore - hintTotalCost)} pts</strong>
+              </div>
+              <div className="hint-confirm-actions">
+                <button className="secondary-button" type="button" onClick={() => setHintConfirmation(false)}>Cancel</button>
+                <button className="ink-button" type="button" onClick={() => void confirmHint()} disabled={busy || gameScore < hintTotalCost}>Use hint</button>
+              </div>
+            </section>
+
             <div className="entry-actions">
-              <button className="secondary-button" onClick={() => void startNewPuzzle()} disabled={busy}>Start new puzzle</button>
+              <button className="secondary-button" type="button" onClick={() => void startNewGame()} disabled={busy}>New game</button>
             </div>
-          </section>
-        ) : status === 'won' ? (
-          <section className="finish-panel">
-            <h2>Complete</h2>
-            <p>{puzzle.target} reached in {movesUsed} moves. {message}</p>
-            <button className="ink-button" onClick={() => void loadPuzzle()}>Next level · {level + 1}</button>
           </section>
         ) : (
           <section className="finish-panel">
-            <h2>Try again</h2>
-            <p>The target was {puzzle.target}.</p>
-            <button className="secondary-button" onClick={() => void loadPuzzle()}>Start new puzzle</button>
+            <h2>Connected!</h2>
+            <p>{puzzle.target} reached in {movesUsed} moves. {message}</p>
+            {hintsUsed > 0 && <p>You used {hintsUsed} campaign hints. Next hint price: {5 + hintsUsed} points.</p>}
+            <p className="finish-score">{gameScore} points remaining</p>
+            <button className="ink-button" type="button" onClick={() => void startNextLevel()} disabled={busy}>
+              Next level · {level + 1} <span aria-hidden="true">→</span>
+            </button>
+            <div className="entry-actions">
+              <button className="secondary-button" type="button" onClick={() => void startNewGame()} disabled={busy}>Start new game</button>
+            </div>
           </section>
         )}
       </div>
