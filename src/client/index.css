@@ -952,7 +952,7 @@ button:focus-visible, input:focus-visible {
     min-height: 0;
     margin: 0;
     padding: 12px;
-    overflow: auto;
+    overflow: hidden;
   }
   .finish-panel h2 { font-size: 23px; }
   .finish-panel p { margin-bottom: 8px; font-size: 11px; line-height: 1.35; }
