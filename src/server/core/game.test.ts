@@ -23,18 +23,18 @@ const puzzle: Puzzle = {
   start: 'HEAD',
   target: 'TAIL',
   wordLength: 4,
-  optimalMoves: 5,
+  optimalMoves: 4,
 };
 
 void test('accepts the minimum route', () => {
   const result = validateSequence(
     puzzle,
     DICTIONARY,
-    ['HEAD', 'HEAL', 'TEAL', 'TELL', 'TALL', 'TAIL']
+    ['HEAD', 'HEAT', 'TEAT', 'TEAL', 'TAIL']
   );
   assert.equal(result.valid, true);
   assert.equal(result.complete, true);
-  assert.equal(result.movesUsed, 5);
+  assert.equal(result.movesUsed, 4);
   assert.match(result.message, /minimum/i);
 });
 
