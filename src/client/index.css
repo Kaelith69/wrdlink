@@ -1097,3 +1097,77 @@ button:focus-visible, input:focus-visible {
   .virtual-key { border-radius: 6px; font-size: 11px; }
 }
 
+
+
+/* Completed state: release the keyboard dock and give the chain its own scroll area.
+   Keep the active game layout and its keyboard reservation unchanged. */
+@media (max-width: 620px) {
+  .game-page.is-complete .game-workspace {
+    grid-template-rows: minmax(70px, auto) minmax(120px, 1fr) auto;
+    padding-bottom: 10px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    align-content: stretch;
+    overscroll-behavior-y: contain;
+  }
+  .game-page.is-complete .chain-panel {
+    min-height: 120px;
+    overflow: hidden;
+  }
+  .game-page.is-complete .chain-list {
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: 10px;
+    scroll-padding-bottom: 10px;
+    overscroll-behavior-y: contain;
+    scrollbar-width: thin;
+  }
+  .game-page.is-complete .finish-panel {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 5px;
+    padding: 12px;
+    overflow: visible;
+  }
+  .game-page.is-complete .finish-panel h2 {
+    margin: 2px 0 5px;
+    font-size: clamp(23px, 6vw, 28px);
+    line-height: 1.05;
+  }
+  .game-page.is-complete .finish-panel p {
+    margin: 0 auto 5px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+  .game-page.is-complete .finish-panel .finish-bonus {
+    color: var(--success);
+    font-size: 15px;
+    font-weight: 950;
+  }
+  .game-page.is-complete .finish-panel .finish-next-button {
+    width: min(100%, 320px);
+    min-height: 44px;
+    align-self: center;
+    margin: 4px auto 5px;
+  }
+  .game-page.is-complete .finish-panel .entry-actions {
+    width: 100%;
+    margin-top: 0;
+  }
+  .game-page.is-complete .finish-panel .entry-actions .secondary-button {
+    width: 100%;
+    min-height: 40px;
+  }
+}
+@media (max-width: 620px) and (max-height: 700px) {
+  .game-page.is-complete .game-workspace {
+    grid-template-rows: minmax(62px, auto) minmax(105px, 1fr) auto;
+    padding-bottom: 8px;
+  }
+  .game-page.is-complete .chain-list li {
+    min-height: 26px;
+    flex-basis: 26px;
+  }
+}
