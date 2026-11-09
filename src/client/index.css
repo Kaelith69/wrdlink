@@ -1171,3 +1171,108 @@ button:focus-visible, input:focus-visible {
     flex-basis: 26px;
   }
 }
+
+
+
+/* Dad Jokes design language: charcoal, warm ivory, and acid lime.
+   Keep the game layout and mechanics independent from this visual layer. */
+:root {
+  color-scheme: dark;
+  --canvas: #171714;
+  --paper: #24251f;
+  --paper-strong: #2e3027;
+  --ink: #f4efdf;
+  --ink-soft: #d8d4c4;
+  --muted: #aaa995;
+  --line: rgba(244, 239, 223, .16);
+  --line-strong: #0d0e0a;
+  --dot: rgba(244, 239, 223, .075);
+  --tile: #d7f36a;
+  --tile-ink: #171714;
+  --tile-shadow: #849a3d;
+  --accent: #d7f36a;
+  --accent-ink: #171714;
+  --success: #a8d7a5;
+  --success-bg: #263328;
+  --error: #ff9e91;
+  --error-bg: #402a27;
+  --disabled: #414239;
+  --violet: #d7f36a;
+  --tangerine: #e8dfc9;
+  --mint: #d7f36a;
+  --coral: #ff9e91;
+  --violet-soft: #333b25;
+  --tangerine-soft: #39372e;
+  --mint-soft: #333b25;
+  --radius-card: 20px;
+  --radius-control: 13px;
+}
+body { background: var(--canvas); color: var(--ink); }
+.game-page {
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(215,243,106,.065), transparent 31rem),
+    radial-gradient(ellipse at 92% 88%, rgba(215,243,106,.035), transparent 27rem),
+    var(--canvas);
+}
+.game-page::before { background-image: radial-gradient(var(--dot) 1px, transparent 1.3px); background-size: 26px 26px; }
+.game-header {
+  border-bottom: 1px solid var(--line);
+  background: rgba(36,37,31,.94);
+  box-shadow: 0 8px 28px rgba(0,0,0,.12);
+}
+.brand-mark { border: 1px solid rgba(215,243,106,.45); border-radius: 11px; box-shadow: none; }
+.level-badge { border-color: var(--line); background: var(--paper-strong); color: var(--acid, #d7f36a); }
+.score-pill, .moves-pill { border: 1px solid var(--line); border-radius: 11px; background: var(--paper-strong); }
+.card-panel, .finish-panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-card);
+  background: linear-gradient(145deg, rgba(46,48,39,.98), rgba(35,36,30,.98));
+  box-shadow: 0 18px 48px rgba(0,0,0,.2);
+}
+.word-display span {
+  border: 1px solid rgba(215,243,106,.55);
+  border-radius: 10px;
+  background: var(--tile);
+  color: var(--tile-ink);
+  box-shadow: 0 4px 0 var(--tile-shadow);
+}
+.word-display-target span {
+  border-color: var(--paper);
+  background: var(--paper-strong);
+  color: var(--ink);
+  box-shadow: 0 4px 0 rgba(215,243,106,.35);
+}
+.chain-list li { border-color: var(--line); border-radius: 10px; background: rgba(255,255,255,.025); }
+.chain-list li.chain-final { border-color: var(--success); background: var(--success-bg); }
+.entry-panel input { border: 1px solid var(--line); border-radius: 12px; background: #1c1d18; color: var(--ink); box-shadow: none; }
+.entry-panel input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(215,243,106,.12); }
+.ink-button {
+  border: 1px solid var(--accent);
+  border-radius: 11px;
+  background: var(--accent);
+  color: var(--accent-ink);
+  box-shadow: 0 4px 0 var(--tile-shadow);
+}
+.ink-button:hover:not(:disabled) { box-shadow: 0 6px 0 var(--tile-shadow); }
+.ink-button:active:not(:disabled) { box-shadow: 0 1px 0 var(--tile-shadow); }
+.ink-button:disabled { border-color: var(--line); background: var(--disabled); color: var(--muted); box-shadow: none; }
+.secondary-button, .header-hint-button { border: 1px solid var(--line); border-radius: 10px; background: var(--paper-strong); color: var(--ink); }
+.secondary-button:hover:not(:disabled), .header-hint-button:hover:not(:disabled) { border-color: rgba(215,243,106,.48); background: rgba(215,243,106,.07); }
+.hint-confirmation { border: 1px solid rgba(215,243,106,.28); border-radius: 20px; background: #24251f; color: var(--ink); box-shadow: 0 24px 70px rgba(0,0,0,.4); }
+.hint-confirm-icon { border: 1px solid rgba(215,243,106,.5); border-radius: 11px; background: var(--accent); color: var(--accent-ink); box-shadow: none; }
+.virtual-keyboard {
+  border-color: var(--line);
+  background: #22231e;
+  box-shadow: 0 -8px 30px rgba(0,0,0,.24);
+}
+.virtual-key {
+  border-color: var(--line);
+  border-radius: 8px;
+  background: #36382e;
+  color: var(--ink);
+  box-shadow: 0 3px 0 #11120f;
+}
+.virtual-key:active:not(:disabled) { border-color: var(--accent); background: var(--accent); color: var(--accent-ink); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+}
