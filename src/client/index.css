@@ -739,3 +739,14 @@ button:focus-visible, input:focus-visible {
   .virtual-keyboard { padding: 7px; gap: 4px; }
   .virtual-key { min-height: 35px; }
 }
+
+
+/* Final touch layout: use the full viewport and support hybrid touch devices. */
+.virtual-keyboard {
+  width: calc(100vw - 20px);
+  max-width: none;
+}
+@media (pointer: coarse), (any-pointer: coarse) {
+  .virtual-keyboard { display: grid; }
+  .entry-panel input { caret-color: transparent; }
+}
