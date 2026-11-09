@@ -36,11 +36,21 @@ void test('random puzzle endpoints are connected through dictionary neighbors', 
 
 
 void test('campaign levels receive progressively harder optimal move bands', () => {
-  for (const [level, minimum, maximum] of [[1, 3, 5], [4, 4, 6], [7, 5, 7]] as const) {
+  for (const [level, minimum, maximum] of [[1, 3, 5], [4, 4, 6], [7, 5, 7], [10, 6, 8], [13, 7, 9]] as const) {
     const puzzle = createRandomPuzzle(level);
     assert.ok(
       puzzle.optimalMoves >= minimum && puzzle.optimalMoves <= maximum,
       `Level ${level} generated ${puzzle.optimalMoves} optimal moves, expected ${minimum} to ${maximum}.`
     );
   }
+});
+
+void test('high campaign levels still produce a valid puzzle when a target band is sparse', () => {
+  const puzzle = createRandomPuzzle(10_000);
+  assert.ok(DICTIONARY.has(puzzle.start));
+  assert.ok(DICTIONARY.has(puzzle.target));
+  assert.notEqual(puzzle.start, puzzle.target);
+  const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
+  assert.ok(route);
+  assert.equal(route.length - 1, puzzle.optimalMoves);
 });
