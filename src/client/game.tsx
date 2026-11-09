@@ -149,6 +149,7 @@ export function App() {
   const [celebrationPoints, setCelebrationPoints] = useState<number | null>(null);
   const [hintConfirmation, setHintConfirmation] = useState(false);
   const [newGameConfirmation, setNewGameConfirmation] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const celebrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chainListRef = useRef<HTMLOListElement | null>(null);
   const finishHeadingRef = useRef<HTMLHeadingElement | null>(null);
@@ -163,8 +164,8 @@ export function App() {
   useEffect(() => { if (status === 'won') finishHeadingRef.current?.focus(); }, [status]);
   const hintTotalCost = 6 + hintsUsed;
   useEffect(() => {
-    if (!hintConfirmation && !newGameConfirmation) return;
-    const backdropId = hintConfirmation ? 'hint-confirmation' : 'new-game-confirmation';
+    if (!hintConfirmation && !newGameConfirmation && !helpOpen) return;
+    const backdropId = hintConfirmation ? 'hint-confirmation' : newGameConfirmation ? 'new-game-confirmation' : 'how-to-play-dialog';
     const dialog = document.getElementById(backdropId)?.querySelector<HTMLElement>('[role="dialog"]');
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const focusable = () => dialog?.querySelectorAll<HTMLElement>(
@@ -176,6 +177,7 @@ export function App() {
       if (event.key === 'Escape') {
         if (hintConfirmation) setHintConfirmation(false);
         if (newGameConfirmation) setNewGameConfirmation(false);
+        if (helpOpen) setHelpOpen(false);
         return;
       }
       if (event.key !== 'Tab') return;
@@ -197,7 +199,7 @@ export function App() {
       document.removeEventListener('keydown', onKeyDown);
       previousFocus?.focus();
     };
-  }, [hintConfirmation, newGameConfirmation]);
+  }, [hintConfirmation, newGameConfirmation, helpOpen]);
 
 
   const commitPuzzle = (data: InitResponse) => {
@@ -455,10 +457,58 @@ export function App() {
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18h6m-5 3h4m-5-6.2a6 6 0 1 1 6 0c-.7.6-1 1.2-1 2.2h-4c0-1-.3-1.6-1-2.2Z" /></svg>
             <span className="header-hint-cost">−{hintTotalCost}</span>
           </button>
+          <button className="header-help-button" type="button" aria-label="How to play and game rules" title="How to play" aria-haspopup="dialog" aria-controls="how-to-play-dialog" onClick={() => setHelpOpen(true)}>
+            !
+          </button>
         </div>
       </header>
 
-      <div className="hint-confirmation-backdrop" id="hint-confirmation" hidden={!hintConfirmation}>
+
+      <div className="hint-confirmation-backdrop help-backdrop" id="how-to-play-dialog" hidden={!helpOpen}>
+        <section className="hint-confirmation help-dialog" role="dialog" aria-modal="true" aria-labelledby="help-title" aria-describedby="help-intro">
+          <div className="help-dialog-header">
+            <span className="help-kicker">WRDLINK FIELD GUIDE</span>
+            <button className="help-close-button" type="button" aria-label="Close how to play" onClick={() => setHelpOpen(false)}>×</button>
+          </div>
+          <h2 id="help-title">How to play</h2>
+          <p id="help-intro">Build a word ladder from the start word to the target. Every step must be a real word and change exactly one letter.</p>
+
+          <div className="help-section">
+            <h3>The rules</h3>
+            <ol className="help-rules">
+              <li><strong>Change one letter.</strong> Each new word must be the same length as the previous word and differ by exactly one letter.</li>
+              <li><strong>Use real words.</strong> Every entry must be in the game's word list and use the puzzle's required number of letters.</li>
+              <li><strong>No repeats.</strong> A word can appear only once in your chain.</li>
+              <li><strong>Reach the target.</strong> The target word must be the final word in your chain. You cannot continue after reaching it.</li>
+            </ol>
+          </div>
+
+          <div className="help-section">
+            <h3>Example ladder</h3>
+            <div className="help-example" aria-label="COLD changes to CORD, then CARD, WARD, and WARM">
+              {['COLD', 'CORD', 'CARD', 'WARD', 'WARM'].map((word, index) => (
+                <span className="help-example-step" key={word}>
+                  <strong>{word}</strong>
+                  {index < 4 && <span aria-hidden="true">→</span>}
+                </span>
+              ))}
+            </div>
+            <p className="help-example-note">COLD → CORD changes L to R. CORD → CARD changes O to A. Continue one letter at a time until WARM.</p>
+          </div>
+
+          <div className="help-section">
+            <h3>Scoring and hints</h3>
+            <ul className="help-rules">
+              <li>You begin a new campaign with <strong>25 points</strong>.</li>
+              <li>Every move submitted for validation costs <strong>1 point</strong>, whether the word is accepted or rejected.</li>
+              <li>Completing a level awards <strong>25 points</strong>.</li>
+              <li>A hint automatically adds the next word on a shortest route. Its hint price starts at 5 points and increases by 1 each time. The normal 1 point move cost also applies, so the first hint deducts 6 points in total.</li>
+            </ul>
+          </div>
+          <button className="ink-button help-done-button" type="button" onClick={() => setHelpOpen(false)}>Got it</button>
+        </section>
+      </div>
+\n      <div className="hint-confirmation-backdrop" id="hint-confirmation" hidden={!hintConfirmation}>
         <section className="hint-confirmation" role="dialog" aria-modal="true" aria-labelledby="hint-confirm-title" aria-describedby="hint-confirm-description">
           <span className="hint-confirm-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false"><path d="M9 18h6m-5 3h4m-5-6.2a6 6 0 1 1 6 0c-.7.6-1 1.2-1 2.2h-4c0-1-.3-1.6-1-2.2Z" /></svg>

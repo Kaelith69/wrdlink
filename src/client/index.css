@@ -519,3 +519,105 @@ button:focus-visible, input:focus-visible {
   .header-hint-button { min-width: 36px; }
 }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+
+
+/* In game help guide */
+.header-help-button {
+  display: grid;
+  width: 36px;
+  min-width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 2px solid var(--line-strong);
+  border-radius: 11px;
+  background: var(--violet);
+  color: #FFFFFF;
+  box-shadow: 2px 3px 0 var(--line-strong);
+  font-size: 23px;
+  font-weight: 950;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+.header-help-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 3px 4px 0 var(--line-strong);
+  background: color-mix(in srgb, var(--violet) 82%, white);
+}
+.header-help-button:focus-visible, .help-close-button:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 3px;
+}
+.help-backdrop { z-index: 30; }
+.help-dialog {
+  width: min(100%, 560px);
+  max-height: min(88svh, 780px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: clamp(18px, 4vw, 28px);
+}
+.help-dialog-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.help-kicker {
+  display: inline-flex;
+  padding: 5px 9px;
+  border: 1.5px dashed var(--violet);
+  border-radius: 999px;
+  background: var(--violet-soft);
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .13em;
+}
+.help-close-button {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 2px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--paper-strong);
+  color: var(--ink);
+  font-size: 25px;
+  line-height: 1;
+  cursor: pointer;
+}
+.help-dialog h2 { margin: 13px 0 5px; font-size: clamp(25px, 5vw, 31px); }
+.help-dialog > p { margin: 0 0 18px; color: var(--muted); font-size: 13px; line-height: 1.55; }
+.help-section { margin-top: 17px; padding-top: 15px; border-top: 1.5px solid var(--line); }
+.help-section h3 { margin: 0 0 10px; font-size: 14px; font-weight: 950; letter-spacing: -.01em; }
+.help-rules { display: grid; gap: 9px; margin: 0; padding-left: 21px; color: var(--muted); font-size: 12px; line-height: 1.55; }
+.help-rules strong { color: var(--ink); }
+.help-example {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 13px 10px;
+  border: 1.5px dashed var(--violet);
+  border-radius: 13px;
+  background: var(--violet-soft);
+}
+.help-example-step { display: inline-flex; align-items: center; gap: 7px; color: var(--violet); }
+.help-example-step strong {
+  padding: 6px 8px;
+  border: 2px solid var(--line-strong);
+  border-radius: 7px;
+  background: var(--violet);
+  color: #FFFFFF;
+  font-size: 13px;
+  letter-spacing: .05em;
+  box-shadow: 2px 2px 0 var(--line-strong);
+}
+.help-example-note { margin: 9px 0 0 !important; font-size: 11px !important; }
+.help-done-button { width: 100%; margin-top: 20px; min-height: 48px; }
+@media (max-width: 420px) {
+  .header-help-button { width: 32px; min-width: 32px; height: 34px; border-radius: 9px; }
+  .help-dialog { padding: 17px; }
+  .help-example { gap: 5px; }
+  .help-example-step { gap: 5px; }
+  .help-example-step strong { padding: 5px 6px; font-size: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .header-help-button { transition: none; }
+}
