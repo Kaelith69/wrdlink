@@ -501,25 +501,27 @@ export const DICTIONARY = new Set<string>([
 
 const words = [...DICTIONARY].filter((word) => word.length === 4);
 
-function differsByOneLetter(first: string, second: string): boolean {
-  let differences = 0;
-  for (let index = 0; index < first.length; index += 1) {
-    if (first[index] !== second[index]) differences += 1;
-  }
-  return differences === 1;
-}
-
 function neighbors(word: string): string[] {
-  return words.filter((candidate) => differsByOneLetter(word, candidate));
+  const found: string[] = [];
+  for (let position = 0; position < word.length; position += 1) {
+    for (let code = 65; code <= 90; code += 1) {
+      const letter = String.fromCharCode(code);
+      if (letter === word[position]) continue;
+      const candidate = word.slice(0, position) + letter + word.slice(position + 1);
+      if (DICTIONARY.has(candidate)) found.push(candidate);
+    }
+  }
+  return found;
 }
 
 function shortestDistance(start: string, target: string): number | null {
   const distances = new Map<string, number>([[start, 0]]);
   const queue = [start];
+  let head = 0;
 
-  while (queue.length > 0) {
-    const current = queue.shift();
-    if (!current) break;
+  while (head < queue.length) {
+    const current = queue[head++];
+    if (!current) continue;
     const distance = distances.get(current) ?? 0;
     if (current === target) return distance;
     for (const neighbor of neighbors(current)) {
