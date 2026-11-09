@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
-import { redis } from '@devvit/web/server';
+import { context, redis } from '@devvit/web/server';
 import type { HintResponse, InitResponse, MoveValidationResponse, Puzzle } from '../../shared/api';
 import { createRandomPuzzle, DICTIONARY } from '../data/puzzles';
 import {
@@ -86,6 +86,45 @@ function sessionKey(sessionId: string): string {
   return `wrdlink:session:${sessionId}`;
 }
 
+function accountSessionKey(userId: string): string {
+  return `wrdlink:account:${userId}`;
+}
+
+/** Resolve a campaign from Devvit's authenticated account identity. */
+async function resolveSessionId(requested?: string): Promise<string> {
+  const userId = context.userId;
+  if (!userId) return requested && sessionPattern.test(requested) ? requested : randomUUID();
+  const key = accountSessionKey(userId);
+  const candidate = requested && sessionPattern.test(requested) ? requested : randomUUID();
+  await redis.set(key, candidate, {
+    nx: true,
+    expiration: new Date(Date.now() + SESSION_TTL_SECONDS * 1000),
+  });
+  const linkedSessionId = await redis.get(key);
+  if (!linkedSessionId || !sessionPattern.test(linkedSessionId)) {
+    throw new Error('Could not restore the account game session.');
+  }
+  await redis.expire(key, SESSION_TTL_SECONDS);
+  return linkedSessionId;
+}
+
+async function sessionBelongsToCurrentUser(sessionId: string): Promise<boolean> {
+  const userId = context.userId;
+  if (!userId) return true;
+  return await redis.get(accountSessionKey(userId)) === sessionId;
+}
+
+function rateLimitSubject(sessionId: string): string {
+  return context.userId ? `user:${context.userId}` : sessionId;
+}
+
+async function refreshAccountSessionLink(sessionId: string): Promise<void> {
+  const userId = context.userId;
+  if (!userId) return;
+  const key = accountSessionKey(userId);
+  if (await redis.get(key) === sessionId) await redis.expire(key, SESSION_TTL_SECONDS);
+}
+
 /**
  * Serialize mutations with a short Redis lease. Devvit's TxClient queues reads
  * until EXEC, so a WATCH read cannot safely drive a conditional write in the
@@ -131,6 +170,7 @@ async function updateSession<T>(
       await redis.set(key, JSON.stringify(cloneSession(outcome.state)));
       await redis.expire(key, SESSION_TTL_SECONDS);
     }
+    await refreshAccountSessionLink(sessionId);
     return outcome.result;
   } finally {
     // The lease is short lived. Compare before deleting to avoid releasing a
@@ -151,7 +191,8 @@ function rateLimitKey(sessionId: string, action: string): string {
 }
 
 async function allowedRequest(sessionId: string, action: string, limit: number): Promise<boolean> {
-  const sessionAllowed = await consumeRateLimit(rateLimitKey(sessionId, action), limit);
+  const subject = rateLimitSubject(sessionId);
+  const sessionAllowed = await consumeRateLimit(rateLimitKey(subject, action), limit);
   if (!sessionAllowed) return false;
   return consumeRateLimit(`wrdlink:rate:global:${action}`, GLOBAL_RATE_LIMITS[action] ?? 300);
 }
@@ -167,8 +208,6 @@ function responseFor(
     movesUsed: state.words.length - 1,
     pointsAwarded: 0,
     gameScore: state.gameScore,
-    reset: false,
-    failed: false,
     words: [...state.words],
     level: state.level,
     hintsUsed: state.hintsUsed,
@@ -186,8 +225,6 @@ function invalidResponse(message: string, state?: SessionState): MoveValidationR
     movesUsed: state ? state.words.length - 1 : 0,
     pointsAwarded: 0,
     gameScore: state?.gameScore ?? 0,
-    reset: false,
-    failed: false,
     words: state ? [...state.words] : [],
     level: state?.level ?? 1,
     hintsUsed: state?.hintsUsed ?? 0,
@@ -213,7 +250,7 @@ api.get('/init', async (c) => {
   const requested = c.req.query('sessionId');
   const newGame = c.req.query('newGame') === 'true';
   const nextLevel = c.req.query('nextLevel') === 'true';
-  const sessionId = requested && sessionPattern.test(requested) ? requested : randomUUID();
+  const sessionId = await resolveSessionId(requested);
 
   if (!await allowedRequest(sessionId, 'init', 12)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
@@ -267,6 +304,9 @@ api.post('/validate', async (c) => {
   if (!isSessionRequest(body) || !('word' in body) || typeof body.word !== 'string') {
     return c.json(invalidResponse('Enter a word to continue.'));
   }
+  if (!await sessionBelongsToCurrentUser(body.sessionId)) {
+    return c.json(invalidResponse('That puzzle session is not available.'));
+  }
   if (!await allowedRequest(body.sessionId, 'validate', 30)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
     return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
@@ -314,6 +354,9 @@ api.post('/hint', async (c) => {
       word: null, hintCost: 5, totalCost: 6, pointsAwarded: 0,
       gameScore: 0, hintsUsed: 0, words: [],
     });
+  }
+  if (!await sessionBelongsToCurrentUser(body.sessionId)) {
+    return c.json({ error: 'That puzzle session is not available.' }, 403);
   }
   if (!await allowedRequest(body.sessionId, 'hint', 8)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));

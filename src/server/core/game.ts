@@ -14,19 +14,12 @@ function failure(
     movesUsed,
     pointsAwarded: 0,
     gameScore,
-    reset: false,
-    failed: false,
     words,
     level: 1,
     hintsUsed,
     hintCost: 5 + hintsUsed,
     hintWord: null,
   };
-}
-
-/** Remaining score in a fresh 25 point level after its valid moves. */
-export function calculatePoints(_puzzle: Puzzle, movesUsed: number): number {
-  return Math.max(0, 25 - movesUsed);
 }
 
 export function calculateHintCost(hintsUsed: number): number {
@@ -51,11 +44,6 @@ export function canAffordHint(score: number, hintsUsed: number): boolean {
 
 export function applyHintCost(score: number, hintsUsed: number): number | null {
   return canAffordHint(score, hintsUsed) ? score - calculateHintTotalCost(hintsUsed) : null;
-}
-
-export function calculateHintPenalty(hintsUsed: number): number {
-  const count = Math.max(0, Math.floor(hintsUsed));
-  return count * 5 + (count * (count - 1)) / 2;
 }
 
 export function assertPuzzleDefinition(
@@ -182,8 +170,6 @@ export function validateSequence(
       movesUsed,
       pointsAwarded: 0,
       gameScore: 0,
-      reset: false,
-      failed: false,
       words: [...words],
       level: 1,
       hintsUsed: 0,
@@ -199,8 +185,6 @@ export function validateSequence(
     movesUsed,
     pointsAwarded: 0,
     gameScore: 0,
-    reset: false,
-    failed: false,
     words: [...words],
     level: 1,
     hintsUsed: 0,

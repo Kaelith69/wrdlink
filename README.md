@@ -40,10 +40,11 @@ The server owns the authoritative session, move chain, score, and hint count. Th
 
 ## Session persistence
 
-- Each play session uses a random identifier retained in session storage when available.
-- Redis stores the puzzle, current word chain, score, level, completion state, and campaign hint count.
-- Redis stores each session for **7 days** from its most recent update. The server serializes session mutations with a short Redis lease to prevent concurrent moves from overwriting each other.
-- API requests are rate limited per session and by shared action ceilings. Session identifiers are not authentication credentials, so the shared ceilings also limit simple identifier rotation.
+- Devvit's authenticated Reddit user ID is linked to one campaign session in Redis. The browser session ID is used only to adopt an existing legacy session when the account has no campaign mapping.
+- Returning in another tab or browser session restores the account linked campaign automatically. The client never supplies or chooses the account identity.
+- Redis stores the puzzle, current word chain, score, level, completion state, and campaign hint count. Session mutations are serialized with a short Redis lease to prevent concurrent moves from overwriting each other.
+- Both the campaign and its account mapping expire after **7 days** without activity. Each successful session interaction refreshes both expirations.
+- Authenticated requests are checked against the account's linked session and rate limited by account. Logged out play retains browser session behavior.
 
 ## Reddit and Devvit compatibility
 

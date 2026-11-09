@@ -32,8 +32,6 @@ export type MoveValidationResponse = {
   movesUsed: number;
   pointsAwarded: number;
   gameScore: number;
-  reset: boolean;
-  failed: boolean;
   words: string[];
   level: number;
   hintsUsed: number;
