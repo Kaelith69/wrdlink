@@ -458,7 +458,7 @@ export function App() {
   }
 
   return (
-    <main className={`game-page ${celebrationPoints !== null ? 'is-celebrating' : ''}`}>
+    <main className={`game-page ${status === 'won' ? 'is-complete' : ''} ${celebrationPoints !== null ? 'is-celebrating' : ''}`}>
       <header className="game-header">
         <div className="wordmark" aria-label="WRDLINK">
           <span className="brand-mark" aria-hidden="true">W</span>
@@ -662,12 +662,12 @@ export function App() {
             </div>
           </section>
         ) : (
-          <section className="finish-panel">
-            <h2 ref={finishHeadingRef} tabIndex={-1}>Connected!</h2>
-            <p>{puzzle.target} reached in {movesUsed} moves. {message}</p>
-            {hintsUsed > 0 && <p>You used {hintsUsed} campaign hints. Next hint total deduction: {6 + hintsUsed} points.</p>}
-            <p className="finish-score">{gameScore} points remaining</p>
-            <button className="ink-button" type="button" onClick={() => void startNextLevel()} disabled={busy}>
+          <section className="finish-panel" aria-labelledby="completion-title">
+            <h2 ref={finishHeadingRef} id="completion-title" tabIndex={-1}>Connected!</h2>
+            <p>{puzzle.target} reached in {movesUsed} moves. {message.replace(/\s*\+25 points\.\s*Level balance: \d+\./, '').trim()}</p>
+            <p className="finish-bonus">+25 points awarded</p>
+            {hintsUsed > 0 && <p>You used {hintsUsed} campaign hints. Next hint costs {6 + hintsUsed} points.</p>}
+            <button className="ink-button finish-next-button" type="button" onClick={() => void startNextLevel()} disabled={busy}>
               Next level · {level + 1} <span aria-hidden="true">→</span>
             </button>
             <div className="entry-actions">
