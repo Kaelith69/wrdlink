@@ -13,7 +13,7 @@ void test('generates solvable dictionary puzzles with random endpoints', () => {
     assert.equal(puzzle.wordLength, 4);
     assert.equal(DICTIONARY.has(puzzle.start), true);
     assert.equal(DICTIONARY.has(puzzle.target), true);
-    assert.ok(puzzle.optimalMoves >= 1);
+    assert.ok(puzzle.optimalMoves >= 3 && puzzle.optimalMoves <= 5);
     const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
     assert.ok(route);
     assert.equal(route.length - 1, puzzle.optimalMoves);
@@ -32,4 +32,15 @@ void test('random puzzle endpoints are connected through dictionary neighbors', 
   const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
   assert.ok(route);
   assert.equal(route.length - 1, puzzle.optimalMoves);
+});
+
+
+void test('campaign levels receive progressively harder optimal move bands', () => {
+  for (const [level, minimum, maximum] of [[1, 3, 5], [4, 4, 6], [7, 5, 7]] as const) {
+    const puzzle = createRandomPuzzle(level);
+    assert.ok(
+      puzzle.optimalMoves >= minimum && puzzle.optimalMoves <= maximum,
+      `Level ${level} generated ${puzzle.optimalMoves} optimal moves, expected ${minimum} to ${maximum}.`
+    );
+  }
 });
