@@ -192,10 +192,6 @@ async function readJson(c: { req: { json: () => Promise<unknown> } }): Promise<u
   }
 }
 
-function rateLimitResponse(c: { json: (body: unknown, status?: number) => Response }) {
-  return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
-}
-
 api.get('/init', async (c) => {
   const requested = c.req.query('sessionId');
   const newGame = c.req.query('newGame') === 'true';
@@ -204,7 +200,7 @@ api.get('/init', async (c) => {
 
   if (!await consumeRateLimit(rateLimitKey(sessionId, 'init'), 12)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
-    return rateLimitResponse(c);
+    return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
   }
 
   const result = await updateSession(sessionId, (previous) => {
