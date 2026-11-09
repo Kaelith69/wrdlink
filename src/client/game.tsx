@@ -169,16 +169,8 @@ export function App() {
 
   const handleVirtualKey = (key: string) => {
     if (busy || status !== 'playing') return;
-    if (key === 'ENTER') {
-      entryFormRef.current?.requestSubmit();
-      return;
-    }
     if (key === 'BACKSPACE') {
       setEntry((current) => current.slice(0, -1));
-      return;
-    }
-    if (key === 'CLEAR') {
-      setEntry('');
       return;
     }
     if (!/^[A-Z]$/.test(key) || !puzzle) return;
@@ -598,7 +590,7 @@ export function App() {
         </section>
 
         <section className="chain-panel card-panel" aria-label="Your word chain">
-          <div className="panel-heading"><h2>Word ladder</h2><span className="panel-caption">{movesUsed} moves · {puzzle.optimalMoves} minimum</span></div>
+          <div className="panel-heading"><h2>Word ladder</h2></div>
           <ol className="chain-list" ref={chainListRef}>
             {words.map((word, index) => (
               <li className={word === puzzle.target ? 'chain-final' : ''} key={`${word}-${index}`}>
@@ -661,22 +653,6 @@ export function App() {
                     )}
                   </div>
                 ))}
-                <div className="virtual-keyboard-actions">
-                  <button
-                    className="virtual-key virtual-key-utility"
-                    type="button"
-                    onPointerDown={(event) => event.preventDefault()}
-                    onClick={() => handleVirtualKey('CLEAR')}
-                    disabled={busy || entry.length === 0}
-                  >Clear</button>
-                  <button
-                    className="virtual-key virtual-key-enter"
-                    type="button"
-                    onPointerDown={(event) => event.preventDefault()}
-                    onClick={() => handleVirtualKey('ENTER')}
-                    disabled={busy || entry.length !== puzzle.wordLength}
-                  >Enter ↵</button>
-                </div>
               </div>
             )}
             {message && <p className={`game-message ${messageType}`} role={messageType === 'error' ? 'alert' : 'status'}>{message}</p>}
