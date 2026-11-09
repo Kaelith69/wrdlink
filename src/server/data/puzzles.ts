@@ -545,7 +545,9 @@ function randomId(): string {
   return `random-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
-export function createRandomPuzzle(): Puzzle {
+export function createRandomPuzzle(level = 1): Puzzle {
+  const minOptimalMoves = Math.min(3 + Math.floor((Math.max(1, level) - 1) / 3), 5);
+  const maxOptimalMoves = minOptimalMoves + 2;
   for (let attempt = 0; attempt < 100; attempt += 1) {
     const start = randomItem(words);
     const route = [start];
@@ -564,7 +566,8 @@ export function createRandomPuzzle(): Puzzle {
 
     const target = route[route.length - 1];
     const optimalMoves = target ? shortestDistance(start, target) : null;
-    if (target && target !== start && optimalMoves !== null && route.length > 2) {
+    if (target && target !== start && optimalMoves !== null &&
+        optimalMoves >= minOptimalMoves && optimalMoves <= maxOptimalMoves) {
       return {
         id: randomId(),
         title: 'Random puzzle',
