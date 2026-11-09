@@ -156,6 +156,35 @@ export function App() {
   const [completionAnnouncement, setCompletionAnnouncement] = useState('');
   const [sessionId, setSessionId] = useState(() => getSessionId());
 
+  const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
+  const entryFormRef = useRef<HTMLFormElement | null>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia('(pointer: coarse)');
+    const update = () => setUseVirtualKeyboard(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  const handleVirtualKey = (key: string) => {
+    if (busy || status !== 'playing') return;
+    if (key === 'ENTER') {
+      entryFormRef.current?.requestSubmit();
+      return;
+    }
+    if (key === 'BACKSPACE') {
+      setEntry((current) => current.slice(0, -1));
+      return;
+    }
+    if (key === 'CLEAR') {
+      setEntry('');
+      return;
+    }
+    if (!/^[A-Z]$/.test(key) || !puzzle) return;
+    setEntry((current) => current.length < puzzle.wordLength ? current + key : current);
+  };
+
   const movesUsed = words.length - 1;
   useEffect(() => {
     const list = chainListRef.current;
@@ -585,7 +614,7 @@ export function App() {
             {showFirstPlayInstructions && (
             <div className="entry-heading"><h2>Your next word</h2><p>Change exactly one letter. Use each word once. Reach the target to finish.</p></div>
           )}
-            <form onSubmit={submitMove}>
+            <form ref={entryFormRef} onSubmit={submitMove}>
               <label className="sr-only" htmlFor="word-entry">Next {puzzle.wordLength} letter word</label>
               <input
                 id="word-entry"
@@ -596,12 +625,60 @@ export function App() {
                 autoComplete="off"
                 autoCapitalize="characters"
                 spellCheck={false}
+                readOnly={useVirtualKeyboard}
                 disabled={busy}
+                aria-describedby={useVirtualKeyboard ? 'virtual-keyboard-help' : undefined}
               />
               <button className="ink-button" type="submit" disabled={busy || entry.length !== puzzle.wordLength}>
                 {busy ? 'Checking…' : 'Submit'} <span aria-hidden="true">→</span>
               </button>
             </form>
+            {useVirtualKeyboard && (
+              <div className="virtual-keyboard" aria-label="On screen letter keyboard">
+                <p id="virtual-keyboard-help" className="virtual-keyboard-label">TAP LETTERS TO BUILD YOUR WORD</p>
+                {['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map((row, index) => (
+                  <div className="virtual-keyboard-row" key={row}>
+                    {[...row].map((letter) => (
+                      <button
+                        className="virtual-key"
+                        key={letter}
+                        type="button"
+                        onPointerDown={(event) => event.preventDefault()}
+                        onClick={() => handleVirtualKey(letter)}
+                        disabled={busy || entry.length >= puzzle.wordLength}
+                        aria-label={letter}
+                      >{letter}</button>
+                    ))}
+                    {index === 2 && (
+                      <button
+                        className="virtual-key virtual-key-utility"
+                        type="button"
+                        onPointerDown={(event) => event.preventDefault()}
+                        onClick={() => handleVirtualKey('BACKSPACE')}
+                        disabled={busy || entry.length === 0}
+                        aria-label="Delete last letter"
+                      >⌫</button>
+                    )}
+                  </div>
+                ))}
+                <div className="virtual-keyboard-actions">
+                  <button
+                    className="virtual-key virtual-key-utility"
+                    type="button"
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() => handleVirtualKey('CLEAR')}
+                    disabled={busy || entry.length === 0}
+                  >Clear</button>
+                  <button
+                    className="virtual-key virtual-key-enter"
+                    type="button"
+                    onPointerDown={(event) => event.preventDefault()}
+                    onClick={() => handleVirtualKey('ENTER')}
+                    disabled={busy || entry.length !== puzzle.wordLength}
+                  >Enter ↵</button>
+                </div>
+              </div>
+            )}
             {message && <p className={`game-message ${messageType}`} role={messageType === 'error' ? 'alert' : 'status'}>{message}</p>}
 
             <div className="entry-actions">
