@@ -300,6 +300,10 @@ export function App() {
   async function submitMove(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!puzzle || busy || status !== 'playing') return;
+    // Dismiss onboarding on the first actual form submission, even if local length validation rejects it.
+    setShowFirstPlayInstructions(false);
+    markFirstPlayInstructionsSeen();
+
     const candidate = entry.trim().toUpperCase();
     if (!new RegExp(`^[A-Z]{${puzzle.wordLength}}$`).test(candidate)) {
       setMessage(`Use ${puzzle.wordLength} letters.`);
@@ -307,8 +311,6 @@ export function App() {
       return;
     }
 
-    setShowFirstPlayInstructions(false);
-    markFirstPlayInstructionsSeen();
     setBusy(true);
     setMessage('');
     try {
