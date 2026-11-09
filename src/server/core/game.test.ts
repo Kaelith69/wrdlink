@@ -1,9 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Puzzle } from '../../shared/api.ts';
-// @ts-expect-error Node resolves the native TypeScript module at runtime.
-import { DICTIONARY } from '../data/puzzles.ts';
-// @ts-expect-error Node resolves the native TypeScript module at runtime.
+import { DICTIONARY } from '../data/puzzles';
 import {
   calculateHintCost,
   calculateHintPenalty,
@@ -12,7 +10,7 @@ import {
   neighbors,
   shortestPath,
   validateSequence,
-} from './game.ts';
+} from './game';
 
 const puzzle: Puzzle = {
   id: '001',
