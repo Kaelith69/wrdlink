@@ -116,7 +116,7 @@ async function consumeRateLimit(key: string, limit: number): Promise<boolean> {
   for (let attempt = 0; attempt < 4; attempt += 1) {
     const txn = await redis.watch(key);
     try {
-      const raw = await txn.get(key);
+      const raw = await redis.get(key);
       const count = raw ? Number.parseInt(raw, 10) : 0;
       if (!Number.isSafeInteger(count) || count >= limit) {
         await txn.unwatch();
@@ -298,7 +298,7 @@ api.post('/hint', async (c) => {
   }
   if (!await consumeRateLimit(rateLimitKey(body.sessionId, 'hint'), 8)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
-    return rateLimitResponse(c);
+    return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
   }
 
   const result = await updateSession<HintResponse>(body.sessionId, (stored) => {
