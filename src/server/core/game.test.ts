@@ -46,7 +46,7 @@ void test('enforces exactly one changed letter and dictionary membership', () =>
   assert.equal(differsByOneLetter('COLD', 'CORD'), true);
   assert.equal(differsByOneLetter('COLD', 'WARM'), false);
   assert.equal(differsByOneLetter('COLD', 'COL'), false);
-  assert.equal(neighbors('HEAD', DICTIONARY).includes('HEAL'), false);
+  assert.equal(neighbors('HEAD', DICTIONARY).includes('HEAL'), true);
   assert.equal(DICTIONARY.has('HEAL'), true);
 });
 

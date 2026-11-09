@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
 import { redis } from '@devvit/web/server';
 import type {
+  Context,
   InitResponse,
   MoveValidationResponse,
   Puzzle,
@@ -54,7 +55,14 @@ function isSessionState(value: unknown): value is SessionState {
     return false;
   }
 
-  const puzzle = value.puzzle as unknown as Puzzle;
+  const puzzle: Puzzle = {
+    id: value.puzzle.id as string,
+    title: value.puzzle.title as string,
+    start: value.puzzle.start as string,
+    target: value.puzzle.target as string,
+    wordLength: value.puzzle.wordLength as number,
+    optimalMoves: value.puzzle.optimalMoves as number,
+  };
   if (puzzle.wordLength !== 4 || puzzle.start.length !== 4 || puzzle.target.length !== 4 ||
       !DICTIONARY.has(puzzle.start) || !DICTIONARY.has(puzzle.target) ||
       !Number.isSafeInteger(puzzle.optimalMoves) || puzzle.optimalMoves < 1 ||
@@ -150,7 +158,7 @@ function isSessionRequest(value: unknown): value is { sessionId: string; puzzleI
     sessionPattern.test(value.sessionId) && typeof value.puzzleId === 'string';
 }
 
-async function readJson(c: Parameters<typeof api.post>[0] extends never ? never : any): Promise<unknown> {
+async function readJson(c: Context): Promise<unknown> {
   try {
     return await c.req.json();
   } catch {
@@ -208,11 +216,11 @@ api.get('/init', async (c) => {
 
 api.post('/validate', async (c) => {
   const body: unknown = await readJson(c);
-  if (!isSessionRequest(body) || typeof (body as Record<string, unknown>).word !== 'string') {
+  if (!isSessionRequest(body) || typeof body.word !== 'string') {
     return c.json(invalidResponse('Enter a word to continue.'));
   }
 
-  const word = String((body as Record<string, unknown>).word).trim().toUpperCase();
+  const word = body.word.trim().toUpperCase();
   if (!/^[A-Z]{4}$/.test(word)) {
     return c.json(invalidResponse('Enter a valid four letter word.'));
   }
