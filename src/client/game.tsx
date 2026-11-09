@@ -92,7 +92,15 @@ export function App() {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [celebrationPoints, setCelebrationPoints] = useState<number | null>(null);
   const [hintConfirmation, setHintConfirmation] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark');
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const stored = window.localStorage.getItem('wrdlink-theme');
+      return stored === 'light' || stored === 'dark' ? stored : 'dark';
+    } catch (error) {
+      console.warn('WRDLINK theme storage is unavailable:', error);
+      return 'dark';
+    }
+  });
   const celebrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionId = useMemo(() => getSessionId(), []);
 
@@ -101,16 +109,8 @@ export function App() {
   const hintTotalCost = nextHintCost + 1;
 
   useEffect(() => {
-    let selected: 'dark' | 'light' = 'dark';
-    try {
-      const stored = window.localStorage.getItem('wrdlink-theme');
-      if (stored === 'dark' || stored === 'light') selected = stored;
-    } catch (error) {
-      console.warn('WRDLINK theme storage is unavailable:', error);
-    }
-    setTheme(selected);
-    document.documentElement.dataset.theme = selected;
-  }, []);
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   const commitPuzzle = (data: InitResponse) => {
     const update = () => {
