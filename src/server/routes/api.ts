@@ -100,16 +100,16 @@ async function updateSession<T>(
   const token = randomUUID();
   let acquired = false;
 
-  for (let attempt = 0; attempt < 40; attempt += 1) {
+  for (let attempt = 0; attempt < 120; attempt += 1) {
     const result = await redis.set(lockKey, token, {
       nx: true,
-      expiration: new Date(Date.now() + 10_000),
+      expiration: new Date(Date.now() + 30_000),
     });
     if (result === 'OK') {
       acquired = true;
       break;
     }
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
   if (!acquired) throw new Error('Session is busy. Please retry.');
 
