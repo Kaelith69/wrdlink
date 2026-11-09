@@ -110,7 +110,27 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
     externalSignal?.removeEventListener('abort', abortFromCaller);
   }
 }
+const FIRST_PLAY_INSTRUCTIONS_KEY = 'wrdlink-instructions-seen';
+
+function hasSeenFirstPlayInstructions(): boolean {
+  try {
+    return window.localStorage.getItem(FIRST_PLAY_INSTRUCTIONS_KEY) === 'true';
+  } catch (error) {
+    console.error('WRDLINK could not read the onboarding preference:', error);
+    return false;
+  }
+}
+
+function markFirstPlayInstructionsSeen(): void {
+  try {
+    window.localStorage.setItem(FIRST_PLAY_INSTRUCTIONS_KEY, 'true');
+  } catch (error) {
+    console.error('WRDLINK could not save the onboarding preference:', error);
+  }
+}
+
 export function App() {
+  const [showFirstPlayInstructions] = useState(() => !hasSeenFirstPlayInstructions());
   const [hadStoredSession] = useState(() => {
     try { return Boolean(window.sessionStorage.getItem('wrdlink-session')); }
     catch { return false; }
@@ -181,6 +201,7 @@ export function App() {
 
 
   const commitPuzzle = (data: InitResponse) => {
+    markFirstPlayInstructionsSeen();
     const update = () => {
       setPuzzle(data.puzzle);
       setWords(data.words);
@@ -505,7 +526,9 @@ export function App() {
 
         {status === 'playing' ? (
           <section className="entry-panel card-panel">
+            {showFirstPlayInstructions && (
             <div className="entry-heading"><h2>Your next word</h2><p>Change exactly one letter. Use each word once. Reach the target to finish.</p></div>
+          )}
             <form onSubmit={submitMove}>
               <label className="sr-only" htmlFor="word-entry">Next {puzzle.wordLength} letter word</label>
               <input
