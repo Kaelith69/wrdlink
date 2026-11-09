@@ -1,6 +1,6 @@
 import './splash.css';
 
-import { StrictMode, useState } from 'react';
+import { StrictMode, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { MouseEvent } from 'react';
@@ -9,10 +9,12 @@ import { requestExpandedMode } from '@devvit/web/client';
 export function Splash() {
   const [launching, setLaunching] = useState(false);
   const [error, setError] = useState('');
+  const launchRequested = useRef(false);
 
   async function play(event: MouseEvent<HTMLButtonElement>) {
-    if (launching) return;
+    if (launchRequested.current || launching) return;
 
+    launchRequested.current = true;
     setLaunching(true);
     setError('');
 
@@ -21,6 +23,7 @@ export function Splash() {
     } catch (reason) {
       console.error('Could not open WRDLINK:', reason);
       setError('The game could not open here. Try again from the post.');
+      launchRequested.current = false;
       setLaunching(false);
     }
   }
@@ -44,7 +47,7 @@ export function Splash() {
         </div>
         <p className="splash-subtitle">WORD TRANSFORMATION GAME</p>
         <p className="splash-instructions">Change one letter at a time. Use real four letter words, never repeat a word, and reach the target to complete the puzzle.</p>
-        <button className="start-button" onClick={play} disabled={launching}>
+        <button className="start-button" onClick={play} disabled={launching} aria-busy={launching}>
           {launching ? 'Opening…' : 'Play puzzle'}
         </button>
         {error && <p className="launch-error" role="alert">{error}</p>}
