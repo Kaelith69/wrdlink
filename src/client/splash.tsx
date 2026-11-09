@@ -43,6 +43,7 @@ export function Splash() {
           <span className="splash-line splash-line-bottom" aria-hidden="true" />
         </div>
         <p className="splash-subtitle">WORD TRANSFORMATION GAME</p>
+        <p className="splash-instructions">Change one letter at a time. Use real four letter words, never repeat a word, and reach the target to complete the puzzle.</p>
         <button className="start-button" onClick={play} disabled={launching}>
           {launching ? 'Opening…' : 'Play puzzle'}
         </button>
