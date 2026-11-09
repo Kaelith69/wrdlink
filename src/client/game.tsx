@@ -92,25 +92,12 @@ export function App() {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [celebrationPoints, setCelebrationPoints] = useState<number | null>(null);
   const [hintConfirmation, setHintConfirmation] = useState(false);
-  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
-    try {
-      const stored = window.localStorage.getItem('wrdlink-theme');
-      return stored === 'light' || stored === 'dark' ? stored : 'dark';
-    } catch (error) {
-      console.warn('WRDLINK theme storage is unavailable:', error);
-      return 'dark';
-    }
-  });
   const celebrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sessionId = useMemo(() => getSessionId(), []);
 
   const movesUsed = words.length - 1;
   const nextHintCost = 5 + hintsUsed;
   const hintTotalCost = nextHintCost + 1;
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
 
   const commitPuzzle = (data: InitResponse) => {
     const update = () => {
@@ -272,17 +259,6 @@ export function App() {
     }
   }
 
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark';
-    setTheme(next);
-    document.documentElement.dataset.theme = next;
-    try {
-      window.localStorage.setItem('wrdlink-theme', next);
-    } catch (error) {
-      console.warn('WRDLINK theme preference could not be saved:', error);
-    }
-  };
-
   if (loading) {
     return (
       <main className="game-page state-page">
@@ -305,35 +281,48 @@ export function App() {
   return (
     <main className={`game-page ${celebrationPoints !== null ? 'is-celebrating' : ''}`}>
       <header className="game-header">
-        <div className="wordmark" aria-label="WRDLINK">WRDLINK</div>
-        <div className="header-context">LV{level}</div>
-        <div className="header-tools">
+        <div className="wordmark" aria-label="WRDLINK">
+          <span className="brand-mark" aria-hidden="true">W</span>
+          <span>WRDLINK</span>
+          <span className="level-badge">LV{level}</span>
+        </div>
+        <div className="header-right">
           <div className="header-count">
-            <span>{gameScore} pts</span>
-            <span>{movesUsed} moves</span>
+            <span className="score-pill"><span className="metric-label">SCORE</span><strong>{gameScore}</strong></span>
+            <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{movesUsed}</strong></span>
           </div>
-          <button
-            className="theme-toggle"
-            type="button"
-            onClick={toggleTheme}
-            aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-            title={`Switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-          >
-            <span aria-hidden="true">{theme === 'dark' ? '☀' : '☾'}</span>
-          </button>
           <button
             className="header-hint-button"
             type="button"
             title={`Hint costs ${nextHintCost} points plus one move point`}
             aria-label={`Use hint for ${hintTotalCost} total points`}
+            aria-haspopup="dialog"
+            aria-controls="hint-confirmation"
             onClick={() => setHintConfirmation(true)}
             disabled={busy || status !== 'playing' || gameScore < hintTotalCost}
           >
-            <span aria-hidden="true">✦</span>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18h6m-5 3h4m-5-6.2a6 6 0 1 1 6 0c-.7.6-1 1.2-1 2.2h-4c0-1-.3-1.6-1-2.2Z" /></svg>
             <span className="header-hint-cost">−{nextHintCost}</span>
           </button>
         </div>
       </header>
+
+      <div className="hint-confirmation-backdrop" id="hint-confirmation" hidden={!hintConfirmation}>
+        <section className="hint-confirmation" role="dialog" aria-modal="true" aria-labelledby="hint-confirm-title" aria-describedby="hint-confirm-description">
+          <span className="hint-confirm-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" focusable="false"><path d="M9 18h6m-5 3h4m-5-6.2a6 6 0 1 1 6 0c-.7.6-1 1.2-1 2.2h-4c0-1-.3-1.6-1-2.2Z" /></svg>
+          </span>
+          <h2 id="hint-confirm-title">Use a hint?</h2>
+          <p id="hint-confirm-description">This hint costs points and automatically submits the next word on a shortest route, including its move deduction.</p>
+          <div className="hint-confirm-cost"><span>Total deduction, hint plus move</span><strong>{hintTotalCost} pts</strong></div>
+          <div className="hint-confirm-balance"><span>Your score after hint</span><strong>{Math.max(0, gameScore - hintTotalCost)} pts</strong></div>
+          <p className="hint-confirm-warning">Confirming submits the next word automatically and uses one move.</p>
+          <div className="hint-confirm-actions">
+            <button className="secondary-button" type="button" onClick={() => setHintConfirmation(false)}>Cancel</button>
+            <button className="ink-button" type="button" onClick={() => void confirmHint()} disabled={busy || gameScore < hintTotalCost}>Use hint</button>
+          </div>
+        </section>
+      </div>
 
       <div className="game-workspace" aria-live="polite">
         {status === 'won' && celebrationPoints !== null && (
@@ -350,18 +339,18 @@ export function App() {
         )}
         <section className="route-panel" aria-label="Puzzle route">
           <div className="route-end">
-            <span className="route-label">Start</span>
+            <span className="route-label"><span className="route-dot start-dot" /> START WORD</span>
             <Word word={puzzle.start} />
           </div>
-          <div className="route-line" aria-hidden="true"><span>→</span></div>
+          <div className="route-connector" aria-hidden="true"><i /></div>
           <div className="route-end route-end-target">
-            <span className="route-label">Target</span>
+            <span className="route-label"><span className="route-dot target-dot" /> TARGET WORD</span>
             <Word word={puzzle.target} target />
           </div>
         </section>
 
-        <section className="chain-panel" aria-label="Your word chain">
-          <div className="panel-caption"><span>Word chain</span><span>{movesUsed} moves</span></div>
+        <section className="chain-panel card-panel" aria-label="Your word chain">
+          <div className="panel-heading"><h2>Word ladder</h2><span className="panel-caption">{movesUsed} moves</span></div>
           <ol className="chain-list">
             {words.map((word, index) => (
               <li className={word === puzzle.target ? 'chain-final' : ''} key={`${word}-${index}`}>
@@ -373,10 +362,8 @@ export function App() {
         </section>
 
         {status === 'playing' ? (
-          <section className="entry-panel">
-            <div className="entry-heading">
-              <div><span className="panel-caption">Next move</span><strong>Change one letter</strong></div>
-            </div>
+          <section className="entry-panel card-panel">
+            <div className="entry-heading"><h2>Your next word</h2></div>
             <form onSubmit={submitMove}>
               <label className="sr-only" htmlFor="word-entry">Next {puzzle.wordLength} letter word</label>
               <input
@@ -395,23 +382,6 @@ export function App() {
               </button>
             </form>
             {message && <p className={`game-message ${messageType}`} role={messageType === 'error' ? 'alert' : 'status'}>{message}</p>}
-
-            <section className="hint-confirmation" hidden={!hintConfirmation} aria-label="Confirm hint">
-              <h2>Use a hint?</h2>
-              <p>The next word on a shortest route will be submitted automatically.</p>
-              <div className="hint-confirm-cost">
-                <span>Hint price plus move</span>
-                <strong>{hintTotalCost} pts</strong>
-              </div>
-              <div className="hint-confirm-balance">
-                <span>Remaining score</span>
-                <strong>{Math.max(0, gameScore - hintTotalCost)} pts</strong>
-              </div>
-              <div className="hint-confirm-actions">
-                <button className="secondary-button" type="button" onClick={() => setHintConfirmation(false)}>Cancel</button>
-                <button className="ink-button" type="button" onClick={() => void confirmHint()} disabled={busy || gameScore < hintTotalCost}>Use hint</button>
-              </div>
-            </section>
 
             <div className="entry-actions">
               <button className="secondary-button" type="button" onClick={() => void startNewGame()} disabled={busy}>New game</button>
