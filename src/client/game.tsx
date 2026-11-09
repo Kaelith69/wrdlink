@@ -102,7 +102,7 @@ export function App() {
   const [sessionId, setSessionId] = useState(() => getSessionId());
 
   const movesUsed = words.length - 1;
-  const hintTotalCost = nextHintCost + 1;
+  const hintTotalCost = 6 + hintsUsed;
 
   const commitPuzzle = (data: InitResponse) => {
     const update = () => {
