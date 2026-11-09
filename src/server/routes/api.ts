@@ -297,7 +297,9 @@ api.post('/validate', async (c) => {
         pointsAwarded: validation.complete ? 25 : 0,
         message: validation.complete
           ? `${validation.message} +25 points. Level balance: ${state.gameScore}.`
-          : 'Valid move.',
+          : state.gameScore === 0
+            ? 'Valid move. Your score is zero, so hints are unavailable until you earn more points by completing a level.'
+            : 'Valid move.',
       }),
     };
   });
