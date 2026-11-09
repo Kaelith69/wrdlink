@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
 import { redis } from '@devvit/web/server';
-import type { InitResponse, MoveValidationResponse, Puzzle } from '../../shared/api';
+import type { HintResponse, InitResponse, MoveValidationResponse, Puzzle } from '../../shared/api';
 import { createRandomPuzzle, DICTIONARY } from '../data/puzzles';
 import {
   assertPuzzleDefinition,
@@ -86,7 +86,7 @@ async function updateSession<T>(
   for (let attempt = 0; attempt < 5; attempt += 1) {
     const txn = await redis.watch(key);
     try {
-      const raw = await txn.get(key);
+      const raw = await redis.get(key);
       let current: SessionState | null = null;
       if (raw) {
         const parsed: unknown = JSON.parse(raw);
@@ -102,7 +102,7 @@ async function updateSession<T>(
       await txn.set(key, JSON.stringify(cloneSession(outcome.state)));
       await txn.expire(key, SESSION_TTL_SECONDS);
       const committed = await txn.exec();
-      if (committed !== null) return outcome.result;
+      if (committed.length > 0) return outcome.result;
     } catch (error) {
       await txn.unwatch().catch(() => undefined);
       throw error;
@@ -126,7 +126,7 @@ async function consumeRateLimit(key: string, limit: number): Promise<boolean> {
       await txn.incrBy(key, 1);
       await txn.expire(key, RATE_WINDOW_SECONDS);
       const committed = await txn.exec();
-      if (committed !== null) return true;
+      if (committed.length > 0) return true;
     } catch (error) {
       await txn.unwatch().catch(() => undefined);
       throw error;
@@ -252,7 +252,7 @@ api.post('/validate', async (c) => {
   }
   if (!await consumeRateLimit(rateLimitKey(body.sessionId, 'validate'), 30)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
-    return rateLimitResponse(c);
+    return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
   }
 
   const word = body.word.trim().toUpperCase();
@@ -301,7 +301,7 @@ api.post('/hint', async (c) => {
     return rateLimitResponse(c);
   }
 
-  const result = await updateSession(body.sessionId, (stored) => {
+  const result = await updateSession<HintResponse>(body.sessionId, (stored) => {
     const hintCost = calculateHintCost(stored?.hintsUsed ?? 0);
     const totalCost = calculateHintTotalCost(stored?.hintsUsed ?? 0);
     if (!stored || stored.puzzle.id !== body.puzzleId || stored.completed) {
