@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Puzzle } from '../../shared/api.ts';
-import { DICTIONARY } from '../data/puzzles';
+// @ts-expect-error Node's native TypeScript runner requires explicit source extensions.
+import { DICTIONARY } from '../data/puzzles.ts';
 import {
   calculateHintCost,
   calculateHintPenalty,
@@ -10,7 +11,7 @@ import {
   neighbors,
   shortestPath,
   validateSequence,
-} from './game';
+} from './game.ts';
 
 const puzzle: Puzzle = {
   id: '001',
