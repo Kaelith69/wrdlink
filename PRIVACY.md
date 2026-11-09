@@ -2,44 +2,90 @@
 
 _Last updated: 9 November 2026_
 
-This policy explains what the current WRDLINK application code handles when you play the game on Reddit.
+This policy describes the information handled by the WRDLINK game when it is used through Reddit. It describes the current application implementation, not every category of information Reddit may process as the platform provider.
 
-## Information the app handles
+## 1. Information WRDLINK handles
 
-**Session identifier.** The game creates a random session identifier in the browser using `crypto.randomUUID()` when available, with a generated fallback. It is stored in browser `sessionStorage` under the key `wrdlink-session` so the game can reconnect to the same session during that browser tab's page session.
+### Game and session information
 
-**Game session data.** The server stores the following session state: current puzzle data (including its identifier, start word, target word, word length and optimal move count), level number, cumulative game score, submitted word chain, completion state, and campaign hint count.
+WRDLINK creates a random browser session identifier, using `crypto.randomUUID()` when available and a generated fallback otherwise. The identifier is stored in browser `sessionStorage` under `wrdlink-session`. Browser session storage is scoped to the tab's page session and is not a Reddit account credential.
 
-**Submitted words.** When you submit a move, the client sends the session identifier, puzzle identifier, and candidate word to the WRDLINK server for validation. The server stores the accepted word chain in the Redis session record so your progress can be restored during the session retention period.
+The game server stores campaign state in Reddit Devvit Redis. This includes:
 
-## Where information is stored
+- The current puzzle identifier and puzzle data, including its start word, target word, word length, and optimal move count.
+- The campaign level and cumulative score.
+- The accepted word chain.
+- Whether the current puzzle is complete.
+- The number of hints used during the campaign.
 
-The server uses Reddit Devvit's Redis service. Session records are stored under a key derived from the session identifier. Each session record expires after **7 days** without an update. The app does not provide an in-game control to delete a session record before expiry.
+### Submitted words and gameplay actions
 
-The server depends on Devvit Redis for session persistence. If Redis is unavailable, requests can fail temporarily and the app displays a service error. There is no in-memory fallback.
+When a player submits a move, the server receives the session identifier, puzzle identifier, and candidate word so it can validate the move and apply the scoring rules. A submitted move costs one point whether it is accepted or rejected, provided it reaches the server's move validation flow for an active puzzle. The candidate word from a rejected move is not added to the saved word chain. Accepted words are stored as part of campaign progress.
 
-For signed in Reddit users, the server also stores a mapping from the authenticated Reddit account ID to the campaign session ID. This account ID is supplied by Devvit's server context, not by the browser. The mapping allows campaign recovery across tabs and browser sessions. The account ID is used only as the Redis key for this mapping. The mapping expires after 7 days without activity and is refreshed when the campaign is used. The browser session identifier remains in `sessionStorage` as a compatibility and logged out fallback.
+A confirmed hint is processed by the server. The hint count and updated campaign state are stored. The hint price increases with each hint, and the normal one point move cost is included in the hint's total deduction.
 
-## Reddit account information
+### Reddit account identifier
 
-The current WRDLINK application does not request or store your Reddit username, email address, or profile information. For signed in players, Devvit provides an authenticated Reddit account ID to the server. WRDLINK uses that ID as the key for the account to campaign mapping described above. It does not store the ID as a profile field or display it in the game. It does not include a leaderboard, advertising tracker, analytics SDK, or external tracking integration in the code reviewed for this policy.
+For signed in Reddit players, Devvit supplies an authenticated Reddit account identifier to the server. WRDLINK uses that identifier to associate the account with its campaign session in Redis and to scope authenticated rate limits. The identifier is not supplied by the browser, displayed in the game, or stored as a username, email address, or profile record by WRDLINK.
 
-Reddit and Devvit may independently process information as part of operating the Reddit platform and hosting Devvit apps. Their processing is governed by Reddit's own terms and privacy policy.
+WRDLINK does not request a player's Reddit username, email address, or profile information in the current implementation. Logged out play uses the browser session identifier and does not have an authenticated account mapping.
 
-## Sharing
+### Operational and rate limit information
 
-The current app code does not send the game session record or submitted word chain to an external analytics or advertising provider. Session data is written to Devvit Redis as described above. Reddit/Devvit necessarily provides the platform and storage services on which the app runs.
+The server maintains short lived rate limit counters to protect the game from excessive requests. These counters are keyed to the authenticated account for signed in players or to the session for logged out play. Rate limit counters are configured to expire after 60 seconds.
 
-## Retention and deletion
+The server also uses a short lived Redis lock while updating campaign state, to prevent concurrent requests from overwriting one another. The lock is temporary operational state, not a player profile.
 
-The app does not currently implement a user-facing session deletion feature. Session records automatically expire after 7 days without an update. Redis rate limit counters expire after 60 seconds. The browser's session identifier remains in session storage for the lifetime of that browser tab session and may be cleared by closing the tab or clearing site data.
+## 2. How information is used
 
-Signed in players' campaign sessions are associated with their authenticated Reddit account ID through the expiring mapping. Logged out sessions remain browser session based. The app does not currently implement a user facing session deletion feature. For questions or requests relating to WRDLINK data, contact the moderators of the subreddit where you used the game through Reddit modmail. Requests concerning data processed by Reddit itself should be directed to Reddit through its privacy controls and policies.
+WRDLINK uses the information above only to:
 
-## Changes to this policy
+- Load and restore a player's campaign.
+- Validate submitted word chains against the game's rules and embedded dictionary.
+- Calculate move deductions, hint costs, and level completion rewards.
+- Prevent duplicate or conflicting campaign updates.
+- Apply request rate limits and protect service availability.
+- Diagnose service errors and maintain the game.
 
-This policy will be updated if the app's data handling changes. The latest version will be published at this URL.
+## 3. Storage and service providers
 
-## Contact
+Campaign data, account to campaign mappings, rate limit counters, and temporary session locks are stored using Reddit Devvit Redis.
+
+WRDLINK runs on Reddit's Devvit platform. Reddit and Devvit may process information independently to provide, secure, and operate Reddit and its developer platform. That processing is governed by Reddit's own terms, privacy policy, and platform rules. This policy does not replace those documents.
+
+The current WRDLINK application code does not integrate a separate advertising network, analytics SDK, or external word definition service. This statement describes the application code and should not be read as a promise about platform level processing by Reddit.
+
+## 4. Retention
+
+- Campaign session records expire after **7 days without an update**. Successful campaign interactions refresh the session expiry.
+- Signed in account to campaign mappings are configured to expire after **7 days** and are refreshed when the account campaign is resolved or used.
+- Session ownership records are temporary Redis records with a **7 day** expiry, refreshed when the account campaign is resolved.
+- Rate limit counters expire after **60 seconds**.
+- Session update locks are temporary and use a **60 second** lease.
+- The browser session identifier remains in session storage for the lifetime of the browser tab's page session, subject to browser behavior and user clearing site data.
+
+These are application configured expiry periods. Reddit or Devvit may retain platform operational records under their own policies.
+
+## 5. Access, deletion, and campaign reset
+
+WRDLINK currently does not provide an in game control to delete a Redis campaign record immediately. Starting a new campaign resets the active campaign state, but it should not be treated as an immediate deletion request for every related Redis record. Expiring session, account mapping, ownership, rate limit, and lock records are removed according to their configured expiry behavior.
+
+For questions or requests concerning WRDLINK campaign data, contact the moderators of the subreddit where you used the game through Reddit modmail. Requests about information processed by Reddit or Devvit should be directed to Reddit through its privacy controls and policies.
+
+## 6. Security and limitations
+
+WRDLINK uses server side validation, account linked campaign sessions for signed in players, request rate limits, and serialized session updates. No internet service can guarantee absolute security or uninterrupted availability. Session continuity may be affected by Redis availability, expiry, browser session storage, or changes to the game.
+
+A browser session identifier is a session credential for logged out play. Do not share it if you do not want another person with access to that browser session to interact with its campaign.
+
+## 7. Children and eligibility
+
+WRDLINK is provided through Reddit. Users must meet Reddit's applicable age requirements and comply with Reddit's terms and policies. WRDLINK does not independently verify a player's age.
+
+## 8. Changes to this policy
+
+This policy may be updated when the game's functionality, data handling, or platform integration changes. The latest version will be published in this repository.
+
+## 9. Contact
 
 For WRDLINK privacy questions, contact the moderators of the subreddit where you accessed the game through Reddit modmail.

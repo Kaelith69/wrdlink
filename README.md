@@ -50,6 +50,11 @@ The server owns the authoritative session, move chain, score, and hint count. Th
 
 The inline post launcher continues to use Devvit's expanded mode flow. The expanded React game communicates with the Hono API routes. This Reddit edition is gameplay only: it intentionally has no challenge sharing, result cards, social sharing, replay links, file downloads, or PWA installation flow.
 
+## Policies
+
+- [Privacy Policy](PRIVACY.md)
+- [Terms and Conditions](TERMS.md)
+
 ## Development and checks
 
 ```bash
