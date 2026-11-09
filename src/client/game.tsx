@@ -103,7 +103,7 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
     return await fetch(input, { ...init, signal: controller.signal });
   } catch (error) {
     if (externalSignal?.aborted) throw error;
-    if (error instanceof DOMException && error.name === 'AbortError') throw new Error('The request timed out after 12 seconds. Check your connection and try again.');
+    if (error instanceof DOMException && error.name === 'AbortError') throw new Error('The request timed out after 12 seconds. Check your connection and try again.', { cause: error });
     throw error;
   } finally {
     clearTimeout(timer);
