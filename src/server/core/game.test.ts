@@ -30,7 +30,7 @@ void test('accepts the minimum route', () => {
   const result = validateSequence(
     puzzle,
     DICTIONARY,
-    ['HEAD', 'HEAT', 'TEAT', 'TEAL', 'TAIL']
+    ['HEAD', 'HEAL', 'HEIL', 'HAIL', 'TAIL']
   );
   assert.equal(result.valid, true);
   assert.equal(result.complete, true);
