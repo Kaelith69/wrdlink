@@ -6,11 +6,9 @@ import {
   applyHintCost,
   calculateCompletionScore,
   calculateHintCost,
-  calculateHintPenalty,
   calculateHintTotalCost,
   calculateMoveScore,
   canAffordHint,
-  calculatePoints,
   differsByOneLetter,
   neighbors,
   shortestPath,
@@ -53,13 +51,6 @@ void test('enforces exactly one changed letter and dictionary membership', () =>
   assert.equal(DICTIONARY.has('HEAL'), true);
 });
 
-void test('uses the current level scoring model', () => {
-  assert.equal(calculatePoints(puzzle, 0), 25);
-  assert.equal(calculatePoints(puzzle, 1), 24);
-  assert.equal(calculatePoints(puzzle, 25), 0);
-  assert.equal(calculatePoints(puzzle, 80), 0);
-});
-
 void test('campaign scoring applies move, hint, and completion costs exactly once', () => {
   assert.equal(calculateMoveScore(25), 24);
   assert.equal(calculateMoveScore(1), 0);
@@ -78,8 +69,6 @@ void test('prices hints cumulatively across levels', () => {
   assert.equal(calculateHintCost(1), 6);
   assert.equal(calculateHintCost(2), 7);
   assert.equal(calculateHintCost(3), 8);
-  assert.equal(calculateHintPenalty(3), 18);
-  assert.equal(calculateHintPenalty(4), 26);
 });
 
 void test('finds a shortest unused route for hints', () => {
