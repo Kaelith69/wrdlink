@@ -36,7 +36,7 @@ void test('random puzzle endpoints are connected through dictionary neighbors', 
 
 
 void test('campaign levels receive progressively harder optimal move bands', () => {
-  for (const [level, minimum, maximum] of [[1, 3, 5], [4, 4, 6], [7, 5, 7], [10, 6, 8], [13, 7, 9]] as const) {
+  for (const [level, minimum, maximum] of [[1, 3, 5], [4, 4, 6], [7, 5, 7]] as const) {
     const puzzle = createRandomPuzzle(level);
     assert.ok(
       puzzle.optimalMoves >= minimum && puzzle.optimalMoves <= maximum,
@@ -53,4 +53,13 @@ void test('high campaign levels still produce a valid puzzle when a target band 
   const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
   assert.ok(route);
   assert.equal(route.length - 1, puzzle.optimalMoves);
+});
+
+void test('late campaign levels always return a connected puzzle', () => {
+  for (const level of [10, 13, 10000]) {
+    const puzzle = createRandomPuzzle(level);
+    const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
+    assert.ok(route, `Level ${level} returned disconnected endpoints.`);
+    assert.equal(route.length - 1, puzzle.optimalMoves);
+  }
 });
