@@ -225,8 +225,6 @@ function invalidResponse(message: string, state?: SessionState): MoveValidationR
     movesUsed: state ? state.words.length - 1 : 0,
     pointsAwarded: 0,
     gameScore: state?.gameScore ?? 0,
-    reset: false,
-    failed: false,
     words: state ? [...state.words] : [],
     level: state?.level ?? 1,
     hintsUsed: state?.hintsUsed ?? 0,
