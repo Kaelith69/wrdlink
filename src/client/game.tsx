@@ -62,7 +62,12 @@ function Word({ word, target = false }: { word: string; target?: boolean }) {
 
 function LoadingProgress() {
   return (
-    <div className="loading-progress" aria-label="Loading puzzle">
+    <section className="loading-progress" aria-label="Loading puzzle">
+      <div className="loading-heading">
+        <span className="loading-kicker">WRDLINK ARCADE</span>
+        <h1>Getting your puzzle ready</h1>
+        <p>Connecting the words. One moment.</p>
+      </div>
       <div className="loading-letters" aria-hidden="true">
         {'WRDLINK'.split('').map((letter, index) => (
           <span className="loading-tile" key={`${letter}-${index}`} style={{ '--tile-index': index } as CSSProperties}>
@@ -73,8 +78,8 @@ function LoadingProgress() {
       <div className="loading-track" role="progressbar" aria-label="Loading puzzle" aria-busy="true">
         <span className="loading-fill" />
       </div>
-      <p className="loading-label" role="status">Loading puzzle</p>
-    </div>
+      <p className="loading-label" role="status">Preparing your next word challenge</p>
+    </section>
   );
 }
 
