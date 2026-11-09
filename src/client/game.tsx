@@ -83,7 +83,38 @@ function LoadingProgress() {
   );
 }
 
+async function responseError(response: Response): Promise<string> {
+  try {
+    const payload: unknown = await response.json();
+    if (isRecord(payload)) {
+      if (typeof payload.error === 'string') return payload.error;
+      if (typeof payload.message === 'string') return payload.message;
+    }
+  } catch { /* Non JSON response. */ }
+  return 'Request failed (HTTP ' + response.status + ').';
+}
+async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}, externalSignal?: AbortSignal): Promise<Response> {
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  if (externalSignal?.aborted) controller.abort();
+  else externalSignal?.addEventListener('abort', abortFromCaller, { once: true });
+  const timer = setTimeout(() => controller.abort(), 12000);
+  try {
+    return await fetch(input, { ...init, signal: controller.signal });
+  } catch (error) {
+    if (externalSignal?.aborted) throw error;
+    if (error instanceof DOMException && error.name === 'AbortError') throw new Error('The request timed out after 12 seconds. Check your connection and try again.', { cause: error });
+    throw error;
+  } finally {
+    clearTimeout(timer);
+    externalSignal?.removeEventListener('abort', abortFromCaller);
+  }
+}
 export function App() {
+  const [hadStoredSession] = useState(() => {
+    try { return Boolean(window.sessionStorage.getItem('wrdlink-session')); }
+    catch { return false; }
+  });
   const [puzzle, setPuzzle] = useState<Puzzle | null>(null);
   const [words, setWords] = useState<string[]>([]);
   const [entry, setEntry] = useState('');
@@ -99,9 +130,17 @@ export function App() {
   const [hintConfirmation, setHintConfirmation] = useState(false);
   const [newGameConfirmation, setNewGameConfirmation] = useState(false);
   const celebrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const chainListRef = useRef<HTMLOListElement | null>(null);
+  const finishHeadingRef = useRef<HTMLHeadingElement | null>(null);
+  const [completionAnnouncement, setCompletionAnnouncement] = useState('');
   const [sessionId, setSessionId] = useState(() => getSessionId());
 
   const movesUsed = words.length - 1;
+  useEffect(() => {
+    const list = chainListRef.current;
+    if (list) list.scrollTo({ top: list.scrollHeight, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+  }, [words]);
+  useEffect(() => { if (status === 'won') finishHeadingRef.current?.focus(); }, [status]);
   const hintTotalCost = 6 + hintsUsed;
   useEffect(() => {
     if (!hintConfirmation && !newGameConfirmation) return;
@@ -151,6 +190,7 @@ export function App() {
       setHintsUsed(data.hintsUsed);
       setStatus(data.completed ? 'won' : 'playing');
       setCelebrationPoints(null);
+      setCompletionAnnouncement(data.completed ? 'Level ' + data.level + ' complete. ' + data.puzzle.target + ' reached in ' + (data.words.length - 1) + ' moves.' : '');
       setHintConfirmation(false);
       setNewGameConfirmation(false);
     };
@@ -168,17 +208,20 @@ export function App() {
     setStatus('playing');
     setMessage('');
     try {
-      const query = new URLSearchParams({ sessionId });
-      if (options.newGame) query.set('newGame', 'true');
-      if (options.nextLevel) query.set('nextLevel', 'true');
-      const response = await fetch(`/api/init?${query.toString()}`, signal ? { signal } : undefined);
+      const response = await fetchWithTimeout('/api/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, newGame: Boolean(options.newGame), nextLevel: Boolean(options.nextLevel), resume: hadStoredSession && !options.newGame }),
+      }, signal);
       if (!response.ok) {
+        const detail = await responseError(response);
         if (response.status === 429) {
           const retryAfter = response.headers.get('Retry-After');
-          throw new Error(`Too many requests. Please wait ${retryAfter ? `${retryAfter} seconds` : 'a moment'} before trying again.`);
+          throw new Error('Too many requests. Please wait ' + (retryAfter ? retryAfter + ' seconds' : 'a moment') + ' before trying again.');
         }
-        if (response.status >= 500) throw new Error('The game service is temporarily unavailable. Your saved progress has not been changed. Please try again shortly.');
-        throw new Error(`Unable to load your game (HTTP ${response.status}). Please start a new game or try again.`);
+        if (response.status === 410) throw new Error(detail || 'Your saved campaign has expired. Start a fresh campaign to continue.');
+        if (response.status >= 500) throw new Error(detail || 'The game service is temporarily unavailable. Your saved progress has not been changed. Please try again shortly.');
+        throw new Error(detail || 'Unable to load your game (HTTP ' + response.status + ').');
       }
       const data: unknown = await response.json();
       if (!isInitResponse(data)) throw new Error('The puzzle response was invalid.');
@@ -191,11 +234,11 @@ export function App() {
       if (signal?.aborted) return;
       console.error('WRDLINK initialization failed:', error);
       setStatus('error');
-      setMessage('The puzzle could not be loaded. Try again.');
+      setMessage(error instanceof Error ? error.message : 'The puzzle could not be loaded. Check your connection and try again.');
     } finally {
       setLoading(false);
     }
-  }, [sessionId]);
+  }, [hadStoredSession, sessionId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -245,7 +288,7 @@ export function App() {
     setBusy(true);
     setMessage('');
     try {
-      const response = await fetch('/api/validate', {
+      const response = await fetchWithTimeout('/api/validate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, puzzleId: puzzle.id, word: candidate }),
@@ -264,6 +307,8 @@ export function App() {
       if (!isMoveResponse(result)) throw new Error('The validation response was invalid.');
       setMessage(result.message);
       setMessageType(result.valid ? 'info' : 'error');
+      setGameScore(result.gameScore);
+      setHintsUsed(result.hintsUsed);
       if (!result.valid) {
         if (/session is not available/i.test(result.message)) {
           setMessage('This saved session has expired or is unavailable. Choose New game to start a fresh campaign.');
@@ -271,19 +316,18 @@ export function App() {
         return;
       }
       setWords(result.words);
-      setGameScore(result.gameScore);
-      setHintsUsed(result.hintsUsed);
       setEntry('');
       if (result.complete) {
         setStatus('won');
+        setCompletionAnnouncement('Level ' + result.level + ' complete. ' + puzzle.target + ' reached in ' + result.movesUsed + ' moves. ' + result.pointsAwarded + ' points awarded.');
         setCelebrationPoints(result.pointsAwarded);
         if (celebrationTimer.current) clearTimeout(celebrationTimer.current);
         celebrationTimer.current = setTimeout(() => setCelebrationPoints(null), 1800);
       }
     } catch (error) {
       console.error('WRDLINK move validation failed:', error);
-      await loadPuzzle();
       setMessage(error instanceof Error ? error.message : 'The move could not be submitted. Please try again.');
+      setMessageType('error');
       setMessageType('error');
     } finally {
       setBusy(false);
@@ -296,7 +340,7 @@ export function App() {
     setBusy(true);
     setMessage('');
     try {
-      const response = await fetch('/api/hint', {
+      const response = await fetchWithTimeout('/api/hint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, puzzleId: puzzle.id }),
@@ -327,6 +371,7 @@ export function App() {
         setHintsUsed(result.hintsUsed);
         if (result.complete) {
           setStatus('won');
+          setCompletionAnnouncement('Level ' + level + ' complete. ' + puzzle.target + ' reached in ' + (result.words.length - 1) + ' moves. ' + result.pointsAwarded + ' points awarded.');
           setCelebrationPoints(result.pointsAwarded);
           if (celebrationTimer.current) clearTimeout(celebrationTimer.current);
           celebrationTimer.current = setTimeout(() => setCelebrationPoints(null), 1800);
@@ -334,8 +379,8 @@ export function App() {
       }
     } catch (error) {
       console.error('WRDLINK hint failed:', error);
-      await loadPuzzle();
       setMessage(error instanceof Error ? error.message : 'The hint could not be submitted. Please try again.');
+      setMessageType('error');
       setMessageType('error');
     } finally {
       setBusy(false);
@@ -356,7 +401,9 @@ export function App() {
       <main className="game-page state-page">
         <div className="state-mark">WRD<span>LINK</span></div>
         <p className="state-error" role="alert">{message}</p>
-        <button className="ink-button" onClick={() => void loadPuzzle()}>Try again</button>
+        <button className="ink-button" onClick={() => void loadPuzzle(undefined, { newGame: true })}>
+          {message.toLowerCase().includes('expired') ? 'Start fresh campaign' : 'Try again'}
+        </button>
       </main>
     );
   }
@@ -418,9 +465,10 @@ export function App() {
         </section>
       </div>
 
+      <p className="sr-only" role="status" aria-live="polite">{completionAnnouncement}</p>
       <div className="game-workspace">
         {status === 'won' && celebrationPoints !== null && (
-          <div className="completion-celebration" role="status" aria-label={`Level ${level} complete. ${celebrationPoints} points awarded`}>
+          <div className="completion-celebration" aria-hidden="true">
             <span className="celebration-spark spark-one" />
             <span className="celebration-spark spark-two" />
             <div className="completion-score">
@@ -445,7 +493,7 @@ export function App() {
 
         <section className="chain-panel card-panel" aria-label="Your word chain">
           <div className="panel-heading"><h2>Word ladder</h2><span className="panel-caption">{movesUsed} moves · {puzzle.optimalMoves} minimum</span></div>
-          <ol className="chain-list">
+          <ol className="chain-list" ref={chainListRef}>
             {words.map((word, index) => (
               <li className={word === puzzle.target ? 'chain-final' : ''} key={`${word}-${index}`}>
                 <span>{String(index).padStart(2, '0')}</span>
@@ -483,7 +531,7 @@ export function App() {
           </section>
         ) : (
           <section className="finish-panel">
-            <h2>Connected!</h2>
+            <h2 ref={finishHeadingRef} tabIndex={-1}>Connected!</h2>
             <p>{puzzle.target} reached in {movesUsed} moves. {message}</p>
             {hintsUsed > 0 && <p>You used {hintsUsed} campaign hints. Next hint total deduction: {6 + hintsUsed} points.</p>}
             <p className="finish-score">{gameScore} points remaining</p>
