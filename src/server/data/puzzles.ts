@@ -547,7 +547,7 @@ function randomId(): string {
 
 export function createRandomPuzzle(level = 1): Puzzle {
   const safeLevel = Math.max(1, Math.floor(level));
-  const minOptimalMoves = Math.min(3 + Math.floor((safeLevel - 1) / 3), 7);
+  const minOptimalMoves = Math.min(3 + Math.floor((safeLevel - 1) / 3), 9);
   const maxOptimalMoves = minOptimalMoves + 2;
   let best: { start: string; target: string; optimalMoves: number } | null = null;
 
@@ -555,7 +555,7 @@ export function createRandomPuzzle(level = 1): Puzzle {
     const start = randomItem(words);
     const route = [start];
     const visited = new Set(route);
-    const desiredMoves = Math.min(9, 3 + Math.floor(Math.random() * 7));
+    const desiredMoves = 3 + Math.floor(Math.random() * 9);
 
     while (route.length - 1 < desiredMoves) {
       const current = route[route.length - 1];
