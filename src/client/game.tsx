@@ -1,6 +1,6 @@
 import './index.css';
 
-import { StrictMode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { InitResponse, MoveValidationResponse, Puzzle } from '../shared/api';
@@ -97,12 +97,12 @@ export function App() {
   const [hintsUsed, setHintsUsed] = useState(0);
   const [celebrationPoints, setCelebrationPoints] = useState<number | null>(null);
   const [hintConfirmation, setHintConfirmation] = useState(false);
+  const [newGameConfirmation, setNewGameConfirmation] = useState(false);
   const celebrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const sessionId = useMemo(() => getSessionId(), []);
+  const [sessionId, setSessionId] = useState(() => getSessionId());
 
   const movesUsed = words.length - 1;
-  const nextHintCost = 5 + hintsUsed;
-  const hintTotalCost = nextHintCost + 1;
+  const hintTotalCost = 6 + hintsUsed;
 
   const commitPuzzle = (data: InitResponse) => {
     const update = () => {
@@ -115,6 +115,7 @@ export function App() {
       setStatus(data.completed ? 'won' : 'playing');
       setCelebrationPoints(null);
       setHintConfirmation(false);
+      setNewGameConfirmation(false);
     };
     const startViewTransition = Reflect.get(document, 'startViewTransition');
     if (typeof startViewTransition === 'function') startViewTransition.call(document, update);
@@ -137,6 +138,10 @@ export function App() {
       if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
       const data: unknown = await response.json();
       if (!isInitResponse(data)) throw new Error('The puzzle response was invalid.');
+      setSessionId(data.sessionId);
+      try { window.sessionStorage.setItem('wrdlink-session', data.sessionId); } catch (error) {
+        console.error('WRDLINK could not persist the server session ID:', error);
+      }
       commitPuzzle(data);
     } catch (error) {
       if (signal?.aborted) return;
@@ -157,8 +162,14 @@ export function App() {
     };
   }, [loadPuzzle]);
 
-  async function startNewGame() {
+  function startNewGame() {
     if (busy) return;
+    setNewGameConfirmation(true);
+  }
+
+  async function confirmNewGame() {
+    if (busy) return;
+    setNewGameConfirmation(false);
     setBusy(true);
     try {
       await loadPuzzle(undefined, { newGame: true });
@@ -299,7 +310,7 @@ export function App() {
           <button
             className="header-hint-button"
             type="button"
-            title={`Hint costs ${nextHintCost} points plus one move point`}
+            title={`Hint costs ${hintTotalCost} points in total`}
             aria-label={`Use hint for ${hintTotalCost} total points`}
             aria-haspopup="dialog"
             aria-controls="hint-confirmation"
@@ -307,7 +318,7 @@ export function App() {
             disabled={busy || status !== 'playing' || gameScore < hintTotalCost}
           >
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 18h6m-5 3h4m-5-6.2a6 6 0 1 1 6 0c-.7.6-1 1.2-1 2.2h-4c0-1-.3-1.6-1-2.2Z" /></svg>
-            <span className="header-hint-cost">−{nextHintCost}</span>
+            <span className="header-hint-cost">−{hintTotalCost}</span>
           </button>
         </div>
       </header>
@@ -325,6 +336,17 @@ export function App() {
           <div className="hint-confirm-actions">
             <button className="secondary-button" type="button" onClick={() => setHintConfirmation(false)}>Cancel</button>
             <button className="ink-button" type="button" onClick={() => void confirmHint()} disabled={busy || gameScore < hintTotalCost}>Use hint</button>
+          </div>
+        </section>
+      </div>
+
+      <div className="hint-confirmation-backdrop" hidden={!newGameConfirmation}>
+        <section className="hint-confirmation" role="dialog" aria-modal="true" aria-labelledby="new-game-confirm-title">
+          <h2 id="new-game-confirm-title">Start a new game?</h2>
+          <p>This will reset your current puzzle, campaign level, score, and hint count. Your current progress cannot be restored.</p>
+          <div className="hint-confirm-actions">
+            <button className="secondary-button" type="button" onClick={() => setNewGameConfirmation(false)}>Keep playing</button>
+            <button className="ink-button" type="button" onClick={() => void confirmNewGame()} disabled={busy}>Start new game</button>
           </div>
         </section>
       </div>
@@ -396,7 +418,7 @@ export function App() {
           <section className="finish-panel">
             <h2>Connected!</h2>
             <p>{puzzle.target} reached in {movesUsed} moves. {message}</p>
-            {hintsUsed > 0 && <p>You used {hintsUsed} campaign hints. Next hint price: {5 + hintsUsed} points.</p>}
+            {hintsUsed > 0 && <p>You used {hintsUsed} campaign hints. Next hint total deduction: {6 + hintsUsed} points.</p>}
             <p className="finish-score">{gameScore} points remaining</p>
             <button className="ink-button" type="button" onClick={() => void startNextLevel()} disabled={busy}>
               Next level · {level + 1} <span aria-hidden="true">→</span>
