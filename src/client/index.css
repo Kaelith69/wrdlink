@@ -47,7 +47,11 @@
   --error-surface: #44252B;
   --disabled: #53627A;
 }
+:root[data-theme='dark'] {
+  color-scheme: dark;
+}
 :root[data-theme='light'] {
+  color-scheme: light;
   --background: #0B1220;
   --surface: #17233B;
   --surface-raised: #22304A;

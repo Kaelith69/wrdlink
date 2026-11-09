@@ -55,13 +55,15 @@ function isSessionState(value: unknown): value is SessionState {
     return false;
   }
 
+  if (typeof value.puzzle.wordLength !== 'number' ||
+      typeof value.puzzle.optimalMoves !== 'number') return false;
   const puzzle: Puzzle = {
-    id: value.puzzle.id as string,
-    title: value.puzzle.title as string,
-    start: value.puzzle.start as string,
-    target: value.puzzle.target as string,
-    wordLength: value.puzzle.wordLength as number,
-    optimalMoves: value.puzzle.optimalMoves as number,
+    id: value.puzzle.id,
+    title: value.puzzle.title,
+    start: value.puzzle.start,
+    target: value.puzzle.target,
+    wordLength: value.puzzle.wordLength,
+    optimalMoves: value.puzzle.optimalMoves,
   };
   if (puzzle.wordLength !== 4 || puzzle.start.length !== 4 || puzzle.target.length !== 4 ||
       !DICTIONARY.has(puzzle.start) || !DICTIONARY.has(puzzle.target) ||
@@ -70,7 +72,7 @@ function isSessionState(value: unknown): value is SessionState {
     return false;
   }
 
-  const words = value.words as string[];
+  const words = value.words;
   if (words.length === 1) return !value.completed;
   const result = validateSequence(puzzle, DICTIONARY, words);
   return result.valid && result.complete === value.completed;
@@ -216,7 +218,7 @@ api.get('/init', async (c) => {
 
 api.post('/validate', async (c) => {
   const body: unknown = await readJson(c);
-  if (!isSessionRequest(body) || typeof body.word !== 'string') {
+  if (!isSessionRequest(body) || !('word' in body) || typeof body.word !== 'string') {
     return c.json(invalidResponse('Enter a word to continue.'));
   }
 

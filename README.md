@@ -17,6 +17,7 @@ WRDLINK is a Reddit word transformation game built with **Devvit Web**. Change o
 - Completing a level awards **25 additional points**.
 - The remaining score carries into the next level. It never drops below zero.
 - Starting a new game resets the score to 25, level to 1, and campaign hint count to zero.
+- When moves reduce the balance below zero, it remains at zero.
 
 ## BFS hints
 
