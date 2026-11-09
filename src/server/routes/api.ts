@@ -90,6 +90,10 @@ function accountSessionKey(userId: string): string {
   return `wrdlink:account:${userId}`;
 }
 
+function sessionOwnerKey(sessionId: string): string {
+  return `wrdlink:session-owner:${sessionId}`;
+}
+
 /** Resolve a campaign from Devvit's authenticated account identity. */
 async function resolveSessionId(requested?: string): Promise<string> {
   const userId = context.userId;
