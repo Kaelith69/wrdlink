@@ -26,5 +26,8 @@
   },
   "dev": {
     "subreddit": "wrdlink_dev"
+  },
+  "permissions": {
+    "reddit": true
   }
 }
