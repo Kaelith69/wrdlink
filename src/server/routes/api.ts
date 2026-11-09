@@ -9,7 +9,11 @@ import type {
 import { createRandomPuzzle, DICTIONARY } from '../data/puzzles';
 import {
   assertPuzzleDefinition,
+  applyHintCost,
+  calculateCompletionScore,
   calculateHintCost,
+  calculateMoveScore,
+  calculateHintTotalCost,
   shortestPath,
   validateSequence,
 } from '../core/game';
@@ -239,10 +243,10 @@ api.post('/validate', async (c) => {
 
   state.words = candidateChain;
   // Every accepted move costs one point immediately.
-  state.gameScore = Math.max(0, state.gameScore - 1);
+  state.gameScore = calculateMoveScore(state.gameScore);
   if (result.complete) {
     // The web campaign awards 25 points on top of the remaining level balance.
-    state.gameScore += 25;
+    state.gameScore = calculateCompletionScore(state.gameScore);
     state.completed = true;
   }
 
@@ -281,7 +285,7 @@ api.post('/hint', async (c) => {
   const current = state.words[state.words.length - 1];
   const word = current ? responseFor(state).hintWord : null;
   const hintCost = calculateHintCost(state.hintsUsed);
-  const totalCost = hintCost + 1;
+  const totalCost = calculateHintTotalCost(state.hintsUsed);
 
   if (!word) {
     return c.json({
@@ -290,7 +294,8 @@ api.post('/hint', async (c) => {
       gameScore: state.gameScore, hintsUsed: state.hintsUsed, words: [...state.words],
     });
   }
-  if (state.gameScore < totalCost) {
+  const scoreAfterHint = applyHintCost(state.gameScore, state.hintsUsed);
+  if (scoreAfterHint === null) {
     return c.json({
       valid: false, complete: false,
       message: `Not enough score. This hint and its move cost ${totalCost} points, but your current score is ${state.gameScore}.`,
@@ -312,10 +317,9 @@ api.post('/hint', async (c) => {
   state.words = candidateChain;
   state.hintsUsed += 1;
   // The hint price excludes the separate one point move penalty.
-  state.gameScore = Math.max(0, state.gameScore - hintCost);
-  state.gameScore = Math.max(0, state.gameScore - 1);
+  state.gameScore = scoreAfterHint;
   if (result.complete) {
-    state.gameScore += 25;
+    state.gameScore = calculateCompletionScore(state.gameScore);
     state.completed = true;
   }
 

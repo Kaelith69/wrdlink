@@ -2,10 +2,14 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Puzzle } from '../../shared/api.ts';
 import { DICTIONARY } from '../data/puzzles.ts';
-// @ts-expect-error Node's native TypeScript runner requires explicit source extensions.
 import {
+  applyHintCost,
+  calculateCompletionScore,
   calculateHintCost,
   calculateHintPenalty,
+  calculateHintTotalCost,
+  calculateMoveScore,
+  canAffordHint,
   calculatePoints,
   differsByOneLetter,
   neighbors,
@@ -56,13 +60,17 @@ void test('uses the current level scoring model', () => {
   assert.equal(calculatePoints(puzzle, 80), 0);
 });
 
-void test('move penalties and hint affordability are separate costs', () => {
-  const scoreAfterMove = Math.max(0, 25 - 4 - 1);
-  const firstHintCost = calculateHintCost(0);
-  assert.equal(scoreAfterMove, 20);
-  assert.equal(firstHintCost + 1, 6);
-  assert.equal(Math.max(0, scoreAfterMove - firstHintCost - 1), 14);
-  assert.equal(Math.max(0, 5 - (firstHintCost + 1)), 0);
+void test('campaign scoring applies move, hint, and completion costs exactly once', () => {
+  assert.equal(calculateMoveScore(25), 24);
+  assert.equal(calculateMoveScore(1), 0);
+  assert.equal(calculateMoveScore(0), 0);
+  assert.equal(calculateHintTotalCost(0), 6);
+  assert.equal(canAffordHint(6, 0), true);
+  assert.equal(canAffordHint(5, 0), false);
+  assert.equal(applyHintCost(6, 0), 0);
+  assert.equal(applyHintCost(5, 0), null);
+  assert.equal(calculateCompletionScore(14), 39);
+  assert.equal(calculateCompletionScore(0), 25);
 });
 
 void test('prices hints cumulatively across levels', () => {

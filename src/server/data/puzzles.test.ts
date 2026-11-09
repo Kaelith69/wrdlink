@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-// @ts-expect-error Node resolves the native TypeScript module at runtime.
 import { createRandomPuzzle, DICTIONARY } from './puzzles.ts';
+import { differsByOneLetter, shortestPath } from '../core/game.ts';
 
 void test('generates solvable dictionary puzzles with random endpoints', () => {
   const puzzles = Array.from({ length: 20 }, () => createRandomPuzzle());
@@ -14,7 +14,12 @@ void test('generates solvable dictionary puzzles with random endpoints', () => {
     assert.equal(DICTIONARY.has(puzzle.start), true);
     assert.equal(DICTIONARY.has(puzzle.target), true);
     assert.ok(puzzle.optimalMoves >= 1);
-    assert.ok(puzzle.optimalMoves >= 1);
+    const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
+    assert.ok(route);
+    assert.equal(route.length - 1, puzzle.optimalMoves);
+    for (let index = 1; index < route.length; index += 1) {
+      assert.equal(differsByOneLetter(route[index - 1] ?? '', route[index] ?? ''), true);
+    }
   }
 });
 
@@ -24,4 +29,7 @@ void test('random puzzle endpoints are connected through dictionary neighbors', 
   assert.ok(DICTIONARY.has(puzzle.start));
   assert.ok(DICTIONARY.has(puzzle.target));
   assert.ok(puzzle.optimalMoves >= 1);
+  const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
+  assert.ok(route);
+  assert.equal(route.length - 1, puzzle.optimalMoves);
 });

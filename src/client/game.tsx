@@ -221,7 +221,8 @@ export function App() {
       }
     } catch (error) {
       console.error('WRDLINK move validation failed:', error);
-      setMessage('Connection lost. Your chain is unchanged.');
+      await loadPuzzle();
+      setMessage('Connection interrupted. Your saved chain has been refreshed.');
       setMessageType('error');
     } finally {
       setBusy(false);
@@ -263,7 +264,8 @@ export function App() {
       }
     } catch (error) {
       console.error('WRDLINK hint failed:', error);
-      setMessage('The hint could not be applied. Your points were not changed.');
+      await loadPuzzle();
+      setMessage('Connection interrupted. Your saved game has been refreshed.');
       setMessageType('error');
     } finally {
       setBusy(false);

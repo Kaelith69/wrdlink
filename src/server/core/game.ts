@@ -33,6 +33,26 @@ export function calculateHintCost(hintsUsed: number): number {
   return 5 + Math.max(0, Math.floor(hintsUsed));
 }
 
+export function calculateMoveScore(score: number): number {
+  return Math.max(0, Math.floor(score) - 1);
+}
+
+export function calculateCompletionScore(score: number): number {
+  return Math.max(0, Math.floor(score)) + 25;
+}
+
+export function calculateHintTotalCost(hintsUsed: number): number {
+  return calculateHintCost(hintsUsed) + 1;
+}
+
+export function canAffordHint(score: number, hintsUsed: number): boolean {
+  return Number.isSafeInteger(score) && score >= calculateHintTotalCost(hintsUsed);
+}
+
+export function applyHintCost(score: number, hintsUsed: number): number | null {
+  return canAffordHint(score, hintsUsed) ? score - calculateHintTotalCost(hintsUsed) : null;
+}
+
 export function calculateHintPenalty(hintsUsed: number): number {
   const count = Math.max(0, Math.floor(hintsUsed));
   return count * 5 + (count * (count - 1)) / 2;

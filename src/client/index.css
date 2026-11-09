@@ -52,23 +52,23 @@
 }
 :root[data-theme='light'] {
   color-scheme: light;
-  --background: #0B1220;
-  --surface: #17233B;
-  --surface-raised: #22304A;
-  --text: #F9FAFB;
-  --muted: #9CA3AF;
-  --line: #33445F;
-  --teal: #10B981;
-  --teal-hover: #059669;
-  --action: #34D399;
-  --accent: #10B981;
-  --accent-hover: #059669;
-  --target: #F59E0B;
-  --positive: #34D399;
-  --negative: #F87171;
-  --success-surface: #123B35;
-  --error-surface: #44252B;
-  --disabled: #53627A;
+  --background: #f4f5f1;
+  --surface: #ffffff;
+  --surface-raised: #e8eee9;
+  --text: #172321;
+  --muted: #62716d;
+  --line: #d5dfd9;
+  --teal: #0d8b70;
+  --teal-hover: #08765e;
+  --action: #087e66;
+  --accent: #0d8b70;
+  --accent-hover: #08765e;
+  --target: #c38a18;
+  --positive: #087e66;
+  --negative: #b33f47;
+  --success-surface: #e2f3eb;
+  --error-surface: #f8e7e8;
+  --disabled: #aab8b1;
 }
 
 * { box-sizing: border-box; }
@@ -113,7 +113,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--action); ou
 .chain-panel, .entry-panel { padding-top: 18px; }
 .panel-caption { display: flex; justify-content: space-between; }
 .panel-caption span:last-child { color: var(--muted); font-variant-numeric: tabular-nums; }
-.chain-list { margin: 2px 0 0; padding: 0; list-style: none; }
+.chain-list { max-height: min(42vh, 420px); margin: 2px 0 0; padding: 0; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; list-style: none; }
 .chain-list li { display: grid; grid-template-columns: 32px 1fr; align-items: center; min-height: 34px; border-bottom: 1px solid var(--line); animation: row-in 260ms ease both; }
 .chain-list li > span { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
 .chain-list li b { font-size: 17px; font-weight: 600; letter-spacing: .06em; }
@@ -225,25 +225,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--action); ou
 }
 
 /* Devvit campaign controls and accessible feedback. */
-:root[data-theme='light'] {
-  --background: #f4f5f1;
-  --surface: #ffffff;
-  --surface-raised: #e8eee9;
-  --text: #172321;
-  --muted: #62716d;
-  --line: #d5dfd9;
-  --teal: #0d8b70;
-  --teal-hover: #08765e;
-  --action: #087e66;
-  --accent: #0d8b70;
-  --accent-hover: #08765e;
-  --target: #c38a18;
-  --positive: #087e66;
-  --negative: #b33f47;
-  --success-surface: #e2f3eb;
-  --error-surface: #f8e7e8;
-  --disabled: #aab8b1;
-}
+
 .header-tools { gap: 9px; }
 .theme-toggle {
   display: grid; width: 36px; height: 36px; place-items: center;
