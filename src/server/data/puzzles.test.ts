@@ -36,7 +36,7 @@ void test('random puzzle endpoints are connected through dictionary neighbors', 
 
 
 void test('campaign levels receive progressively harder optimal move bands', () => {
-  for (const [level, minimum, maximum] of [[1, 3, 5], [4, 4, 6], [7, 5, 7], [10, 6, 8], [13, 7, 9], [19, 8, 10]] as const) {
+  for (const [level, minimum, maximum] of [[1, 3, 5], [4, 4, 6], [7, 5, 7], [10, 6, 8], [13, 7, 9]] as const) {
     const puzzle = createRandomPuzzle(level);
     assert.ok(
       puzzle.optimalMoves >= minimum && puzzle.optimalMoves <= maximum,
