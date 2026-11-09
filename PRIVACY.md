@@ -8,15 +8,15 @@ This policy explains what the current WRDLINK application code handles when you 
 
 **Session identifier.** The game creates a random session identifier in the browser using `crypto.randomUUID()` when available, with a generated fallback. It is stored in browser `sessionStorage` under the key `wrdlink-session` so the game can reconnect to the same session during that browser tab's page session.
 
-**Game session data.** The server stores the following session state: current puzzle data (including its identifier, start word, target word, word length and optimal move count), level number, cumulative game score, and whether the puzzle is completed.
+**Game session data.** The server stores the following session state: current puzzle data (including its identifier, start word, target word, word length and optimal move count), level number, cumulative game score, submitted word chain, completion state, and campaign hint count.
 
-**Submitted words.** When you submit a move, the client sends the session identifier, puzzle identifier, and current word chain to the WRDLINK server for validation. The current server code validates the submitted chain but does not save the submitted word chain as part of the session record.
+**Submitted words.** When you submit a move, the client sends the session identifier, puzzle identifier, and candidate word to the WRDLINK server for validation. The server stores the accepted word chain in the Redis session record so your progress can be restored during the session retention period.
 
 ## Where information is stored
 
-The server uses Reddit Devvit's Redis service. Session records are stored under a key derived from the session identifier. The current code does not set a Redis expiration time (TTL) and does not provide an in-game control to delete a session record. Redis retention and deletion are therefore subject to the Devvit platform's operation and policies.
+The server uses Reddit Devvit's Redis service. Session records are stored under a key derived from the session identifier. Each session record expires after **7 days** without an update. The app does not provide an in-game control to delete a session record before expiry.
 
-If a Redis read or write fails, the server uses an in-memory fallback. In-memory session data is lost when that server process stops or restarts.
+The server depends on Devvit Redis for session persistence. If Redis is unavailable, requests can fail temporarily and the app displays a service error. There is no in-memory fallback.
 
 The browser session identifier is held in browser `sessionStorage`, rather than a permanent account profile or a WRDLINK account.
 
@@ -32,7 +32,7 @@ The current app code does not send the game session record or submitted word cha
 
 ## Retention and deletion
 
-The app does not currently implement a user-facing session deletion feature or an automatic Redis expiry. A session record may remain in Devvit Redis until it is overwritten or removed under the platform's storage lifecycle. The browser's session identifier remains in session storage for the lifetime of that browser tab session and may be cleared by closing the tab or clearing site data.
+The app does not currently implement a user-facing session deletion feature. Session records automatically expire after 7 days without an update. Redis rate limit counters expire after 60 seconds. The browser's session identifier remains in session storage for the lifetime of that browser tab session and may be cleared by closing the tab or clearing site data.
 
 Because the current app does not associate session records with a Reddit account, the app cannot identify a session by username. For questions or requests relating to WRDLINK data, contact the moderators of the subreddit where you used the game through Reddit modmail. Requests concerning data processed by Reddit itself should be directed to Reddit through its privacy controls and policies.
 

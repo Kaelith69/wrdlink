@@ -16,6 +16,14 @@ import {
 
 export const api = new Hono();
 
+api.onError((error, context) => {
+  console.error('WRDLINK API request failed:', error);
+  return context.json({
+    error: 'The game service is temporarily unavailable. Please try again shortly.',
+    code: 'SERVICE_UNAVAILABLE',
+  }, 503);
+});
+
 type SessionState = {
   gameScore: number;
   level: number;
@@ -30,6 +38,7 @@ type MutationResult<T> = { state?: SessionState; result: T };
 const sessionPattern = /^(?:[a-f0-9-]{20,80}|session-[a-z0-9-]{10,80})$/i;
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const RATE_WINDOW_SECONDS = 60;
+const GLOBAL_RATE_LIMITS: Record<string, number> = { init: 300, validate: 900, hint: 180 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -77,66 +86,74 @@ function sessionKey(sessionId: string): string {
   return `wrdlink:session:${sessionId}`;
 }
 
-/** Redis WATCH/MULTI makes the read, validation, and write one optimistic transaction. */
+/**
+ * Serialize mutations with a short Redis lease. Devvit's TxClient queues reads
+ * until EXEC, so a WATCH read cannot safely drive a conditional write in the
+ * same transaction. The lease keeps the read/validate/write sequence exclusive.
+ */
 async function updateSession<T>(
   sessionId: string,
   update: (state: SessionState | null) => MutationResult<T>
 ): Promise<T> {
   const key = sessionKey(sessionId);
-  for (let attempt = 0; attempt < 5; attempt += 1) {
-    const txn = await redis.watch(key);
-    try {
-      const raw = await redis.get(key);
-      let current: SessionState | null = null;
-      if (raw) {
-        const parsed: unknown = JSON.parse(raw);
-        if (isSessionState(parsed)) current = cloneSession(parsed);
-      }
-      const outcome = update(current);
-      if (!outcome.state) {
-        await txn.unwatch();
-        return outcome.result;
-      }
+  const lockKey = `${key}:lock`;
+  const token = randomUUID();
+  let acquired = false;
 
-      await txn.multi();
-      await txn.set(key, JSON.stringify(cloneSession(outcome.state)));
-      await txn.expire(key, SESSION_TTL_SECONDS);
-      const committed = await txn.exec();
-      if (committed.length > 0) return outcome.result;
-    } catch (error) {
-      await txn.unwatch().catch(() => undefined);
-      throw error;
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    const result = await redis.set(lockKey, token, {
+      nx: true,
+      expiration: new Date(Date.now() + 30_000),
+    });
+    if (result === 'OK') {
+      acquired = true;
+      break;
     }
+    await new Promise((resolve) => setTimeout(resolve, 50));
   }
-  throw new Error('Session changed too frequently. Please retry.');
+  if (!acquired) throw new Error('Session is busy. Please retry.');
+
+  try {
+    const raw = await redis.get(key);
+    let current: SessionState | null = null;
+    if (raw) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        parsed = null;
+      }
+      if (isSessionState(parsed)) current = cloneSession(parsed);
+    }
+
+    const outcome = update(current);
+    if (outcome.state) {
+      await redis.set(key, JSON.stringify(cloneSession(outcome.state)));
+      await redis.expire(key, SESSION_TTL_SECONDS);
+    }
+    return outcome.result;
+  } finally {
+    // The lease is short lived. Compare before deleting to avoid releasing a
+    // newer owner's lease if this operation ever outlives its expiration.
+    if (await redis.get(lockKey) === token) await redis.del(lockKey);
+  }
 }
 
-/** A per-session fixed window limiter. Counter increments and expiry are atomic. */
+/** Atomic fixed-window counter with both session and shared action limits. */
 async function consumeRateLimit(key: string, limit: number): Promise<boolean> {
-  for (let attempt = 0; attempt < 4; attempt += 1) {
-    const txn = await redis.watch(key);
-    try {
-      const raw = await redis.get(key);
-      const count = raw ? Number.parseInt(raw, 10) : 0;
-      if (!Number.isSafeInteger(count) || count >= limit) {
-        await txn.unwatch();
-        return false;
-      }
-      await txn.multi();
-      await txn.incrBy(key, 1);
-      await txn.expire(key, RATE_WINDOW_SECONDS);
-      const committed = await txn.exec();
-      if (committed.length > 0) return true;
-    } catch (error) {
-      await txn.unwatch().catch(() => undefined);
-      throw error;
-    }
-  }
-  return false;
+  const count = await redis.incrBy(key, 1);
+  if (count === 1) await redis.expire(key, RATE_WINDOW_SECONDS);
+  return count <= limit;
 }
 
 function rateLimitKey(sessionId: string, action: string): string {
   return `wrdlink:rate:${action}:${sessionId}`;
+}
+
+async function allowedRequest(sessionId: string, action: string, limit: number): Promise<boolean> {
+  const sessionAllowed = await consumeRateLimit(rateLimitKey(sessionId, action), limit);
+  if (!sessionAllowed) return false;
+  return consumeRateLimit(`wrdlink:rate:global:${action}`, GLOBAL_RATE_LIMITS[action] ?? 300);
 }
 
 function responseFor(
@@ -198,7 +215,7 @@ api.get('/init', async (c) => {
   const nextLevel = c.req.query('nextLevel') === 'true';
   const sessionId = requested && sessionPattern.test(requested) ? requested : randomUUID();
 
-  if (!await consumeRateLimit(rateLimitKey(sessionId, 'init'), 12)) {
+  if (!await allowedRequest(sessionId, 'init', 12)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
     return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
   }
@@ -250,7 +267,7 @@ api.post('/validate', async (c) => {
   if (!isSessionRequest(body) || !('word' in body) || typeof body.word !== 'string') {
     return c.json(invalidResponse('Enter a word to continue.'));
   }
-  if (!await consumeRateLimit(rateLimitKey(body.sessionId, 'validate'), 30)) {
+  if (!await allowedRequest(body.sessionId, 'validate', 30)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
     return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
   }
@@ -280,7 +297,9 @@ api.post('/validate', async (c) => {
         pointsAwarded: validation.complete ? 25 : 0,
         message: validation.complete
           ? `${validation.message} +25 points. Level balance: ${state.gameScore}.`
-          : 'Valid move.',
+          : state.gameScore === 0
+            ? 'Valid move. Your score is zero, so hints are unavailable until you earn more points by completing a level.'
+            : 'Valid move.',
       }),
     };
   });
@@ -296,7 +315,7 @@ api.post('/hint', async (c) => {
       gameScore: 0, hintsUsed: 0, words: [],
     });
   }
-  if (!await consumeRateLimit(rateLimitKey(body.sessionId, 'hint'), 8)) {
+  if (!await allowedRequest(body.sessionId, 'hint', 8)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
     return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
   }

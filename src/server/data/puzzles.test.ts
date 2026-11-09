@@ -44,3 +44,22 @@ void test('campaign levels receive progressively harder optimal move bands', () 
     );
   }
 });
+
+void test('high campaign levels still produce a valid puzzle when a target band is sparse', () => {
+  const puzzle = createRandomPuzzle(10_000);
+  assert.ok(DICTIONARY.has(puzzle.start));
+  assert.ok(DICTIONARY.has(puzzle.target));
+  assert.notEqual(puzzle.start, puzzle.target);
+  const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
+  assert.ok(route);
+  assert.equal(route.length - 1, puzzle.optimalMoves);
+});
+
+void test('late campaign levels always return a connected puzzle', () => {
+  for (const level of [10, 13, 10000]) {
+    const puzzle = createRandomPuzzle(level);
+    const route = shortestPath(puzzle.start, puzzle.target, DICTIONARY);
+    assert.ok(route, `Level ${level} returned disconnected endpoints.`);
+    assert.equal(route.length - 1, puzzle.optimalMoves);
+  }
+});

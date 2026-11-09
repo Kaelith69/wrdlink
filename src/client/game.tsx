@@ -103,6 +103,43 @@ export function App() {
 
   const movesUsed = words.length - 1;
   const hintTotalCost = 6 + hintsUsed;
+  useEffect(() => {
+    if (!hintConfirmation && !newGameConfirmation) return;
+    const backdropId = hintConfirmation ? 'hint-confirmation' : 'new-game-confirmation';
+    const dialog = document.getElementById(backdropId)?.querySelector<HTMLElement>('[role="dialog"]');
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusable = () => dialog?.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'
+    );
+    focusable()?.[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (hintConfirmation) setHintConfirmation(false);
+        if (newGameConfirmation) setNewGameConfirmation(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (!items?.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus();
+    };
+  }, [hintConfirmation, newGameConfirmation]);
+
 
   const commitPuzzle = (data: InitResponse) => {
     const update = () => {
@@ -135,7 +172,14 @@ export function App() {
       if (options.newGame) query.set('newGame', 'true');
       if (options.nextLevel) query.set('nextLevel', 'true');
       const response = await fetch(`/api/init?${query.toString()}`, signal ? { signal } : undefined);
-      if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+      if (!response.ok) {
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          throw new Error(`Too many requests. Please wait ${retryAfter ? `${retryAfter} seconds` : 'a moment'} before trying again.`);
+        }
+        if (response.status >= 500) throw new Error('The game service is temporarily unavailable. Your saved progress has not been changed. Please try again shortly.');
+        throw new Error(`Unable to load your game (HTTP ${response.status}). Please start a new game or try again.`);
+      }
       const data: unknown = await response.json();
       if (!isInitResponse(data)) throw new Error('The puzzle response was invalid.');
       setSessionId(data.sessionId);
@@ -206,12 +250,26 @@ export function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, puzzleId: puzzle.id, word: candidate }),
       });
-      if (!response.ok) throw new Error(`Validation failed with status ${response.status}`);
+      if (!response.ok) {
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          setMessage(`Too many attempts. Please wait ${retryAfter ? `${retryAfter} seconds` : 'a moment'} before trying again.`);
+          setMessageType('error');
+          return;
+        }
+        if (response.status >= 500) throw new Error('The game service is temporarily unavailable. Your current chain is unchanged. Please try again shortly.');
+        throw new Error(`The move could not be checked (HTTP ${response.status}).`);
+      }
       const result: unknown = await response.json();
       if (!isMoveResponse(result)) throw new Error('The validation response was invalid.');
       setMessage(result.message);
       setMessageType(result.valid ? 'info' : 'error');
-      if (!result.valid) return;
+      if (!result.valid) {
+        if (/session is not available/i.test(result.message)) {
+          setMessage('This saved session has expired or is unavailable. Choose New game to start a fresh campaign.');
+        }
+        return;
+      }
       setWords(result.words);
       setGameScore(result.gameScore);
       setHintsUsed(result.hintsUsed);
@@ -225,7 +283,7 @@ export function App() {
     } catch (error) {
       console.error('WRDLINK move validation failed:', error);
       await loadPuzzle();
-      setMessage('Connection interrupted. Your saved chain has been refreshed.');
+      setMessage(error instanceof Error ? error.message : 'The move could not be submitted. Please try again.');
       setMessageType('error');
     } finally {
       setBusy(false);
@@ -243,7 +301,16 @@ export function App() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sessionId, puzzleId: puzzle.id }),
       });
-      if (!response.ok) throw new Error(`Hint failed with status ${response.status}`);
+      if (!response.ok) {
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After');
+          setMessage(`Too many hint requests. Please wait ${retryAfter ? `${retryAfter} seconds` : 'a moment'} before trying again.`);
+          setMessageType('error');
+          return;
+        }
+        if (response.status >= 500) throw new Error('The game service is temporarily unavailable. Your progress is unchanged. Please try again shortly.');
+        throw new Error(`The hint could not be processed (HTTP ${response.status}).`);
+      }
       const result: unknown = await response.json();
       if (!isRecord(result) || typeof result.valid !== 'boolean' ||
           typeof result.complete !== 'boolean' || typeof result.message !== 'string' ||
@@ -268,7 +335,7 @@ export function App() {
     } catch (error) {
       console.error('WRDLINK hint failed:', error);
       await loadPuzzle();
-      setMessage('Connection interrupted. Your saved game has been refreshed.');
+      setMessage(error instanceof Error ? error.message : 'The hint could not be submitted. Please try again.');
       setMessageType('error');
     } finally {
       setBusy(false);
@@ -340,7 +407,7 @@ export function App() {
         </section>
       </div>
 
-      <div className="hint-confirmation-backdrop" hidden={!newGameConfirmation}>
+      <div className="hint-confirmation-backdrop" id="new-game-confirmation" hidden={!newGameConfirmation}>
         <section className="hint-confirmation" role="dialog" aria-modal="true" aria-labelledby="new-game-confirm-title">
           <h2 id="new-game-confirm-title">Start a new game?</h2>
           <p>This will reset your current puzzle, campaign level, score, and hint count. Your current progress cannot be restored.</p>
@@ -351,7 +418,7 @@ export function App() {
         </section>
       </div>
 
-      <div className="game-workspace" aria-live="polite">
+      <div className="game-workspace">
         {status === 'won' && celebrationPoints !== null && (
           <div className="completion-celebration" role="status" aria-label={`Level ${level} complete. ${celebrationPoints} points awarded`}>
             <span className="celebration-spark spark-one" />
@@ -377,7 +444,7 @@ export function App() {
         </section>
 
         <section className="chain-panel card-panel" aria-label="Your word chain">
-          <div className="panel-heading"><h2>Word ladder</h2><span className="panel-caption">{movesUsed} moves</span></div>
+          <div className="panel-heading"><h2>Word ladder</h2><span className="panel-caption">{movesUsed} moves · {puzzle.optimalMoves} minimum</span></div>
           <ol className="chain-list">
             {words.map((word, index) => (
               <li className={word === puzzle.target ? 'chain-final' : ''} key={`${word}-${index}`}>
@@ -390,7 +457,7 @@ export function App() {
 
         {status === 'playing' ? (
           <section className="entry-panel card-panel">
-            <div className="entry-heading"><h2>Your next word</h2></div>
+            <div className="entry-heading"><h2>Your next word</h2><p>Change exactly one letter. Use each word once. Reach the target to finish.</p></div>
             <form onSubmit={submitMove}>
               <label className="sr-only" htmlFor="word-entry">Next {puzzle.wordLength} letter word</label>
               <input

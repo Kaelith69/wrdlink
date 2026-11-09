@@ -546,13 +546,16 @@ function randomId(): string {
 }
 
 export function createRandomPuzzle(level = 1): Puzzle {
-  const minOptimalMoves = Math.min(3 + Math.floor((Math.max(1, level) - 1) / 3), 5);
+  const safeLevel = Math.max(1, Math.floor(level));
+  const minOptimalMoves = Math.min(3 + Math.floor((safeLevel - 1) / 3), 7);
   const maxOptimalMoves = minOptimalMoves + 2;
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  let best: { start: string; target: string; optimalMoves: number } | null = null;
+
+  for (let attempt = 0; attempt < 300; attempt += 1) {
     const start = randomItem(words);
     const route = [start];
     const visited = new Set(route);
-    const desiredMoves = 3 + Math.floor(Math.random() * 5);
+    const desiredMoves = 3 + Math.floor(Math.random() * 9);
 
     while (route.length - 1 < desiredMoves) {
       const current = route[route.length - 1];
@@ -566,8 +569,13 @@ export function createRandomPuzzle(level = 1): Puzzle {
 
     const target = route[route.length - 1];
     const optimalMoves = target ? shortestDistance(start, target) : null;
-    if (target && target !== start && optimalMoves !== null &&
-        optimalMoves >= minOptimalMoves && optimalMoves <= maxOptimalMoves) {
+    if (!target || target === start || optimalMoves === null) continue;
+
+    if (!best || Math.abs(optimalMoves - minOptimalMoves) <
+        Math.abs(best.optimalMoves - minOptimalMoves)) {
+      best = { start, target, optimalMoves };
+    }
+    if (optimalMoves >= minOptimalMoves && optimalMoves <= maxOptimalMoves) {
       return {
         id: randomId(),
         title: 'Random puzzle',
@@ -579,5 +587,13 @@ export function createRandomPuzzle(level = 1): Puzzle {
     }
   }
 
-  throw new Error('WRDLINK could not generate a solvable random puzzle.');
+  // Always return a known reachable puzzle if the requested difficulty band
+  // is sparse. Never fail session initialization because random sampling missed.
+  const fallback = best ?? { start: 'HEAD', target: 'TAIL', optimalMoves: 4 };
+  return {
+    id: randomId(),
+    title: 'Random puzzle',
+    ...fallback,
+    wordLength: 4,
+  };
 }

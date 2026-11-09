@@ -17,7 +17,7 @@ WRDLINK is a Reddit word transformation game built with **Devvit Web**. Change o
 - Completing a level awards **25 additional points**.
 - The remaining score carries into the next level. It never drops below zero.
 - Starting a new game resets the score to 25, level to 1, and campaign hint count to zero.
-- When moves reduce the balance below zero, it remains at zero.
+- Once the score reaches zero, the campaign can continue, but hints are unavailable until enough score is earned from a level completion.
 
 ## BFS hints
 
@@ -42,7 +42,8 @@ The server owns the authoritative session, move chain, score, and hint count. Th
 
 - Each play session uses a random identifier retained in session storage when available.
 - Redis stores the puzzle, current word chain, score, level, completion state, and campaign hint count.
-- A process memory fallback keeps a session usable during transient Redis failures. That fallback is not durable across process restarts.
+- Redis stores each session for **7 days** from its most recent update. The server serializes session mutations with a short Redis lease to prevent concurrent moves from overwriting each other.
+- API requests are rate limited per session and by shared action ceilings. Session identifiers are not authentication credentials, so the shared ceilings also limit simple identifier rotation.
 
 ## Reddit and Devvit compatibility
 
@@ -58,4 +59,4 @@ npm run test:unit
 npm run build
 ```
 
-The unit suite covers word validation, neighbor generation, shortest path behavior, 25 point level scoring, and escalating hint prices. A subreddit playtest is still needed to verify behavior in the actual Reddit client.
+The unit suite covers word validation, neighbor generation, shortest path behavior, campaign scoring, and escalating hint prices. A subreddit playtest is still needed to verify behavior in the actual Reddit client.
