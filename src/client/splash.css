@@ -48,7 +48,8 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   display: flex;
   min-height: 100vh;
   min-height: 100svh;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   align-items: center;
   justify-content: center;
   padding: 42px 20px 76px;
@@ -105,8 +106,8 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   line-height: 1;
   background: var(--violet);
   box-shadow: 4px 5px 0 var(--violet-shadow);
-  opacity: 0;
-  animation: tile-settle 620ms cubic-bezier(.2,.8,.2,1) forwards;
+  opacity: 1;
+  animation: tile-settle 620ms cubic-bezier(.2,.8,.2,1) both;
   animation-delay: calc(220ms + var(--tile-index) * 90ms);
 }
 .logo-row-tangerine .logo-tile:nth-child(2n) { background: var(--tangerine); color: var(--ink); box-shadow: 4px 5px 0 color-mix(in srgb, var(--tangerine) 65%, var(--line-strong)); }
@@ -118,9 +119,9 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   font-weight: 900;
   letter-spacing: .2em;
   line-height: 1.5;
-  opacity: 0;
+  opacity: 1;
   text-align: center;
-  animation: fade-up 500ms 1.1s ease-out forwards;
+  animation: fade-up 500ms 1.1s ease-out both;
 }
 .start-button {
   display: inline-flex;
@@ -139,8 +140,8 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   font-size: 14px;
   font-weight: 950;
   letter-spacing: .01em;
-  opacity: 0;
-  animation: fade-up 500ms 1.3s ease-out forwards;
+  opacity: 1;
+  animation: fade-up 500ms 1.3s ease-out both;
   transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
 }
 .start-button:hover:not(:disabled) { filter: saturate(1.08) brightness(1.04); transform: translate(-2px, -2px); box-shadow: 6px 7px 0 var(--line-strong); }
@@ -155,11 +156,11 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
 @keyframes line-draw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes line-draw-reverse { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 @keyframes tile-settle {
-  0% { opacity: 0; transform: translateY(-20px) rotate(var(--tile-rotation, -2deg)) scale(.94); }
+  0% { opacity: 1; transform: translateY(-20px) rotate(var(--tile-rotation, -2deg)) scale(.94); }
   68% { opacity: 1; transform: translateY(3px) rotate(var(--tile-rotation, -2deg)) scale(1.015); }
   100% { opacity: 1; transform: translateY(0) rotate(var(--tile-rotation, -2deg)) scale(1); }
 }
-@keyframes fade-up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fade-up { from { opacity: 1; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes indicator-pulse { 0%, 100% { opacity: .48; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.15); } }
 .logo-tile:nth-child(1) { --tile-rotation: -2deg; }
 .logo-tile:nth-child(2) { --tile-rotation: 1deg; }
@@ -184,3 +185,36 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
 
 .splash-instructions { max-width: 390px; margin: 12px auto 0; color: var(--muted); font-size: 12px; font-weight: 600; line-height: 1.65; text-align: center; }
 @media (max-width: 420px) { .splash-instructions { max-width: 300px; margin-top: 10px; font-size: 11px; } }
+
+
+/* Keep the inline launch screen usable while its embedded viewport settles.
+   Essential content is visible on the first paint; motion is decorative only. */
+.splash-stage,
+.logo-tile,
+.splash-subtitle,
+.splash-instructions,
+.start-button {
+  visibility: visible;
+}
+.splash-page {
+  min-width: 0;
+  overscroll-behavior-y: contain;
+}
+@media (max-height: 560px) {
+  .splash-page {
+    align-items: flex-start;
+    padding-top: 18px;
+    padding-bottom: 58px;
+  }
+  .splash-stage {
+    margin-top: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .logo-tile,
+  .splash-subtitle,
+  .start-button {
+    animation: none;
+    transform: none;
+  }
+}
