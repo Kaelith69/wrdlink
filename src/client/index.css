@@ -703,3 +703,39 @@ button:focus-visible, input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .virtual-key { transition: none; }
 }
+
+
+/* Compact touch keyboard: wider footprint, shorter rows, letter entry only. */
+.virtual-keyboard {
+  position: relative;
+  left: 50%;
+  width: min(700px, calc(100vw - 20px));
+  margin: 10px 0 0;
+  padding: 8px;
+  gap: 5px;
+  transform: translateX(-50%);
+}
+.virtual-keyboard-label { margin: 0; font-size: 8px; line-height: 1.2; }
+.virtual-keyboard-row { width: 100%; gap: clamp(3px, .8vw, 7px); }
+.virtual-key {
+  min-height: 38px;
+  padding-inline: 2px;
+  border-width: 1.5px;
+  border-radius: 7px;
+  font-size: clamp(12px, 3.2vw, 15px);
+  box-shadow: 1px 2px 0 var(--line-strong);
+}
+.virtual-key-utility { flex: 1 1 0; }
+.virtual-keyboard-actions, .virtual-key-enter { display: none !important; }
+.entry-heading {
+  display: grid;
+  justify-content: start;
+  gap: 3px;
+  margin-bottom: 10px;
+}
+.entry-heading h2 { line-height: 1.1; }
+.entry-heading p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.35; }
+@media (max-width: 360px) {
+  .virtual-keyboard { padding: 7px; gap: 4px; }
+  .virtual-key { min-height: 35px; }
+}
