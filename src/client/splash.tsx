@@ -35,7 +35,7 @@ export function Splash() {
               <span className="logo-tile" key={letter} style={{ '--tile-index': index } as CSSProperties}>{letter}</span>
             ))}
           </div>
-          <div className="logo-row logo-row-marigold">
+          <div className="logo-row logo-row-tangerine">
             {['L', 'I', 'N', 'K'].map((letter, index) => (
               <span className="logo-tile" key={letter} style={{ '--tile-index': index + 3 } as CSSProperties}>{letter}</span>
             ))}
@@ -48,7 +48,7 @@ export function Splash() {
         </button>
         {error && <p className="launch-error" role="alert">{error}</p>}
       </section>
-      <div className="splash-progress" aria-label="Loading complete">
+      <div className="splash-progress" aria-label="Game introduction progress">
         <span /><span className="active" /><span />
       </div>
     </main>
