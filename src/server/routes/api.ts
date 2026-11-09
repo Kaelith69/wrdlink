@@ -16,6 +16,14 @@ import {
 
 export const api = new Hono();
 
+api.onError((error, context) => {
+  console.error('WRDLINK API request failed:', error);
+  return context.json({
+    error: 'The game service is temporarily unavailable. Please try again shortly.',
+    code: 'SERVICE_UNAVAILABLE',
+  }, 503);
+});
+
 type SessionState = {
   gameScore: number;
   level: number;
