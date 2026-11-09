@@ -38,7 +38,7 @@ type MutationResult<T> = { state?: SessionState; result: T };
 const sessionPattern = /^(?:[a-f0-9-]{20,80}|session-[a-z0-9-]{10,80})$/i;
 const SESSION_TTL_SECONDS = 7 * 24 * 60 * 60;
 const RATE_WINDOW_SECONDS = 60;
-const GLOBAL_RATE_LIMITS: Record<string, number> = { init: 300, validate: 900, hint: 180 };
+// Rate limits are scoped to the authenticated player (or anonymous session).\n// Avoid installation wide ceilings that let one busy subreddit throttle everyone.
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -90,28 +90,79 @@ function accountSessionKey(userId: string): string {
   return `wrdlink:account:${userId}`;
 }
 
+function sessionOwnerKey(sessionId: string): string {
+  return `wrdlink:session-owner:${sessionId}`;
+}
+
 /** Resolve a campaign from Devvit's authenticated account identity. */
 async function resolveSessionId(requested?: string): Promise<string> {
   const userId = context.userId;
   if (!userId) return requested && sessionPattern.test(requested) ? requested : randomUUID();
-  const key = accountSessionKey(userId);
-  const candidate = requested && sessionPattern.test(requested) ? requested : randomUUID();
-  await redis.set(key, candidate, {
-    nx: true,
-    expiration: new Date(Date.now() + SESSION_TTL_SECONDS * 1000),
-  });
-  const linkedSessionId = await redis.get(key);
-  if (!linkedSessionId || !sessionPattern.test(linkedSessionId)) {
-    throw new Error('Could not restore the account game session.');
+
+  const accountKey = accountSessionKey(userId);
+  const linked = await redis.get(accountKey);
+  if (linked) {
+    if (!sessionPattern.test(linked)) throw new Error('Could not restore the account game session.');
+    const ownerKey = sessionOwnerKey(linked);
+    await redis.set(ownerKey, userId, {
+      nx: true,
+      expiration: new Date(Date.now() + SESSION_TTL_SECONDS * 1000),
+    });
+    if (await redis.get(ownerKey) !== userId) {
+      throw new Error('This account session is already assigned to another player.');
+    }
+    await redis.expire(accountKey, SESSION_TTL_SECONDS);
+    await redis.expire(ownerKey, SESSION_TTL_SECONDS);
+    return linked;
   }
-  await redis.expire(key, SESSION_TTL_SECONDS);
-  return linkedSessionId;
+
+  // Claim a legacy browser session only if no other Reddit account owns it.
+  // If it is already claimed, start a fresh private campaign instead.
+  const preferred = requested && sessionPattern.test(requested) ? requested : randomUUID();
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const candidate = attempt === 0 ? preferred : randomUUID();
+    const ownerKey = sessionOwnerKey(candidate);
+    await redis.set(ownerKey, userId, {
+      nx: true,
+      expiration: new Date(Date.now() + SESSION_TTL_SECONDS * 1000),
+    });
+    const owner = await redis.get(ownerKey);
+    if (owner !== userId) continue;
+
+    await redis.set(accountKey, candidate, {
+      nx: true,
+      expiration: new Date(Date.now() + SESSION_TTL_SECONDS * 1000),
+    });
+    const winner = await redis.get(accountKey);
+    if (!winner || !sessionPattern.test(winner)) {
+      throw new Error('Could not restore the account game session.');
+    }
+    if (winner !== candidate) {
+      // Another concurrent request linked this account first. Its session wins.
+      const winnerOwnerKey = sessionOwnerKey(winner);
+      await redis.set(winnerOwnerKey, userId, {
+        nx: true,
+        expiration: new Date(Date.now() + SESSION_TTL_SECONDS * 1000),
+      });
+      if (await redis.get(winnerOwnerKey) !== userId) {
+        throw new Error('This account session is already assigned to another player.');
+      }
+    }
+    await redis.expire(accountKey, SESSION_TTL_SECONDS);
+    await redis.expire(sessionOwnerKey(winner), SESSION_TTL_SECONDS);
+    return winner;
+  }
+  throw new Error('Could not safely claim a game session. Please retry.');
 }
 
 async function sessionBelongsToCurrentUser(sessionId: string): Promise<boolean> {
   const userId = context.userId;
   if (!userId) return true;
-  return await redis.get(accountSessionKey(userId)) === sessionId;
+  const [linkedSessionId, ownerId] = await Promise.all([
+    redis.get(accountSessionKey(userId)),
+    redis.get(sessionOwnerKey(sessionId)),
+  ]);
+  return linkedSessionId === sessionId && ownerId === userId;
 }
 
 function rateLimitSubject(sessionId: string): string {
@@ -126,9 +177,14 @@ async function refreshAccountSessionLink(sessionId: string): Promise<void> {
 }
 
 /**
- * Serialize mutations with a short Redis lease. Devvit's TxClient queues reads
- * until EXEC, so a WATCH read cannot safely drive a conditional write in the
- * same transaction. The lease keeps the read/validate/write sequence exclusive.
+ * Optimistic Redis transaction. WATCH protects the session snapshot from the
+ * first read through EXEC, so concurrent requests cannot overwrite each other.
+ * A null EXEC means another request changed the key and this mutation retries.
+ */
+/**
+ * Serialize writes with a bounded lease. Devvit requests have a hard execution
+ * limit shorter than this lease, so an active request cannot outlive its lock.
+ * The token check prevents one request from releasing another request's lock.
  */
 async function updateSession<T>(
   sessionId: string,
@@ -142,7 +198,7 @@ async function updateSession<T>(
   for (let attempt = 0; attempt < 120; attempt += 1) {
     const result = await redis.set(lockKey, token, {
       nx: true,
-      expiration: new Date(Date.now() + 30_000),
+      expiration: new Date(Date.now() + 60_000),
     });
     if (result === 'OK') {
       acquired = true;
@@ -173,16 +229,19 @@ async function updateSession<T>(
     await refreshAccountSessionLink(sessionId);
     return outcome.result;
   } finally {
-    // The lease is short lived. Compare before deleting to avoid releasing a
-    // newer owner's lease if this operation ever outlives its expiration.
+    // Devvit terminates a request before this 60 second lease can expire.
     if (await redis.get(lockKey) === token) await redis.del(lockKey);
   }
 }
 
-/** Atomic fixed-window counter with both session and shared action limits. */
+/**
+ * INCRBY is atomic. Expiry is repaired on every request if a prior Redis
+ * failure left a counter without a TTL, avoiding permanently stuck limits.
+ */
 async function consumeRateLimit(key: string, limit: number): Promise<boolean> {
   const count = await redis.incrBy(key, 1);
-  if (count === 1) await redis.expire(key, RATE_WINDOW_SECONDS);
+  const ttl = await redis.expireTime(key);
+  if (count === 1 || ttl <= 0) await redis.expire(key, RATE_WINDOW_SECONDS);
   return count <= limit;
 }
 
@@ -191,10 +250,7 @@ function rateLimitKey(sessionId: string, action: string): string {
 }
 
 async function allowedRequest(sessionId: string, action: string, limit: number): Promise<boolean> {
-  const subject = rateLimitSubject(sessionId);
-  const sessionAllowed = await consumeRateLimit(rateLimitKey(subject, action), limit);
-  if (!sessionAllowed) return false;
-  return consumeRateLimit(`wrdlink:rate:global:${action}`, GLOBAL_RATE_LIMITS[action] ?? 300);
+  return consumeRateLimit(rateLimitKey(rateLimitSubject(sessionId), action), limit);
 }
 
 function responseFor(
