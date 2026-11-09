@@ -508,7 +508,8 @@ export function App() {
           <button className="ink-button help-done-button" type="button" onClick={() => setHelpOpen(false)}>Got it</button>
         </section>
       </div>
-\n      <div className="hint-confirmation-backdrop" id="hint-confirmation" hidden={!hintConfirmation}>
+
+      <div className="hint-confirmation-backdrop" id="hint-confirmation" hidden={!hintConfirmation}>
         <section className="hint-confirmation" role="dialog" aria-modal="true" aria-labelledby="hint-confirm-title" aria-describedby="hint-confirm-description">
           <span className="hint-confirm-icon" aria-hidden="true">
             <svg viewBox="0 0 24 24" focusable="false"><path d="M9 18h6m-5 3h4m-5-6.2a6 6 0 1 1 6 0c-.7.6-1 1.2-1 2.2h-4c0-1-.3-1.6-1-2.2Z" /></svg>
