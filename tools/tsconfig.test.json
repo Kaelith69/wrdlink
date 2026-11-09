@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "types": ["node"],
+    "customConditions": [],
+    "exactOptionalPropertyTypes": false,
+    "rootDir": "../src"
+  },
+  "include": ["../src/server/**/*.test.ts"],
+  "exclude": [],
+  "references": [
+    {
+      "path": "./tsconfig.shared.json"
+    }
+  ]
+}
