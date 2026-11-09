@@ -103,6 +103,43 @@ export function App() {
 
   const movesUsed = words.length - 1;
   const hintTotalCost = 6 + hintsUsed;
+  useEffect(() => {
+    if (!hintConfirmation && !newGameConfirmation) return;
+    const backdropId = hintConfirmation ? 'hint-confirmation' : 'new-game-confirmation';
+    const dialog = document.getElementById(backdropId)?.querySelector<HTMLElement>('[role="dialog"]');
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusable = () => dialog?.querySelectorAll<HTMLElement>(
+      'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])'
+    );
+    focusable()?.[0]?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        if (hintConfirmation) setHintConfirmation(false);
+        if (newGameConfirmation) setNewGameConfirmation(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+      const items = focusable();
+      if (!items?.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      previousFocus?.focus();
+    };
+  }, [hintConfirmation, newGameConfirmation]);
+
 
   const commitPuzzle = (data: InitResponse) => {
     const update = () => {
@@ -370,7 +407,7 @@ export function App() {
         </section>
       </div>
 
-      <div className="hint-confirmation-backdrop" hidden={!newGameConfirmation}>
+      <div className="hint-confirmation-backdrop" id="new-game-confirmation" hidden={!newGameConfirmation}>
         <section className="hint-confirmation" role="dialog" aria-modal="true" aria-labelledby="new-game-confirm-title">
           <h2 id="new-game-confirm-title">Start a new game?</h2>
           <p>This will reset your current puzzle, campaign level, score, and hint count. Your current progress cannot be restored.</p>
