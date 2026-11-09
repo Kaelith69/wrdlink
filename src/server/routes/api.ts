@@ -196,7 +196,13 @@ async function updateSession<T>(
       if (isSessionState(parsed)) current = cloneSession(parsed);
     }
 
-    const outcome = update(current);
+    let outcome: MutationResult<T>;
+    try {
+      outcome = update(current);
+    } catch (error) {
+      await txn.unwatch();
+      throw error;
+    }
     if (!outcome.state) {
       await txn.unwatch();
       return outcome.result;
@@ -221,9 +227,10 @@ async function consumeRateLimit(key: string, limit: number): Promise<boolean> {
     const raw = await txn.get(key);
     const current = raw ? Number.parseInt(raw, 10) : 0;
     const safeCurrent = Number.isSafeInteger(current) && current > 0 ? current : 0;
+    const ttl = await txn.expireTime(key);
     await txn.multi();
     await txn.incrBy(key, 1);
-    if (safeCurrent === 0) await txn.expire(key, RATE_WINDOW_SECONDS);
+    if (safeCurrent === 0 || ttl <= 0) await txn.expire(key, RATE_WINDOW_SECONDS);
     const committed = await txn.exec();
     if (committed !== null) return safeCurrent + 1 <= limit;
   }
