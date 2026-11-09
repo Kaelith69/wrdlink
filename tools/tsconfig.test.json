@@ -8,11 +8,6 @@
     "exactOptionalPropertyTypes": false,
     "rootDir": "../src"
   },
-  "include": ["../src/server/**/*.test.ts"],
-  "exclude": [],
-  "references": [
-    {
-      "path": "./tsconfig.shared.json"
-    }
-  ]
+  "include": ["../src/server/**/*.ts", "../src/shared/**/*.ts"],
+  "exclude": []
 }
