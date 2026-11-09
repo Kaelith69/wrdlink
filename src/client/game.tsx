@@ -110,7 +110,7 @@ async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit = {}
     externalSignal?.removeEventListener('abort', abortFromCaller);
   }
 }
-const FIRST_PLAY_INSTRUCTIONS_KEY = 'wrdlink-instructions-seen';
+const FIRST_PLAY_INSTRUCTIONS_KEY = 'wrdlink-first-move-completed';
 
 function hasSeenFirstPlayInstructions(): boolean {
   try {
@@ -130,7 +130,7 @@ function markFirstPlayInstructionsSeen(): void {
 }
 
 export function App() {
-  const [showFirstPlayInstructions] = useState(() => !hasSeenFirstPlayInstructions());
+  const [showFirstPlayInstructions, setShowFirstPlayInstructions] = useState(() => !hasSeenFirstPlayInstructions());
   const [hadStoredSession] = useState(() => {
     try { return Boolean(window.sessionStorage.getItem('wrdlink-session')); }
     catch { return false; }
@@ -203,7 +203,6 @@ export function App() {
 
 
   const commitPuzzle = (data: InitResponse) => {
-    markFirstPlayInstructionsSeen();
     const update = () => {
       setPuzzle(data.puzzle);
       setWords(data.words);
@@ -308,6 +307,8 @@ export function App() {
       return;
     }
 
+    setShowFirstPlayInstructions(false);
+    markFirstPlayInstructionsSeen();
     setBusy(true);
     setMessage('');
     try {
@@ -360,6 +361,8 @@ export function App() {
   async function confirmHint() {
     if (!puzzle || busy || status !== 'playing') return;
     setHintConfirmation(false);
+    setShowFirstPlayInstructions(false);
+    markFirstPlayInstructionsSeen();
     setBusy(true);
     setMessage('');
     try {
