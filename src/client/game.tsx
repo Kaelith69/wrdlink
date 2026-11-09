@@ -1,6 +1,6 @@
 import './index.css';
 
-import { StrictMode, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { InitResponse, MoveValidationResponse, Puzzle } from '../shared/api';
@@ -102,7 +102,6 @@ export function App() {
   const [sessionId, setSessionId] = useState(() => getSessionId());
 
   const movesUsed = words.length - 1;
-  const nextHintCost = 5 + hintsUsed;
   const hintTotalCost = nextHintCost + 1;
 
   const commitPuzzle = (data: InitResponse) => {
