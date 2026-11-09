@@ -2,7 +2,6 @@ import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
 import { redis } from '@devvit/web/server';
 import type {
-  Context,
   InitResponse,
   MoveValidationResponse,
   Puzzle,
@@ -160,7 +159,7 @@ function isSessionRequest(value: unknown): value is { sessionId: string; puzzleI
     sessionPattern.test(value.sessionId) && typeof value.puzzleId === 'string';
 }
 
-async function readJson(c: Context): Promise<unknown> {
+async function readJson(c: { req: { json: () => Promise<unknown> } }): Promise<unknown> {
   try {
     return await c.req.json();
   } catch {

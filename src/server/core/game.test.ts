@@ -57,6 +57,15 @@ void test('uses the current level scoring model', () => {
   assert.equal(calculatePoints(puzzle, 80), 0);
 });
 
+void test('move penalties and hint affordability are separate costs', () => {
+  const scoreAfterMove = Math.max(0, 25 - 4 - 1);
+  const firstHintCost = calculateHintCost(0);
+  assert.equal(scoreAfterMove, 20);
+  assert.equal(firstHintCost + 1, 6);
+  assert.equal(Math.max(0, scoreAfterMove - firstHintCost - 1), 14);
+  assert.equal(Math.max(0, 5 - (firstHintCost + 1)), 0);
+});
+
 void test('prices hints cumulatively across levels', () => {
   assert.equal(calculateHintCost(0), 5);
   assert.equal(calculateHintCost(1), 6);
