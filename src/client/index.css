@@ -386,3 +386,115 @@ button:focus-visible, input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .header-hint-button, .ink-button, .entry-actions .secondary-button { transition: none !important; }
 }
+
+
+/* Shared Electric Violet arcade loading state. */
+.state-page {
+  justify-content: center;
+  gap: 18px;
+  padding: 28px 18px;
+}
+.state-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -.055em;
+}
+.state-mark::before {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 3px solid var(--line-strong);
+  border-radius: 9px;
+  background: var(--violet);
+  color: #FFFFFF;
+  content: "W";
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 19px;
+  box-shadow: 3px 3px 0 var(--line-strong);
+}
+.loading-progress {
+  width: min(100%, 410px);
+  margin: 0 auto;
+  padding: clamp(22px, 5vw, 34px);
+  border: 3px solid var(--line-strong);
+  border-radius: var(--radius-card);
+  background: var(--paper);
+  box-shadow: 6px 7px 0 var(--line-strong);
+  text-align: center;
+}
+.loading-heading { margin-bottom: 23px; }
+.loading-kicker {
+  display: inline-flex;
+  padding: 5px 9px;
+  border: 1.5px dashed var(--violet);
+  border-radius: 999px;
+  background: var(--violet-soft);
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .14em;
+}
+.loading-heading h1 {
+  margin: 13px 0 6px;
+  color: var(--ink);
+  font-size: clamp(20px, 5vw, 26px);
+  font-weight: 950;
+  letter-spacing: -.045em;
+}
+.loading-heading p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.loading-letters { gap: 6px; }
+.loading-tile {
+  border: 3px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--violet);
+  color: #FFFFFF;
+  box-shadow: 3px 4px 0 var(--tile-shadow);
+  animation: loading-tile 2.8s ease-in-out infinite;
+  animation-delay: calc(var(--tile-index) * -.4s);
+}
+.loading-track {
+  height: 9px;
+  margin-top: 21px;
+  border: 2px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--paper-strong);
+  box-shadow: 2px 3px 0 var(--line-strong);
+}
+.loading-fill {
+  width: 36%;
+  border-radius: 999px;
+  background: var(--mint);
+  animation: loading-track 1.65s cubic-bezier(.45, 0, .35, 1) infinite;
+}
+.loading-label {
+  margin: 17px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+@keyframes loading-tile {
+  0%, 12% { background: var(--violet); color: #FFFFFF; border-color: var(--line-strong); }
+  28%, 48% { background: var(--tangerine); color: #111111; border-color: var(--line-strong); }
+  64%, 100% { background: var(--violet); color: #FFFFFF; border-color: var(--line-strong); }
+}
+@media (prefers-color-scheme: dark) {
+  .loading-progress { background: var(--paper); }
+  .loading-track { background: var(--paper-strong); }
+}
+@media (max-width: 420px) {
+  .loading-progress { padding: 20px 15px; border-radius: 18px; box-shadow: 4px 5px 0 var(--line-strong); }
+  .loading-heading { margin-bottom: 18px; }
+  .loading-tile { border-radius: 8px; box-shadow: 2px 3px 0 var(--tile-shadow); }
+}
