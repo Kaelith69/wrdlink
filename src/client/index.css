@@ -498,3 +498,24 @@ button:focus-visible, input:focus-visible {
   .loading-heading { margin-bottom: 18px; }
   .loading-tile { border-radius: 8px; box-shadow: 2px 3px 0 var(--tile-shadow); }
 }
+
+
+@media (max-width: 420px) {
+  .game-header { grid-template-columns: minmax(0, 1fr) auto; gap: 5px; padding-inline: 8px; }
+  .wordmark { min-width: 0; gap: 5px; font-size: 12px; }
+  .brand-mark { width: 25px; height: 25px; font-size: 13px; }
+  .level-badge { margin-left: 0; padding-inline: 4px; font-size: 7px; }
+  .header-right { gap: 4px; } .header-count { gap: 3px; }
+  .score-pill, .moves-pill { min-height: 34px; gap: 3px; padding-inline: 4px; }
+  .score-pill strong, .moves-pill strong { font-size: 11px; }
+  .metric-label { font-size: 7px; letter-spacing: .04em; }
+  .header-hint-button { min-width: 39px; height: 34px; gap: 2px; padding-inline: 3px; }
+  .header-hint-button svg { width: 16px; height: 16px; } .header-hint-cost { font-size: 9px; }
+}
+@media (max-width: 340px) {
+  .game-header { padding-inline: 6px; gap: 3px; }
+  .wordmark { gap: 4px; font-size: 11px; } .brand-mark { width: 23px; height: 23px; }
+  .score-pill, .moves-pill { padding-inline: 3px; } .metric-label { font-size: 6px; }
+  .header-hint-button { min-width: 36px; }
+}
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

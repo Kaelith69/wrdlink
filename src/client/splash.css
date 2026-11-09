@@ -180,3 +180,7 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; }
   .logo-tile, .splash-subtitle, .start-button { opacity: 1; }
 }
+
+
+.splash-instructions { max-width: 390px; margin: 12px auto 0; color: var(--muted); font-size: 12px; font-weight: 600; line-height: 1.65; text-align: center; }
+@media (max-width: 420px) { .splash-instructions { max-width: 300px; margin-top: 10px; font-size: 11px; } }

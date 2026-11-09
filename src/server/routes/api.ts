@@ -302,11 +302,23 @@ async function readJson(c: { req: { json: () => Promise<unknown> } }): Promise<u
   }
 }
 
-api.get('/init', async (c) => {
-  const requested = c.req.query('sessionId');
-  const newGame = c.req.query('newGame') === 'true';
-  const nextLevel = c.req.query('nextLevel') === 'true';
+api.post('/init', async (c) => {
+  const body: unknown = await readJson(c);
+  if (!isRecord(body) || typeof body.sessionId !== 'string' || !sessionPattern.test(body.sessionId) ||
+      typeof body.newGame !== 'boolean' || typeof body.nextLevel !== 'boolean' || typeof body.resume !== 'boolean') {
+    return c.json({ error: 'The game initialization request was invalid.', code: 'INVALID_INIT' }, 400);
+  }
+  const requested = body.sessionId;
+  const newGame = body.newGame;
+  const nextLevel = body.nextLevel;
+  const resume = body.resume;
   const sessionId = await resolveSessionId(requested);
+  if (resume && !newGame) {
+    const raw = await redis.get(sessionKey(sessionId));
+    let recoverable = false;
+    if (raw) { try { recoverable = isSessionState(JSON.parse(raw)); } catch { recoverable = false; } }
+    if (!recoverable) return c.json({ error: 'Your saved campaign has expired or is unavailable. Start a fresh campaign to continue.', code: 'SESSION_EXPIRED' }, 410);
+  }
 
   if (!await allowedRequest(sessionId, 'init', 12)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
@@ -369,18 +381,17 @@ api.post('/validate', async (c) => {
   }
 
   const word = body.word.trim().toUpperCase();
-  if (!/^[A-Z]{4}$/.test(word)) return c.json(invalidResponse('Enter a valid four letter word.'));
 
   const result = await updateSession(body.sessionId, (stored) => {
     if (!stored || stored.puzzle.id !== body.puzzleId || stored.completed) {
       return { result: invalidResponse('That puzzle session is not available.', stored ?? undefined) };
     }
     const state = cloneSession(stored);
+    state.gameScore = calculateMoveScore(state.gameScore);
     const validation = validateSequence(state.puzzle, DICTIONARY, [...state.words, word]);
-    if (!validation.valid) return { result: invalidResponse(validation.message, state) };
+    if (!validation.valid) return { state, result: invalidResponse(validation.message, state) };
 
     state.words = [...state.words, word];
-    state.gameScore = calculateMoveScore(state.gameScore);
     if (validation.complete) {
       state.gameScore = calculateCompletionScore(state.gameScore);
       state.completed = true;
