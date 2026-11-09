@@ -30,7 +30,8 @@ type SessionState = {
 };
 
 const sessionPattern = /^(?:[a-f0-9-]{20,80}|session-[a-z0-9-]{10,80})$/i;
-const memorySessions = new Map<string, SessionState>();
+const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
+const RATE_WINDOW_SECONDS = 60;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
@@ -86,42 +87,83 @@ function sessionKey(sessionId: string): string {
 }
 
 async function readSession(sessionId: string): Promise<SessionState | null> {
-  try {
-    const raw = await redis.get(sessionKey(sessionId));
-    if (raw) {
-      const parsed: unknown = JSON.parse(raw);
-      if (isSessionState(parsed)) return cloneSession(parsed);
-      console.warn('Discarding an invalid WRDLINK session snapshot.');
-    }
-  } catch (error) {
-    console.error('WRDLINK Redis read failed; using in-memory session state:', error);
+  const raw = await redis.get(sessionKey(sessionId));
+  if (!raw) return null;
+  const parsed: unknown = JSON.parse(raw);
+  if (!isSessionState(parsed)) {
+    console.warn('Discarding an invalid WRDLINK session snapshot.');
+    return null;
   }
-
-  const fallback = memorySessions.get(sessionId);
-  return fallback ? cloneSession(fallback) : null;
+  return cloneSession(parsed);
 }
 
-async function writeSession(sessionId: string, state: SessionState): Promise<void> {
-  const snapshot = cloneSession(state);
-  memorySessions.set(sessionId, snapshot);
-  try {
-    await redis.set(sessionKey(sessionId), JSON.stringify(snapshot));
-  } catch (error) {
-    console.error('WRDLINK Redis write failed; session kept in memory:', error);
+async function updateSession<T>(
+  sessionId: string,
+  update: (state: SessionState | null) => { state?: SessionState; result: T }
+): Promise<T> {
+  const key = sessionKey(sessionId);
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const txn = await redis.watch(key);
+    try {
+      const raw = await txn.get(key);
+      let current: SessionState | null = null;
+      if (raw) {
+        const parsed: unknown = JSON.parse(raw);
+        if (isSessionState(parsed)) current = cloneSession(parsed);
+      }
+      const outcome = update(current);
+      if (!outcome.state) {
+        await txn.unwatch();
+        return outcome.result;
+      }
+      await txn.multi();
+      await txn.set(key, JSON.stringify(cloneSession(outcome.state)));
+      await txn.expire(key, SESSION_TTL_SECONDS);
+      const committed = await txn.exec();
+      if (committed !== null) return outcome.result;
+    } catch (error) {
+      await txn.unwatch().catch(() => undefined);
+      throw error;
+    }
   }
+  throw new Error('Session changed too frequently. Please retry.');
+}
+
+async function consumeRateLimit(key: string, limit: number): Promise<boolean> {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const txn = await redis.watch(key);
+    try {
+      const raw = await txn.get(key);
+      const count = raw ? Number.parseInt(raw, 10) : 0;
+      if (!Number.isSafeInteger(count) || count >= limit) {
+        await txn.unwatch();
+        return false;
+      }
+      await txn.multi();
+      await txn.incrBy(key, 1);
+      await txn.expire(key, RATE_WINDOW_SECONDS);
+      const committed = await txn.exec();
+      if (committed !== null) return true;
+    } catch (error) {
+      await txn.unwatch().catch(() => undefined);
+      throw error;
+    }
+  }
+  return false;
+}
+
+function rateLimitKey(sessionId: string, action: string): string {
+  return `wrdlink:rate:${action}:${sessionId}`;
+}
+
+function rateLimited(c: { json: (body: unknown, status?: number) => Response }) {
+  return c.json({ error: 'Too many requests. Please wait a moment and try again.' }, 429);
 }
 
 function responseFor(
   state: SessionState,
   patch: Partial<MoveValidationResponse> = {}
 ): MoveValidationResponse {
-  const current = state.words[state.words.length - 1] ?? state.puzzle.start;
-  const path = state.completed ? null : shortestPath(
-    current,
-    state.puzzle.target,
-    DICTIONARY,
-    state.words.slice(0, -1)
-  );
   return {
     valid: true,
     complete: state.completed,
@@ -135,7 +177,7 @@ function responseFor(
     level: state.level,
     hintsUsed: state.hintsUsed,
     hintCost: calculateHintCost(state.hintsUsed),
-    hintWord: path && path.length > 1 ? path[1] ?? null : null,
+    hintWord: null,
     ...patch,
   };
 }
@@ -176,46 +218,45 @@ api.get('/init', async (c) => {
   const newGame = c.req.query('newGame') === 'true';
   const nextLevel = c.req.query('nextLevel') === 'true';
   const sessionId = requested && sessionPattern.test(requested) ? requested : randomUUID();
-  const previous = await readSession(sessionId);
 
-  let state: SessionState;
-  if (newGame || !previous) {
-    state = {
-      gameScore: 25,
-      level: 1,
-      puzzle: createRandomPuzzle(),
-      words: [],
-      completed: false,
-      hintsUsed: 0,
-    };
-    state.words = [state.puzzle.start];
-  } else if (nextLevel && previous.completed) {
-    const puzzle = createRandomPuzzle();
-    state = {
-      ...previous,
-      puzzle,
-      level: previous.level + 1,
-      words: [puzzle.start],
-      completed: false,
-    };
-  } else {
-    state = previous;
+  if (!await consumeRateLimit(rateLimitKey(sessionId, 'init'), 12)) {
+    c.header('Retry-After', String(RATE_WINDOW_SECONDS));
+    return rateLimited(c);
   }
 
-  assertPuzzleDefinition(state.puzzle, DICTIONARY);
-  await writeSession(sessionId, state);
-
-  const response: InitResponse = {
-    type: 'init',
-    puzzle: state.puzzle,
-    sessionId,
-    gameScore: state.gameScore,
-    level: state.level,
-    words: [...state.words],
-    hintsUsed: state.hintsUsed,
-    movesUsed: state.words.length - 1,
-    completed: state.completed,
-  };
+  const response = await updateSession(sessionId, (previous) => {
+    let state: SessionState;
+    if (!previous) {
+      state = {
+        gameScore: 25, level: 1, puzzle: createRandomPuzzle(1),
+        words: [], completed: false, hintsUsed: 0,
+      };
+      state.words = [state.puzzle.start];
+    } else if (newGame) {
+      // Explicit reset is allowed only after the client confirmation flow.
+      state = {
+        gameScore: 25, level: 1, puzzle: createRandomPuzzle(1),
+        words: [], completed: false, hintsUsed: 0,
+      };
+      state.words = [state.puzzle.start];
+    } else if (nextLevel && previous.completed) {
+      const puzzle = createRandomPuzzle(previous.level + 1);
+      state = {
+        ...previous, puzzle, level: previous.level + 1,
+        words: [puzzle.start], completed: false,
+      };
+    } else {
+      state = previous;
+    }
+    assertPuzzleDefinition(state.puzzle, DICTIONARY);
+    const data: InitResponse = {
+      type: 'init', puzzle: state.puzzle, sessionId,
+      gameScore: state.gameScore, level: state.level,
+      words: [...state.words], hintsUsed: state.hintsUsed,
+      movesUsed: state.words.length - 1, completed: state.completed,
+    };
+    return { state, result: data };
+  });
   return c.json(response);
 });
 
@@ -224,41 +265,41 @@ api.post('/validate', async (c) => {
   if (!isSessionRequest(body) || !('word' in body) || typeof body.word !== 'string') {
     return c.json(invalidResponse('Enter a word to continue.'));
   }
-
+  if (!await consumeRateLimit(rateLimitKey(body.sessionId, 'validate'), 30)) {
+    c.header('Retry-After', String(RATE_WINDOW_SECONDS));
+    return rateLimited(c);
+  }
   const word = body.word.trim().toUpperCase();
   if (!/^[A-Z]{4}$/.test(word)) {
     return c.json(invalidResponse('Enter a valid four letter word.'));
   }
 
-  const state = await readSession(body.sessionId);
-  if (!state || state.puzzle.id !== body.puzzleId || state.completed) {
-    return c.json(invalidResponse('That puzzle session is not available.', state ?? undefined));
-  }
+  const response = await updateSession(body.sessionId, (stored) => {
+    if (!stored || stored.puzzle.id !== body.puzzleId || stored.completed) {
+      return { result: invalidResponse('That puzzle session is not available.', stored ?? undefined) };
+    }
+    const state = cloneSession(stored);
+    const result = validateSequence(state.puzzle, DICTIONARY, [...state.words, word]);
+    if (!result.valid) return { result: invalidResponse(result.message, state) };
 
-  const candidateChain = [...state.words, word];
-  const result = validateSequence(state.puzzle, DICTIONARY, candidateChain);
-  if (!result.valid) {
-    return c.json(invalidResponse(result.message, state));
-  }
-
-  state.words = candidateChain;
-  // Every accepted move costs one point immediately.
-  state.gameScore = calculateMoveScore(state.gameScore);
-  if (result.complete) {
-    // The web campaign awards 25 points on top of the remaining level balance.
-    state.gameScore = calculateCompletionScore(state.gameScore);
-    state.completed = true;
-  }
-
-  await writeSession(body.sessionId, state);
-  return c.json(responseFor(state, {
-    complete: result.complete,
-    pointsAwarded: result.complete ? 25 : 0,
-    message: result.complete
-      ? `${result.message} +25 points. Level balance: ${state.gameScore}.`
-      : 'Valid move.',
-    hintWord: null,
-  }));
+    state.words = [...state.words, word];
+    state.gameScore = calculateMoveScore(state.gameScore);
+    if (result.complete) {
+      state.gameScore = calculateCompletionScore(state.gameScore);
+      state.completed = true;
+    }
+    return {
+      state,
+      result: responseFor(state, {
+        complete: result.complete,
+        pointsAwarded: result.complete ? 25 : 0,
+        message: result.complete
+          ? `${result.message} +25 points. Level balance: ${state.gameScore}.`
+          : 'Valid move.',
+      }),
+    };
+  });
+  return c.json(response);
 });
 
 api.post('/hint', async (c) => {
@@ -270,70 +311,66 @@ api.post('/hint', async (c) => {
       gameScore: 0, hintsUsed: 0, words: [],
     });
   }
-
-  const state = await readSession(body.sessionId);
-  if (!state || state.puzzle.id !== body.puzzleId || state.completed) {
-    return c.json({
-      valid: false, complete: false, message: 'That puzzle session is not available.',
-      word: null, hintCost: calculateHintCost(state?.hintsUsed ?? 0),
-      totalCost: calculateHintCost(state?.hintsUsed ?? 0) + 1,
-      pointsAwarded: 0, gameScore: state?.gameScore ?? 0,
-      hintsUsed: state?.hintsUsed ?? 0, words: state ? [...state.words] : [],
-    });
+  if (!await consumeRateLimit(rateLimitKey(body.sessionId, 'hint'), 8)) {
+    c.header('Retry-After', String(RATE_WINDOW_SECONDS));
+    return rateLimited(c);
   }
 
-  const current = state.words[state.words.length - 1];
-  const word = current ? responseFor(state).hintWord : null;
-  const hintCost = calculateHintCost(state.hintsUsed);
-  const totalCost = calculateHintTotalCost(state.hintsUsed);
+  const response = await updateSession(body.sessionId, (stored) => {
+    const hintCost = calculateHintCost(stored?.hintsUsed ?? 0);
+    const totalCost = calculateHintTotalCost(stored?.hintsUsed ?? 0);
+    if (!stored || stored.puzzle.id !== body.puzzleId || stored.completed) {
+      return { result: {
+        valid: false, complete: false, message: 'That puzzle session is not available.',
+        word: null, hintCost, totalCost, pointsAwarded: 0,
+        gameScore: stored?.gameScore ?? 0, hintsUsed: stored?.hintsUsed ?? 0,
+        words: stored ? [...stored.words] : [],
+      } };
+    }
 
-  if (!word) {
-    return c.json({
-      valid: false, complete: false, message: 'No unused route to the target remains.',
-      word: null, hintCost, totalCost, pointsAwarded: 0,
+    const state = cloneSession(stored);
+    const current = state.words[state.words.length - 1];
+    const path = current ? shortestPath(current, state.puzzle.target, DICTIONARY, state.words.slice(0, -1)) : null;
+    const word = path && path.length > 1 ? path[1] ?? null : null;
+    if (!word) {
+      return { result: {
+        valid: false, complete: false, message: 'No unused route to the target remains.',
+        word: null, hintCost, totalCost, pointsAwarded: 0,
+        gameScore: state.gameScore, hintsUsed: state.hintsUsed, words: [...state.words],
+      } };
+    }
+    const scoreAfterHint = applyHintCost(state.gameScore, state.hintsUsed);
+    if (scoreAfterHint === null) {
+      return { result: {
+        valid: false, complete: false,
+        message: `Not enough score. This hint and its move cost ${totalCost} points, but your current score is ${state.gameScore}.`,
+        word: null, hintCost, totalCost, pointsAwarded: 0,
+        gameScore: state.gameScore, hintsUsed: state.hintsUsed, words: [...state.words],
+      } };
+    }
+
+    const candidateChain = [...state.words, word];
+    const validation = validateSequence(state.puzzle, DICTIONARY, candidateChain);
+    if (!validation.valid) {
+      return { result: {
+        valid: false, complete: false, message: 'The suggested word could not be validated.',
+        word: null, hintCost, totalCost, pointsAwarded: 0,
+        gameScore: state.gameScore, hintsUsed: state.hintsUsed, words: [...state.words],
+      } };
+    }
+    state.words = candidateChain;
+    state.hintsUsed += 1;
+    state.gameScore = scoreAfterHint;
+    if (validation.complete) {
+      state.gameScore = calculateCompletionScore(state.gameScore);
+      state.completed = true;
+    }
+    return { state, result: {
+      valid: true, complete: validation.complete,
+      message: `Hint used: ${word}. ${totalCost} points deducted, including the submitted move.`,
+      word, hintCost, totalCost, pointsAwarded: validation.complete ? 25 : 0,
       gameScore: state.gameScore, hintsUsed: state.hintsUsed, words: [...state.words],
-    });
-  }
-  const scoreAfterHint = applyHintCost(state.gameScore, state.hintsUsed);
-  if (scoreAfterHint === null) {
-    return c.json({
-      valid: false, complete: false,
-      message: `Not enough score. This hint and its move cost ${totalCost} points, but your current score is ${state.gameScore}.`,
-      word: null, hintCost, totalCost, pointsAwarded: 0,
-      gameScore: state.gameScore, hintsUsed: state.hintsUsed, words: [...state.words],
-    });
-  }
-
-  const candidateChain = [...state.words, word];
-  const result = validateSequence(state.puzzle, DICTIONARY, candidateChain);
-  if (!result.valid) {
-    return c.json({
-      valid: false, complete: false, message: 'The suggested word could not be validated.',
-      word: null, hintCost, totalCost, pointsAwarded: 0,
-      gameScore: state.gameScore, hintsUsed: state.hintsUsed, words: [...state.words],
-    }, 500);
-  }
-
-  state.words = candidateChain;
-  state.hintsUsed += 1;
-  // The hint price excludes the separate one point move penalty.
-  state.gameScore = scoreAfterHint;
-  if (result.complete) {
-    state.gameScore = calculateCompletionScore(state.gameScore);
-    state.completed = true;
-  }
-
-  await writeSession(body.sessionId, state);
-  return c.json({
-    valid: true,
-    complete: result.complete,
-    message: `Hint used: ${word}. ${totalCost} points deducted, including the submitted move.`,
-    word,
-    hintCost,
-    totalCost,
-    pointsAwarded: result.complete ? 25 : 0,
-    gameScore: state.gameScore,
-    hintsUsed: state.hintsUsed,
-    words: [...state.words],
+    } };
   });
+  return c.json(response);
 });
