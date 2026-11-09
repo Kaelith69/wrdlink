@@ -177,14 +177,35 @@ async function refreshAccountSessionLink(sessionId: string): Promise<void> {
  * first read through EXEC, so concurrent requests cannot overwrite each other.
  * A null EXEC means another request changed the key and this mutation retries.
  */
+/**
+ * Serialize writes with a bounded lease. Devvit requests have a hard execution
+ * limit shorter than this lease, so an active request cannot outlive its lock.
+ * The token check prevents one request from releasing another request's lock.
+ */
 async function updateSession<T>(
   sessionId: string,
   update: (state: SessionState | null) => MutationResult<T>
 ): Promise<T> {
   const key = sessionKey(sessionId);
-  for (let attempt = 0; attempt < 8; attempt += 1) {
-    const txn = await redis.watch(key);
-    const raw = await txn.get(key);
+  const lockKey = `${key}:lock`;
+  const token = randomUUID();
+  let acquired = false;
+
+  for (let attempt = 0; attempt < 120; attempt += 1) {
+    const result = await redis.set(lockKey, token, {
+      nx: true,
+      expiration: new Date(Date.now() + 60_000),
+    });
+    if (result === 'OK') {
+      acquired = true;
+      break;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  if (!acquired) throw new Error('Session is busy. Please retry.');
+
+  try {
+    const raw = await redis.get(key);
     let current: SessionState | null = null;
     if (raw) {
       let parsed: unknown;
@@ -196,45 +217,28 @@ async function updateSession<T>(
       if (isSessionState(parsed)) current = cloneSession(parsed);
     }
 
-    let outcome: MutationResult<T>;
-    try {
-      outcome = update(current);
-    } catch (error) {
-      await txn.unwatch();
-      throw error;
+    const outcome = update(current);
+    if (outcome.state) {
+      await redis.set(key, JSON.stringify(cloneSession(outcome.state)));
+      await redis.expire(key, SESSION_TTL_SECONDS);
     }
-    if (!outcome.state) {
-      await txn.unwatch();
-      return outcome.result;
-    }
-
-    await txn.multi();
-    await txn.set(key, JSON.stringify(cloneSession(outcome.state)));
-    await txn.expire(key, SESSION_TTL_SECONDS);
-    const committed = await txn.exec();
-    if (committed !== null) {
-      await refreshAccountSessionLink(sessionId);
-      return outcome.result;
-    }
+    await refreshAccountSessionLink(sessionId);
+    return outcome.result;
+  } finally {
+    // Devvit terminates a request before this 60 second lease can expire.
+    if (await redis.get(lockKey) === token) await redis.del(lockKey);
   }
-  throw new Error('The game session changed repeatedly. Please retry.');
 }
 
-/** Per player fixed window counter. Increment and expiry are committed together. */
+/**
+ * INCRBY is atomic. Expiry is repaired on every request if a prior Redis
+ * failure left a counter without a TTL, avoiding permanently stuck limits.
+ */
 async function consumeRateLimit(key: string, limit: number): Promise<boolean> {
-  for (let attempt = 0; attempt < 6; attempt += 1) {
-    const txn = await redis.watch(key);
-    const raw = await txn.get(key);
-    const current = raw ? Number.parseInt(raw, 10) : 0;
-    const safeCurrent = Number.isSafeInteger(current) && current > 0 ? current : 0;
-    const ttl = await redis.expireTime(key);
-    await txn.multi();
-    await txn.incrBy(key, 1);
-    if (safeCurrent === 0 || ttl <= 0) await txn.expire(key, RATE_WINDOW_SECONDS);
-    const committed = await txn.exec();
-    if (committed !== null) return safeCurrent + 1 <= limit;
-  }
-  throw new Error('Rate limit state is busy. Please retry.');
+  const count = await redis.incrBy(key, 1);
+  const ttl = await redis.expireTime(key);
+  if (count === 1 || ttl <= 0) await redis.expire(key, RATE_WINDOW_SECONDS);
+  return count <= limit;
 }
 
 function rateLimitKey(sessionId: string, action: string): string {
