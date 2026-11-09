@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Puzzle } from '../../shared/api.ts';
-// @ts-expect-error Node's native TypeScript runner requires explicit source extensions.
 import { DICTIONARY } from '../data/puzzles.ts';
+// @ts-expect-error Node's native TypeScript runner requires explicit source extensions.
 import {
   calculateHintCost,
   calculateHintPenalty,
