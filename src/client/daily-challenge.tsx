@@ -45,18 +45,85 @@ const emptyProfile: DailyProfile = {
   currentStreak: 0, bestStreak: 0, lastDailyDate: null, graceTokens: 0, badges: [],
 };
 
-async function request<T>(url: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(url, {
-    ...init,
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-  });
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isDailyResult(value: unknown): value is DailyResult {
+  return isRecord(value) && typeof value.date === 'string' && typeof value.start === 'string' &&
+    typeof value.target === 'string' && Array.isArray(value.words) &&
+    value.words.every((word) => typeof word === 'string') &&
+    typeof value.moves === 'number' && typeof value.score === 'number' &&
+    typeof value.optimalMoves === 'number' && typeof value.hintsUsed === 'number' &&
+    typeof value.completedAt === 'number';
+}
+
+function isDailyProfile(value: unknown): value is DailyProfile {
+  return isRecord(value) && typeof value.totalCompleted === 'number' &&
+    typeof value.totalScore === 'number' && typeof value.totalMoves === 'number' &&
+    typeof value.currentStreak === 'number' && typeof value.bestStreak === 'number' &&
+    (typeof value.lastDailyDate === 'string' || value.lastDailyDate === null) &&
+    typeof value.graceTokens === 'number' && Array.isArray(value.badges) &&
+    value.badges.every((badge) => typeof badge === 'string');
+}
+
+function isBoardResponse(value: unknown): value is BoardResponse {
+  return isRecord(value) && Array.isArray(value.entries) &&
+    value.entries.every((entry) => isRecord(entry) && typeof entry.rank === 'number' &&
+      typeof entry.username === 'string' && typeof entry.score === 'number' &&
+      typeof entry.moves === 'number' && typeof entry.completedCount === 'number') &&
+    (typeof value.currentUserRank === 'number' || value.currentUserRank === null);
+}
+
+function isDailyInit(value: unknown): value is {
+  date: string;
+  puzzle: { id: string; start: string; target: string; optimalMoves: number };
+  words: string[];
+  score: number;
+  completed: boolean;
+  result: DailyResult | null;
+  profile: DailyProfile;
+  ranked: boolean;
+} {
+  return isRecord(value) && typeof value.date === 'string' && isRecord(value.puzzle) &&
+    typeof value.puzzle.id === 'string' && typeof value.puzzle.start === 'string' &&
+    typeof value.puzzle.target === 'string' && typeof value.puzzle.optimalMoves === 'number' &&
+    Array.isArray(value.words) && value.words.every((word) => typeof word === 'string') &&
+    typeof value.score === 'number' && typeof value.completed === 'boolean' &&
+    (value.result === null || isDailyResult(value.result)) &&
+    isDailyProfile(value.profile) && typeof value.ranked === 'boolean';
+}
+
+function isDailyMoveResponse(value: unknown): value is {
+  valid: boolean; complete: boolean; message: string; words: string[]; score: number;
+  result: DailyResult | null; profile: DailyProfile | null; newBadges: string[];
+  graceUsed?: boolean; graceEarned?: boolean; ranked?: boolean;
+} {
+  return isRecord(value) && typeof value.valid === 'boolean' &&
+    typeof value.complete === 'boolean' && typeof value.message === 'string' &&
+    Array.isArray(value.words) && value.words.every((word) => typeof word === 'string') &&
+    typeof value.score === 'number' && (value.result === null || isDailyResult(value.result)) &&
+    (value.profile === null || isDailyProfile(value.profile)) &&
+    Array.isArray(value.newBadges) && value.newBadges.every((badge) => typeof badge === 'string');
+}
+
+function isShareResponse(value: unknown): value is { success: boolean; permalink?: string } {
+  return isRecord(value) && value.success === true &&
+    (value.permalink === undefined || typeof value.permalink === 'string');
+}
+
+async function request<T>(url: string, validate: (value: unknown) => value is T, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  headers.set('Content-Type', 'application/json');
+  const response = await fetch(url, { ...init, headers });
   const payload: unknown = await response.json().catch(() => null);
   if (!response.ok) {
-    const message = typeof payload === 'object' && payload !== null && 'error' in payload &&
-      typeof payload.error === 'string' ? payload.error : 'The daily challenge request failed.';
+    const message = isRecord(payload) && typeof payload.error === 'string'
+      ? payload.error : 'The daily challenge request failed.';
     throw new Error(message);
   }
-  return payload as T;
+  if (!validate(payload)) throw new Error('The daily challenge response was invalid.');
+  return payload;
 }
 
 const badgeNames: Record<string, string> = {
@@ -92,7 +159,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
 
   const loadBoard = useCallback(async () => {
     try {
-      const data = await request<BoardResponse>(`/api/daily/leaderboard?period=${period}&metric=${metric}`);
+      const data = await request<BoardResponse>(`/api/daily/leaderboard?period=${period}&metric=${metric}`, isBoardResponse);
       setBoard(data.entries ?? []);
       setMyRank(data.currentUserRank ?? null);
     } catch (cause) {
@@ -103,16 +170,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   useEffect(() => {
     let active = true;
     setLoading(true);
-    request<{
-      date: string;
-      puzzle: { id: string; start: string; target: string; optimalMoves: number };
-      words: string[];
-      score: number;
-      completed: boolean;
-      result: DailyResult | null;
-      profile: DailyProfile;
-      ranked: boolean;
-    }>('/api/daily/init', {
+    request('/api/daily/init', isDailyInit, {
       method: 'POST',
       body: JSON.stringify({ sessionId }),
     }).then((data) => {
@@ -146,19 +204,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     setBusy(true);
     setError('');
     try {
-      const data = await request<{
-        valid: boolean;
-        complete: boolean;
-        message: string;
-        words: string[];
-        score: number;
-        result: DailyResult | null;
-        profile: DailyProfile | null;
-        newBadges: string[];
-        graceUsed?: boolean;
-        graceEarned?: boolean;
-        ranked?: boolean;
-      }>('/api/daily/validate', {
+      const data = await request('/api/daily/validate', isDailyMoveResponse, {
         method: 'POST',
         body: JSON.stringify({ sessionId, date, puzzleId: puzzle.id, word }),
       });
@@ -194,7 +240,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     setError('');
     setShareMessage('');
     try {
-      const data = await request<{ success: boolean; permalink?: string }>(`/api/daily/share/${kind}`, {
+      const data = await request(`/api/daily/share/${kind}`, isShareResponse, {
         method: 'POST',
         body: JSON.stringify({ date }),
       });
