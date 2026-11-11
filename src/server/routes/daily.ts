@@ -192,13 +192,13 @@ async function readProfile(userId: string): Promise<DailyProfile> {
     const parsed: unknown = JSON.parse(raw);
     if (!isRecord(parsed)) return { ...DEFAULT_PROFILE, badges: [] };
     return {
-      totalCompleted: Number.isSafeInteger(parsed.totalCompleted) ? Number(parsed.totalCompleted) : 0,
-      totalScore: Number.isSafeInteger(parsed.totalScore) ? Number(parsed.totalScore) : 0,
-      totalMoves: Number.isSafeInteger(parsed.totalMoves) ? Number(parsed.totalMoves) : 0,
-      currentStreak: Number.isSafeInteger(parsed.currentStreak) ? Number(parsed.currentStreak) : 0,
-      bestStreak: Number.isSafeInteger(parsed.bestStreak) ? Number(parsed.bestStreak) : 0,
-      lastDailyDate: typeof parsed.lastDailyDate === 'string' ? parsed.lastDailyDate : null,
-      graceTokens: Number.isSafeInteger(parsed.graceTokens) ? Number(parsed.graceTokens) : 0,
+      totalCompleted: Number.isSafeInteger(parsed.totalCompleted) && Number(parsed.totalCompleted) >= 0 ? Number(parsed.totalCompleted) : 0,
+      totalScore: Number.isSafeInteger(parsed.totalScore) && Number(parsed.totalScore) >= 0 ? Number(parsed.totalScore) : 0,
+      totalMoves: Number.isSafeInteger(parsed.totalMoves) && Number(parsed.totalMoves) >= 0 ? Number(parsed.totalMoves) : 0,
+      currentStreak: Number.isSafeInteger(parsed.currentStreak) && Number(parsed.currentStreak) >= 0 ? Number(parsed.currentStreak) : 0,
+      bestStreak: Number.isSafeInteger(parsed.bestStreak) && Number(parsed.bestStreak) >= 0 ? Number(parsed.bestStreak) : 0,
+      lastDailyDate: typeof parsed.lastDailyDate === 'string' && parseDateKey(parsed.lastDailyDate) !== null ? parsed.lastDailyDate : null,
+      graceTokens: Number.isSafeInteger(parsed.graceTokens) ? Math.max(0, Math.min(2, Number(parsed.graceTokens))) : 0,
       badges: Array.isArray(parsed.badges) ? parsed.badges.filter((item): item is string => typeof item === 'string') : [],
     };
   } catch {
@@ -376,7 +376,8 @@ async function saveVerifiedCompletion(
     try { verifiedStoredResult = storedResult ? JSON.parse(storedResult) : null; }
     catch { /* The journal remains available for a safe retry. */ }
     if (!isDailyResult(verifiedStoredResult) ||
-        verifiedStoredResult.userId !== userId || verifiedStoredResult.date !== date) {
+        verifiedStoredResult.userId !== userId || verifiedStoredResult.date !== date ||
+        JSON.stringify(verifiedStoredResult) !== JSON.stringify(journal.result)) {
       throw new Error('Could not verify your saved daily result. Please retry.');
     }
 
