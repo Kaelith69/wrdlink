@@ -391,16 +391,16 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           <span>WRDLINK</span>
           <span className="level-badge">DAILY</span>
         </div>
-        <div className="header-count daily-header-count" aria-label={'Score ' + score + ', moves ' + (words.length - 1)}>
-          <span className="score-pill"><span className="metric-label">SCORE</span><strong>{score}</strong></span>
-          <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{words.length - 1}</strong></span>
-        </div>
-        <div className="daily-header-actions">
+        <div className="header-right daily-header-actions">
+          <div className="header-count" aria-label={'Score ' + score + ', moves ' + (words.length - 1)}>
+            <span className="score-pill"><span className="metric-label">SCORE</span><strong>{score}</strong></span>
+            <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{words.length - 1}</strong></span>
+          </div>
           <div className="header-hint-button daily-streak-indicator" aria-label={profile.currentStreak + ' day streak'} title={profile.currentStreak + ' day streak'}>
             <span aria-hidden="true">🔥</span><span className="header-hint-cost">{profile.currentStreak}</span>
           </div>
+          <button className="daily-launch-button daily-mode-toggle" type="button" onClick={onClose} aria-label="Switch to Campaign" title="Switch to Campaign">CAMP</button>
           <button className="header-help-button daily-guide-button" type="button" onClick={() => setHelpOpen(true)} aria-label="How to play today's daily challenge" title="How to play" aria-haspopup="dialog" aria-controls="daily-how-to-dialog" aria-expanded={helpOpen}>!</button>
-          <button className="header-help-button daily-close-button" type="button" onClick={onClose} aria-label="Return to campaign" title="Return to campaign">×</button>
         </div>
       </header>
 
@@ -521,9 +521,13 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
               </div>
             </section>
           ) : (
-            <section className="finish-panel" aria-labelledby="daily-completion-title">
+            <section className="finish-panel daily-finish-panel" aria-labelledby="daily-completion-title">
               <h2 id="daily-completion-title">Daily challenge complete!</h2>
               <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
+              <p className="daily-campaign-prompt">Ready for another round? Your Campaign is waiting.</p>
+              <button className="ink-button finish-next-button daily-campaign-button" type="button" onClick={onClose}>
+                Play Campaign <span aria-hidden="true">→</span>
+              </button>
               {result && (
                 <section className="campaign-share-card" aria-label="Share completed daily puzzle">
                   <div className="campaign-share-preview">
@@ -544,9 +548,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                   {error && <p className="game-message error" role="alert">{error}</p>}
                 </section>
               )}
-              <div className="entry-actions">
-                <button className="secondary-button" type="button" onClick={onClose}>Back to campaign</button>
-              </div>
             </section>
           )}
         </div>
