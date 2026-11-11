@@ -8,6 +8,8 @@ import {
   validateSequence,
 } from '../core/game';
 import {
+  aggregateRankScore,
+  dailyRankScore,
   earnedBadges,
   isoWeekKey,
   parseDateKey,
@@ -161,25 +163,6 @@ async function readProfile(userId: string): Promise<DailyProfile> {
   }
 }
 
-function dailyRankScore(result: DailyResult, metric: 'score' | 'moves'): number {
-  const seconds = Math.floor(result.completedAt / 1000) % 86_400;
-  return metric === 'score'
-    ? (1000 - result.score) * 1_000_000 + result.moves * 1000 + seconds
-    : result.moves * 1_000_000 + (1000 - result.score) * 1000 + seconds;
-}
-
-function aggregateRankScore(
-  totalScore: number,
-  totalMoves: number,
-  completedCount: number,
-  metric: 'score' | 'moves'
-): number {
-  const averageMoves = completedCount ? Math.round((totalMoves / completedCount) * 1000) : 0;
-  return metric === 'score'
-    ? (1_000_000 - Math.min(totalScore, 1_000_000)) * 1_000_000 + averageMoves
-    : averageMoves * 1_000_000 + (1_000_000 - Math.min(totalScore, 1_000_000));
-}
-
 async function saveVerifiedCompletion(
   date: string,
   userId: string,
@@ -252,8 +235,8 @@ async function saveVerifiedCompletion(
   await redis.hSet('wrdlink:v2:profiles', { [userId]: JSON.stringify(profile) });
 
   const dailyPrefix = `wrdlink:v2:leaderboard:daily:${date}`;
-  await redis.zAdd(dailyPrefix + ':score', { member: userId, score: dailyRankScore(result, 'score') });
-  await redis.zAdd(dailyPrefix + ':moves', { member: userId, score: dailyRankScore(result, 'moves') });
+  await redis.zAdd(dailyPrefix + ':score', { member: userId, score: dailyRankScore(result.score, result.moves, result.completedAt, 'score') });
+  await redis.zAdd(dailyPrefix + ':moves', { member: userId, score: dailyRankScore(result.score, result.moves, result.completedAt, 'moves') });
   await redis.hSet(dailyPrefix + ':entries', { [userId]: JSON.stringify(result) });
   await redis.expire(dailyPrefix + ':score', DAILY_TTL_SECONDS);
   await redis.expire(dailyPrefix + ':moves', DAILY_TTL_SECONDS);
