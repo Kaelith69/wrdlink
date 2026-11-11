@@ -537,9 +537,10 @@ dailyApi.post('/validate', async (c) => {
   if (!isRecord(body) || typeof body.sessionId !== 'string' || !SESSION_PATTERN.test(body.sessionId) ||
       typeof body.date !== 'string' || typeof body.puzzleId !== 'string' ||
       typeof body.word !== 'string' || body.word.length > 12 ||
-      typeof body.requestId !== 'string' || !/^[a-f0-9-]{20,80}$/i.test(body.requestId)) {
+      typeof requestId !== 'string' || !/^[a-f0-9-]{20,80}$/i.test(requestId)) {
     return c.json({ error: 'Invalid daily move.' }, 400);
   }
+  const requestId = requestId as string;
   const date = utcDateKey();
   if (body.date !== date || parseDateKey(body.date) === null) {
     return c.json({ error: 'This daily challenge has expired. Load today’s puzzle.' }, 409);
@@ -559,7 +560,7 @@ dailyApi.post('/validate', async (c) => {
     if (!state) {
       return { valid: false, complete: false, message: 'This daily puzzle is unavailable. Reload today’s challenge.', words: [puzzle.start], score: 25, result: null, profile: null, newBadges: [] as string[] };
     }
-    if (state.lastRequestId === body.requestId && state.lastResponse) {
+    if (state.lastRequestId === requestId && state.lastResponse) {
       return state.lastResponse;
     }
     if (state.completed) {
@@ -583,12 +584,12 @@ dailyApi.post('/validate', async (c) => {
         graceEarned: completion?.graceEarned ?? false,
         ranked: Boolean(completion),
       };
-      await redis.set(key, JSON.stringify({ ...state, lastRequestId: body.requestId, lastResponse: response }), {
+      await redis.set(key, JSON.stringify({ ...state, lastRequestId: requestId, lastResponse: response }), {
         expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
       });
       return response;
     }
-    const next: DailyState = { ...state, words: [...state.words], score: calculateMoveScore(state.score), lastRequestId: body.requestId, lastResponse: null };
+    const next: DailyState = { ...state, words: [...state.words], score: calculateMoveScore(state.score), lastRequestId: requestId, lastResponse: null };
     const validation = validateSequence(puzzle, DICTIONARY, [...next.words, word]);
     if (!validation.valid) {
       const response = { valid: false, complete: false, message: validation.message, words: next.words, score: next.score, result: null, profile: null, newBadges: [] as string[] };
