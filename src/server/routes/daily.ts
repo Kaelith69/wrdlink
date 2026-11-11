@@ -313,7 +313,7 @@ async function saveVerifiedCompletion(
   return { result, profile, newBadges, graceUsed: streak.graceUsed, graceEarned: streak.graceEarned };
 }
 
-function parseSession(raw: string | null, puzzle: Puzzle): DailyState | null {
+function parseSession(raw: string | null | undefined, puzzle: Puzzle): DailyState | null {
   if (!raw) return null;
   try {
     const parsed: unknown = JSON.parse(raw);
@@ -354,7 +354,7 @@ async function leaderboard(period: 'daily' | 'weekly' | 'alltime', metric: 'scor
     period,
     metric,
     entries: entries.filter((entry): entry is NonNullable<typeof entry> => entry !== null),
-    currentUserRank: rank === null ? null : rank + 1,
+    currentUserRank: rank == null ? null : rank + 1,
   };
 }
 
@@ -385,11 +385,11 @@ dailyApi.post('/init', async (c) => {
     });
   }
   let profile: DailyProfile = DEFAULT_PROFILE;
-  let currentResult: string | null = null;
-  if (context.userId) {
+  let currentResult: string | null | undefined;
+  if (currentUserId) {
     [profile, currentResult] = await Promise.all([
-      readProfile(context.userId),
-      redis.get(resultKey(date, context.userId)),
+      readProfile(currentUserId),
+      redis.get(resultKey(date, currentUserId)),
     ]);
   }
   let result: DailyResult | null = null;
@@ -438,6 +438,7 @@ dailyApi.post('/validate', async (c) => {
   if (body.puzzleId !== puzzle.id) return c.json({ error: 'Daily puzzle mismatch.' }, 409);
   const key = stateKey(date, body.sessionId);
   const username = context.userId ? await reddit.getCurrentUsername() : undefined;
+  const word = body.word.trim().toUpperCase();
 
   const response = await withLock(key, async () => {
     const state = parseSession(await redis.get(key), puzzle);
@@ -445,12 +446,12 @@ dailyApi.post('/validate', async (c) => {
       return { valid: false, complete: false, message: 'This daily puzzle is already complete or unavailable.', words: state?.words ?? [puzzle.start], score: state?.score ?? 25, result: null, profile: null, newBadges: [] as string[] };
     }
     const next = { ...state, words: [...state.words], score: calculateMoveScore(state.score) };
-    const validation = validateSequence(puzzle, DICTIONARY, [...next.words, body.word.trim().toUpperCase()]);
+    const validation = validateSequence(puzzle, DICTIONARY, [...next.words, word]);
     if (!validation.valid) {
       await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
       return { valid: false, complete: false, message: validation.message, words: next.words, score: next.score, result: null, profile: null, newBadges: [] as string[] };
     }
-    next.words.push(body.word.trim().toUpperCase());
+    next.words.push(word);
     next.completed = validation.complete;
     if (validation.complete) {
       next.score = calculateCompletionScore(next.score);
