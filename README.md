@@ -46,9 +46,39 @@ The server owns the authoritative session, move chain, score, and hint count. Th
 - Both the campaign and its account mapping expire after **7 days** without activity. Each successful session interaction refreshes both expirations.
 - Authenticated requests are checked against the account's linked session and rate limited by account. Logged out play retains browser session behavior.
 
+## Daily challenge and community competition
+
+The **Daily Challenge** is a separate mode from the existing random campaign. It is generated deterministically from the UTC date, so every player in the same subreddit installation receives the same four letter start and target words for that day. The challenge rolls over at 00:00 UTC.
+
+Daily play uses a fresh 25 point score. Each submitted move costs one point and a completion awards 25 points. Hints are not available in the ranked daily mode, keeping leaderboard attempts comparable.
+
+### Leaderboards
+
+- **Daily:** one verified result per Reddit account per UTC date.
+- **Weekly:** aggregates verified daily scores and average moves for the current ISO week.
+- **Community / all time:** aggregates a player's verified daily completions, total score, and average moves.
+- **Highest score:** sorts by score, then fewer moves, then completion time.
+- **Fewest moves:** sorts by moves, then higher score, then completion time.
+
+The server validates the full word chain and calculates score. Client supplied scores are never accepted. Redis locks serialize each daily session, and an immutable per account, per date result prevents duplicate leaderboard submissions. Redis sorted sets provide deterministic ordering; exact ties fall back to the stable Reddit account identifier.
+
+Leaderboards are scoped to the subreddit installation because Devvit Redis is installation scoped. They are not a global leaderboard shared across every subreddit where the app may be installed.
+
+### Streaks and achievements
+
+Daily streaks use UTC challenge dates. One missed day can be protected by a grace token. Players earn a grace token after seven consecutive completed days, with a maximum balance of two. Using a grace token does not immediately earn another token.
+
+Achievement badges are stored on the server and include first solve, 5, 25, and 100 daily completions, optimal path, perfect solve without hints, and 3, 7, and 30 day streak milestones.
+
+### Result cards and Reddit sharing
+
+Every completed campaign level and daily challenge displays a compact result card with its start and target words, move count, score, completion state, and accepted word chain.
+
+Players can explicitly choose to publish the verified result as a Reddit post or as a comment on the current WRDLINK post. These actions are submitted under the player's own Reddit account and are never automatic. Daily leaderboard results are loaded from the server's immutable completion record before they can be shared.
+
 ## Reddit and Devvit compatibility
 
-The inline post launcher continues to use Devvit's expanded mode flow. The expanded React game communicates with the Hono API routes. This Reddit edition is gameplay only: it intentionally has no challenge sharing, result cards, social sharing, replay links, file downloads, or PWA installation flow.
+The inline post launcher continues to use Devvit's expanded mode flow. The expanded React game communicates with Hono API routes. Campaign play remains available alongside the shared daily mode. The daily challenge, streak profile, achievements, and leaderboards use Devvit Redis; Reddit post and comment sharing uses the Reddit API with explicit user initiated actions.
 
 ## Policies
 
