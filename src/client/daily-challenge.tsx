@@ -211,6 +211,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [error, setError] = useState('');
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
+  const [helpOpen, setHelpOpen] = useState(false);
   const boardRequestId = useRef(0);
   const puzzleLoadStarted = useRef(false);
   const pendingMoveRequest = useRef<{ date: string; word: string; id: string } | null>(null);
@@ -264,6 +265,15 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     void Promise.resolve().then(() => loadPuzzle());
   }, [loadPuzzle]);
   useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
+
+  useEffect(() => {
+    if (!helpOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setHelpOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [helpOpen]);
 
   useEffect(() => {
     const list = chainListRef.current;
@@ -375,23 +385,55 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
 
   return (
     <main className={`game-page daily-game-page ${completed ? 'is-complete' : ''}`}>
-      <header className="game-header">
-        <div className="wordmark" aria-label="WRDLINK">
+      <header className="game-header daily-game-header">
+        <div className="wordmark" aria-label="WRDLINK Daily challenge">
           <span className="brand-mark" aria-hidden="true">W</span>
           <span>WRDLINK</span>
           <span className="level-badge">DAILY</span>
         </div>
-        <div className="header-right">
-          <div className="header-count">
-            <span className="score-pill"><span className="metric-label">SCORE</span><strong>{score}</strong></span>
-            <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{words.length - 1}</strong></span>
-          </div>
+        <div className="header-count daily-header-count" aria-label={'Score ' + score + ', moves ' + (words.length - 1)}>
+          <span className="score-pill"><span className="metric-label">SCORE</span><strong>{score}</strong></span>
+          <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{words.length - 1}</strong></span>
+        </div>
+        <div className="daily-header-actions">
           <div className="header-hint-button daily-streak-indicator" aria-label={profile.currentStreak + ' day streak'} title={profile.currentStreak + ' day streak'}>
             <span aria-hidden="true">🔥</span><span className="header-hint-cost">{profile.currentStreak}</span>
           </div>
-          <button className="header-help-button" type="button" onClick={onClose} aria-label="Return to campaign" title="Return to campaign">×</button>
+          <button className="header-help-button daily-guide-button" type="button" onClick={() => setHelpOpen(true)} aria-label="How to play today's daily challenge" title="How to play" aria-haspopup="dialog" aria-controls="daily-how-to-dialog" aria-expanded={helpOpen}>!</button>
+          <button className="header-help-button daily-close-button" type="button" onClick={onClose} aria-label="Return to campaign" title="Return to campaign">×</button>
         </div>
       </header>
+
+      <div className="hint-confirmation-backdrop help-backdrop" id="daily-how-to-dialog" hidden={!helpOpen}>
+        <section className="hint-confirmation help-dialog daily-help-dialog" role="dialog" aria-modal="true" aria-labelledby="daily-help-title" aria-describedby="daily-help-intro">
+          <div className="help-dialog-header">
+            <span className="help-kicker">WRDLINK DAILY FIELD GUIDE</span>
+            <button className="help-close-button" type="button" aria-label="Close daily guide" onClick={() => setHelpOpen(false)}>×</button>
+          </div>
+          <h2 id="daily-help-title">How to play today's challenge</h2>
+          <p id="daily-help-intro">Everyone gets the same four letter puzzle. Build a valid word ladder from today's start word to its target.</p>
+          <div className="help-section">
+            <h3>The rules</h3>
+            <ol className="help-rules">
+              <li><strong>Change one letter.</strong> Every move must change exactly one letter from the previous word.</li>
+              <li><strong>Use real words.</strong> Each entry must be a valid four letter word.</li>
+              <li><strong>No repeats.</strong> Each word can appear only once in your ladder.</li>
+              <li><strong>Reach the target.</strong> The target word completes today's challenge.</li>
+            </ol>
+          </div>
+          <div className="help-section">
+            <h3>Daily progress</h3>
+            <ul className="help-rules">
+              <li>Your score and move count stay visible in the header.</li>
+              <li>Your completed result contributes to the community leaderboard and daily streak.</li>
+              <li>A grace token can protect one missed day. You can hold up to two.</li>
+              <li>The puzzle resets at <strong>00:00 UTC (05:30 IST)</strong>.</li>
+            </ul>
+          </div>
+          <p>On touch devices, tap the on screen letter keys to build your next word, then tap Submit.</p>
+          <button className="ink-button help-done-button" type="button" onClick={() => setHelpOpen(false)}>Got it</button>
+        </section>
+      </div>
 
       <section className="daily-guide" aria-labelledby="daily-guide-title">
         <div className="daily-guide-heading">
@@ -400,30 +442,17 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <h1 id="daily-guide-title">Daily challenge <span>{date}</span></h1>
           </div>
         </div>
-        <p className="daily-guide-summary">Everyone shares today's puzzle. Change one letter per move to reach the target and earn a community ranking.</p>
-        <details className="daily-how-to">
-          <summary>How to play today's puzzle</summary>
-          <ul>
-            <li>Change <strong>exactly one letter</strong> from the previous word.</li>
-            <li>Every entry must be a <strong>real four letter word</strong>.</li>
-            <li>Do not reuse a word. Reach the target to complete the puzzle.</li>
-            <li>Use the on screen keyboard on touch devices, then tap Submit.</li>
-          </ul>
-          <p>The daily puzzle resets at <strong>00:00 UTC (05:30 IST)</strong>. Complete it before the reset to keep your streak alive. A grace token can protect one missed day.</p>
-        </details>
       </section>
 
       <div className="daily-game-content">
         <div className="game-workspace">
-          <section className="route-panel" aria-label="Puzzle route">
-            <div className="route-end">
-              <span className="route-label"><span className="route-dot start-dot" /> START WORD</span>
-              <div className="word-display" aria-label={puzzle.start}>{[...puzzle.start].map((letter, index) => <span key={index}>{letter}</span>)}</div>
+          <section className="route-panel daily-route-panel" aria-label={'Start word ' + puzzle.start + ', target word ' + puzzle.target}>
+            <div className="route-end" aria-label={'Start word: ' + puzzle.start}>
+              <div className="word-display" aria-hidden="true">{[...puzzle.start].map((letter, index) => <span key={index}>{letter}</span>)}</div>
             </div>
             <div className="route-connector" aria-hidden="true"><i /></div>
-            <div className="route-end route-end-target">
-              <span className="route-label"><span className="route-dot target-dot" /> TARGET WORD</span>
-              <div className="word-display word-display-target" aria-label={puzzle.target}>{[...puzzle.target].map((letter, index) => <span key={index}>{letter}</span>)}</div>
+            <div className="route-end route-end-target" aria-label={'Target word: ' + puzzle.target}>
+              <div className="word-display word-display-target" aria-hidden="true">{[...puzzle.target].map((letter, index) => <span key={index}>{letter}</span>)}</div>
             </div>
           </section>
 
@@ -494,15 +523,12 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           ) : (
             <section className="finish-panel" aria-labelledby="daily-completion-title">
               <h2 id="daily-completion-title">Daily challenge complete!</h2>
-              <p>{puzzle.target} reached in {result?.moves ?? words.length - 1} moves.</p>
-              <p className="finish-bonus">{result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
+              <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
               {result && (
                 <section className="campaign-share-card" aria-label="Share completed daily puzzle">
                   <div className="campaign-share-preview">
                     <strong>WRDLINK DAILY · {date}</strong>
                     <b>{result.start} → {result.target}</b>
-                    <span>{result.moves} moves · {result.score} points · Completed</span>
-                    <small>{result.words.join(' → ')}</small>
                     <a href="https://www.reddit.com/r/WRDLINK/" target="_blank" rel="noreferrer">Play WRDLINK ↗</a>
                   </div>
                   {ranked ? (
