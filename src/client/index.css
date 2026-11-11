@@ -1449,24 +1449,24 @@ button:focus-visible, input:focus-visible {
     width: 100%;
     height: fit-content;
     min-height: 0;
-    max-height: min(27dvh, 210px);
+    max-height: min(27dvh, 145px);
     align-self: start;
   }
 
   .chain-list {
     flex: 0 1 auto;
-    max-height: min(20dvh, 150px);
-    padding: 4px 4px 7px 0;
+    max-height: 68px;
+    padding: 0 3px 4px 0;
     overflow-x: hidden;
     overflow-y: auto;
-    scroll-padding-block: 5px;
-    scroll-snap-type: y proximity;
+    scroll-padding-bottom: 4px;
+    scroll-snap-type: none;
     overscroll-behavior-y: contain;
     scrollbar-width: none;
   }
 
   .chain-list li {
-    scroll-snap-align: start;
+    scroll-snap-align: none;
     scroll-snap-stop: normal;
   }
 
@@ -1503,8 +1503,8 @@ button:focus-visible, input:focus-visible {
   }
 
   .game-workspace { gap: 6px; }
-  .chain-panel { max-height: min(25dvh, 170px); }
-  .chain-list { max-height: min(18dvh, 125px); }
+  .chain-panel { max-height: min(25dvh, 135px); }
+  .chain-list { max-height: 58px; }
   .game-page.is-complete .chain-panel { max-height: min(25dvh, 170px); }
   .game-page.is-complete .chain-list { max-height: min(18dvh, 125px); }
 }
@@ -1517,8 +1517,8 @@ button:focus-visible, input:focus-visible {
     min-height: 62px;
   }
 
-  .chain-panel { max-height: min(24dvh, 140px); }
-  .chain-list { max-height: min(16dvh, 95px); }
+  .chain-panel { max-height: min(24dvh, 115px); }
+  .chain-list { max-height: 52px; }
   .game-page.is-complete .chain-panel { max-height: min(24dvh, 140px); }
   .game-page.is-complete .chain-list { max-height: min(16dvh, 95px); }
 }
