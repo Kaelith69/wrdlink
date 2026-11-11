@@ -76,7 +76,7 @@ export function updateDailyStreak(
     graceUsed = true;
   }
 
-  const graceEarned = currentStreak > 0 && currentStreak % 7 === 0 && graceTokens < 2;
+  const graceEarned = !graceUsed && currentStreak > 0 && currentStreak % 7 === 0 && graceTokens < 2;
   if (graceEarned) graceTokens += 1;
   return {
     currentStreak,
