@@ -804,3 +804,72 @@
   .daily-game-page .daily-mode-toggle { width: 30px; min-width: 30px; }
   .daily-game-page .daily-guide-button { width: 27px; min-width: 27px; }
 }
+
+
+/* Daily guide uses the same shared field guide structure and sizing as Campaign. */
+.daily-help-dialog {
+  width: min(100%, 560px);
+  max-height: min(88svh, 780px);
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.daily-help-dialog .help-example {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.daily-help-dialog .help-example-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.daily-help-dialog .help-example-step strong {
+  padding: 5px 7px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  background: var(--paper-strong);
+  color: var(--ink);
+  font-size: 11px;
+  letter-spacing: .08em;
+}
+.daily-help-dialog .help-example-note {
+  margin: 9px 0 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Share feedback is constrained to the card, including long Reddit/API errors. */
+.daily-share-feedback {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 0 !important;
+  padding: 10px 11px;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  white-space: normal;
+  line-height: 1.45;
+  text-align: left;
+  justify-self: stretch;
+}
+.daily-game-page .daily-finish-panel .campaign-share-card {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.daily-game-page .campaign-share-card > .daily-share-feedback {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 !important;
+}
+@media (max-width: 620px) {
+  .daily-game-page .daily-share-feedback {
+    padding: 9px;
+    font-size: 11px;
+  }
+}
