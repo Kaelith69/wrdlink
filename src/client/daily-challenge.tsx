@@ -267,6 +267,15 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
 
   useEffect(() => {
+    if (!helpOpen) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setHelpOpen(false);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [helpOpen]);
+
+  useEffect(() => {
     const list = chainListRef.current;
     if (!list) return;
     list.scrollTo({
@@ -514,7 +523,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           ) : (
             <section className="finish-panel" aria-labelledby="daily-completion-title">
               <h2 id="daily-completion-title">Daily challenge complete!</h2>
-              <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves}</p>
+              <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
               {result && (
                 <section className="campaign-share-card" aria-label="Share completed daily puzzle">
                   <div className="campaign-share-preview">
