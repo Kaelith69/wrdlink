@@ -502,7 +502,7 @@ function shareText(result: DailyResult): string {
     `${result.start} → ${result.target}`,
     `Moves: ${result.moves} · Score: ${result.score}`,
     path,
-    `Play WRDLINK: https://www.reddit.com/r/${context.subredditName ?? 'wrdlink'}/`,
+    `Play WRDLINK: https://www.reddit.com/r/WRDLINK/`,
   ].join('\n\n');
 }
 
