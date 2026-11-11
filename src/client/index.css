@@ -1218,3 +1218,16 @@ button:focus-visible, input:focus-visible {
 @media(max-width:420px){.campaign-share-actions{display:grid}.campaign-share-actions button{min-height:42px}}
 
 .campaign-share-preview a{width:fit-content;color:var(--tile);font-size:10px;font-weight:950;text-decoration:none}.campaign-share-preview a:hover{text-decoration:underline}
+
+/* Tablet sized embedded Reddit webviews need the compact header too. */
+@media(min-width:621px) and (max-width:820px){
+.game-header{grid-template-columns:minmax(0,1fr) auto;min-height:62px;padding:8px 12px;gap:8px}
+.wordmark{gap:6px;font-size:14px}.brand-mark{width:29px;height:29px;font-size:15px}
+.header-right{gap:6px}.header-count{gap:4px}
+.score-pill,.moves-pill{min-height:34px;gap:4px;padding-inline:7px}
+.metric-label{font-size:7px}.score-pill strong,.moves-pill strong{font-size:12px}
+.header-hint-button{min-width:42px;height:34px;gap:3px;padding-inline:5px}
+.header-hint-button svg{width:17px;height:17px}
+.daily-launch-button{min-height:34px;padding-inline:9px;font-size:9px}
+.header-help-button{width:32px;min-width:32px;height:34px}
+}

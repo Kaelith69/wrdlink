@@ -138,6 +138,18 @@ const badgeNames: Record<string, string> = {
   STREAK_30: '30 day streak',
 };
 
+const achievementGoals = [
+  { id: 'FIRST_SOLVE', target: 1, description: 'Complete your first daily puzzle', value: (p: DailyProfile) => p.totalCompleted },
+  { id: 'FIVE_SOLVES', target: 5, description: 'Complete five daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
+  { id: 'TWENTY_FIVE_SOLVES', target: 25, description: 'Complete 25 daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
+  { id: 'HUNDRED_SOLVES', target: 100, description: 'Complete 100 daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
+  { id: 'STREAK_3', target: 3, description: 'Maintain a three day streak', value: (p: DailyProfile) => p.bestStreak },
+  { id: 'STREAK_7', target: 7, description: 'Maintain a seven day streak', value: (p: DailyProfile) => p.bestStreak },
+  { id: 'STREAK_30', target: 30, description: 'Maintain a 30 day streak', value: (p: DailyProfile) => p.bestStreak },
+  { id: 'OPTIMAL_PATH', target: 1, description: 'Solve a puzzle in the optimal number of moves', value: (p: DailyProfile) => p.badges.includes('OPTIMAL_PATH') ? 1 : 0 },
+  { id: 'PERFECT_SOLVE', target: 1, description: 'Find an optimal path without hints or penalties', value: (p: DailyProfile) => p.badges.includes('PERFECT_SOLVE') ? 1 : 0 },
+];
+
 export function DailyChallenge({ sessionId, onClose }: Props) {
   const [date, setDate] = useState('');
   const [puzzle, setPuzzle] = useState<{ id: string; start: string; target: string; optimalMoves: number } | null>(null);
@@ -154,55 +166,69 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [myRank, setMyRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [boardLoading, setBoardLoading] = useState(true);
+  const [boardError, setBoardError] = useState('');
   const [error, setError] = useState('');
+  const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
 
   const loadBoard = useCallback(async () => {
+    setBoardLoading(true);
+    setBoardError('');
     try {
       const data = await request<BoardResponse>(`/api/daily/leaderboard?period=${period}&metric=${metric}`, isBoardResponse);
-      setBoard(data.entries ?? []);
-      setMyRank(data.currentUserRank ?? null);
+      setBoard(data.entries);
+      setMyRank(data.currentUserRank);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Could not load leaderboard.');
+      setBoardError(cause instanceof Error ? cause.message : 'Could not load leaderboard.');
+    } finally {
+      setBoardLoading(false);
     }
   }, [period, metric]);
 
-  useEffect(() => {
-    let active = true;
-    request('/api/daily/init', isDailyInit, {
-      method: 'POST',
-      body: JSON.stringify({ sessionId }),
-    }).then((data) => {
-      if (!active) return;
+  const loadPuzzle = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const data = await request('/api/daily/init', isDailyInit, {
+        method: 'POST',
+        body: JSON.stringify({ sessionId }),
+      });
       setDate(data.date);
       setPuzzle(data.puzzle);
       setWords(data.words);
       setScore(data.score);
       setCompleted(data.completed);
       setResult(data.result);
-      setProfile(data.profile ?? emptyProfile);
+      setProfile(data.profile);
       setRanked(data.ranked);
-    }).catch((cause: unknown) => {
-      if (active) setError(cause instanceof Error ? cause.message : 'Could not load today’s puzzle.');
-    }).finally(() => {
-      if (active) setLoading(false);
-    });
-    return () => { active = false; };
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not load today’s puzzle.');
+    } finally {
+      setLoading(false);
+    }
   }, [sessionId]);
 
+  useEffect(() => { void Promise.resolve().then(() => loadPuzzle()); }, [loadPuzzle]);
+  useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
+
   useEffect(() => {
-    let active = true;
-    request<BoardResponse>('/api/daily/leaderboard?period=' + period + '&metric=' + metric, isBoardResponse)
-      .then((data) => {
-        if (!active) return;
-        setBoard(data.entries);
-        setMyRank(data.currentUserRank);
-      })
-      .catch((cause: unknown) => {
-        if (active) setError(cause instanceof Error ? cause.message : 'Could not load leaderboard.');
-      });
-    return () => { active = false; };
-  }, [period, metric]);
+    const media = window.matchMedia('(pointer: coarse), (any-pointer: coarse)');
+    const update = () => setUseVirtualKeyboard(media.matches);
+    update();
+    media.addEventListener('change', update);
+    return () => media.removeEventListener('change', update);
+  }, []);
+
+  function handleVirtualKey(key: string) {
+    if (busy || completed) return;
+    if (key === 'BACKSPACE') {
+      setEntry((current) => current.slice(0, -1));
+      return;
+    }
+    if (!/^[A-Z]$/.test(key)) return;
+    setEntry((current) => current.length < 4 ? current + key : current);
+  }
 
   async function submitMove(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -221,11 +247,11 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
       });
       setWords(data.words);
       setScore(data.score);
-      setEntry('');
       if (!data.valid) {
         setError(data.message);
         return;
       }
+      setEntry('');
       if (data.complete) {
         setCompleted(true);
         setResult(data.result);
@@ -271,15 +297,15 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'This week' : 'All time';
 
   if (loading) {
-    return <main className="daily-screen"><div className="daily-shell"><button className="daily-back" onClick={onClose}>← Campaign</button><p className="daily-muted">Preparing today’s shared puzzle…</p></div></main>;
+    return <main className="daily-screen"><div className="daily-shell daily-state"><button className="daily-back" type="button" onClick={onClose}>← Campaign</button><p className="daily-muted">Preparing today’s shared puzzle…</p><div className="daily-loading-track"><span /></div></div></main>;
   }
 
   if (!puzzle) {
-    return <main className="daily-screen"><div className="daily-shell"><button className="daily-back" onClick={onClose}>← Campaign</button><p className="daily-error">{error || 'Daily puzzle unavailable.'}</p></div></main>;
+    return <main className="daily-screen"><div className="daily-shell daily-state"><button className="daily-back" type="button" onClick={onClose}>← Campaign</button><p className="daily-error" role="alert">{error || 'Daily puzzle unavailable.'}</p><button className="daily-retry" type="button" onClick={() => void loadPuzzle()}>Retry daily challenge</button></div></main>;
   }
 
   return (
-    <main className="daily-screen">
+    <main className={`daily-screen ${completed ? 'is-complete' : ''}`}>
       <div className="daily-shell">
         <header className="daily-header">
           <button className="daily-back" type="button" onClick={onClose}>← Campaign</button>
@@ -308,14 +334,36 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <div><strong>{puzzle.optimalMoves}</strong><span>OPTIMAL</span></div>
           </div>
           <ol className="daily-chain">
-            {words.map((word, index) => <li className={word === puzzle.target ? 'is-target' : ''} key={index}><span>{String(index + 1).padStart(2, '0')}</span><b>{word}</b></li>)}
+            {words.map((word, index) => <li className={word === puzzle.target ? 'is-target' : ''} key={`${word}-${index}`}><span>{String(index).padStart(2, '0')}</span><b>{word}</b></li>)}
           </ol>
 
           {!completed ? (
+            <>
             <form className="daily-entry" onSubmit={submitMove}>
-              <input value={entry} onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 4))} placeholder="NEXT WORD" maxLength={4} autoComplete="off" spellCheck={false} disabled={busy}/>
+              <label className="sr-only" htmlFor="daily-word-entry">Next four letter word</label>
+              <input id="daily-word-entry" value={entry} onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 4))} placeholder="NEXT WORD" maxLength={4} autoComplete="off" autoCapitalize="characters" spellCheck={false} readOnly={useVirtualKeyboard} disabled={busy} aria-describedby={useVirtualKeyboard ? 'daily-keyboard-help' : undefined}/>
               <button type="submit" disabled={busy || entry.length !== 4}>{busy ? 'Checking…' : 'Submit'}</button>
             </form>
+            {useVirtualKeyboard && !completed && (
+              <div className="daily-virtual-keyboard" aria-label="On screen letter keyboard">
+                <p id="daily-keyboard-help" className="daily-keyboard-label">TAP LETTERS TO BUILD YOUR WORD</p>
+                {['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map((row, index) => (
+                  <div className="daily-virtual-keyboard-row" key={row}>
+                    {[...row].map((letter) => (
+                      <button className="daily-virtual-key" key={letter} type="button"
+                        onPointerDown={(event) => event.preventDefault()}
+                        onClick={() => handleVirtualKey(letter)}
+                        disabled={busy || entry.length >= 4} aria-label={letter}>{letter}</button>
+                    ))}
+                    {index === 2 && <button className="daily-virtual-key daily-key-utility" type="button"
+                      onPointerDown={(event) => event.preventDefault()}
+                      onClick={() => handleVirtualKey('BACKSPACE')}
+                      disabled={busy || entry.length === 0} aria-label="Delete last letter">⌫</button>}
+                  </div>
+                ))}
+              </div>
+            )}
+            </>
           ) : (
             <div className="daily-complete">
               <span>✓</span>
@@ -365,18 +413,27 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             </div>
           </div>
           <p className="daily-muted">{periodLabel} · {moveLabel}</p>
-          {board.length ? (
+          {boardLoading ? <p className="daily-loading-message" role="status">Loading community rankings…</p> : boardError ? <div className="daily-board-error"><p className="daily-error" role="alert">{boardError}</p><button className="daily-refresh" type="button" onClick={() => void loadBoard()}>Retry leaderboard</button></div> : board.length ? (
             <ol className="daily-board">
               {board.map((item) => <li key={item.rank}><span className="daily-board-rank">{String(item.rank).padStart(2, '0')}</span><strong>{item.username}</strong><span>{metric === 'score' ? item.score + ' pts' : item.moves + ' moves'}</span></li>)}
             </ol>
           ) : <p className="daily-empty">No completed runs yet. Set the first mark.</p>}
-          <button className="daily-refresh" type="button" onClick={() => void loadBoard()}>Refresh leaderboard</button>
+          {!boardLoading && !boardError && <button className="daily-refresh" type="button" onClick={() => void loadBoard()}>Refresh leaderboard</button>}
         </section>
 
         <section className="daily-achievements">
           <div className="daily-section-heading"><div><p className="daily-eyebrow">PLAYER PROGRESSION</p><h2>Achievements</h2></div></div>
-          {profile.badges.length ? <div className="daily-badges">{profile.badges.map((badge) => <span key={badge}>✦ {badgeNames[badge] ?? badge}</span>)}</div> : <p className="daily-muted">Complete daily puzzles to unlock badges.</p>}
-          <p className="daily-muted">A grace token protects one missed day. Earn one every seven consecutive completions, up to two.</p>
+          <div className="daily-achievement-grid">
+            {achievementGoals.map((goal) => {
+              const progress = Math.min(goal.target, goal.value(profile));
+              const earned = profile.badges.includes(goal.id);
+              return <div className={`daily-achievement-item ${earned ? 'is-earned' : ''}`} key={goal.id}>
+                <span className="daily-achievement-icon" aria-hidden="true">{earned ? '✦' : '◇'}</span>
+                <div><strong>{badgeNames[goal.id]}</strong><small>{goal.description}</small><span className="daily-achievement-progress">{progress}/{goal.target}</span></div>
+              </div>;
+            })}
+          </div>
+          <p className="daily-muted">A grace token protects one missed day. Earn one every seven consecutive completions, up to two. Daily puzzles reset at 00:00 UTC, which is 05:30 IST.</p>
         </section>
       </div>
     </main>
