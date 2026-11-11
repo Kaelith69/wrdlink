@@ -529,7 +529,9 @@ async function getVerifiedCampaignCompletion(body: unknown): Promise<SessionStat
 
 api.post('/share/campaign/post', async (c) => {
   const body: unknown = await readJson(c);
-  if (!context.userId || !context.subredditName) {
+  const userId = context.userId;
+  const subredditName = context.subredditName;
+  if (!userId || !subredditName) {
     return c.json({ error: 'Sign in to share your campaign result.' }, 401);
   }
   if (!isSessionRequest(body)) return c.json({ error: 'Invalid campaign share request.' }, 400);
@@ -540,7 +542,7 @@ api.post('/share/campaign/post', async (c) => {
   if (!state) return c.json({ error: 'A verified completed campaign level was not found.' }, 404);
   const text = campaignShareText(state);
   const post = await reddit.submitCustomPost({
-    subredditName: context.subredditName,
+    subredditName,
     title: `WRDLINK Level ${state.level}: ${state.puzzle.start} → ${state.puzzle.target}`,
     entry: 'default',
     runAs: 'USER',
@@ -552,7 +554,9 @@ api.post('/share/campaign/post', async (c) => {
 
 api.post('/share/campaign/comment', async (c) => {
   const body: unknown = await readJson(c);
-  if (!context.userId || !context.postId) {
+  const userId = context.userId;
+  const postId = context.postId;
+  if (!userId || !postId) {
     return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 401);
   }
   if (!isSessionRequest(body)) return c.json({ error: 'Invalid campaign share request.' }, 400);
@@ -562,7 +566,7 @@ api.post('/share/campaign/comment', async (c) => {
   const state = await getVerifiedCampaignCompletion(body);
   if (!state) return c.json({ error: 'A verified completed campaign level was not found.' }, 404);
   const comment = await reddit.submitComment({
-    id: context.postId,
+    id: postId,
     text: campaignShareText(state),
     runAs: 'USER',
   });
