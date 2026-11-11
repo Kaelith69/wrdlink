@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 
 type DailyResult = {
   date: string;
@@ -133,7 +134,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
 
   useEffect(() => { void loadBoard(); }, [loadBoard]);
 
-  async function submitMove(event: React.FormEvent<HTMLFormElement>) {
+  async function submitMove(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!puzzle || busy || completed) return;
     const word = entry.trim().toUpperCase();
