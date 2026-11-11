@@ -541,8 +541,8 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                   ))}
                 </div>
               )}
-              {error && <p className="game-message error daily-share-feedback" role="alert">{error}</p>}
-              {shareMessage && <p className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
+              {error && <p className="game-message error" role="alert">{error}</p>}
+              {shareMessage && <p className="game-message" role="status">{shareMessage}</p>}
               <div className="entry-actions">
                 <button className="secondary-button" type="button" onClick={onClose} disabled={busy}>Back to campaign</button>
               </div>
