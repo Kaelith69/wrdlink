@@ -180,6 +180,13 @@ export function App() {
     setEntry((current) => current.length < puzzle.wordLength ? current + key : current);
   };
 
+  const switchMode = (nextDaily: boolean) => {
+    const update = () => setDailyOpen(nextDaily);
+    const startViewTransition = Reflect.get(document, 'startViewTransition');
+    if (typeof startViewTransition === 'function') startViewTransition.call(document, update);
+    else update();
+  };
+
   const movesUsed = words.length - 1;
   useEffect(() => {
     const list = chainListRef.current;
@@ -465,7 +472,7 @@ export function App() {
     }
   }
 
-  if (dailyOpen) return <DailyChallenge sessionId={sessionId} onClose={() => setDailyOpen(false)} />;
+  if (dailyOpen) return <DailyChallenge sessionId={sessionId} onClose={() => switchMode(false)} />;
 
   if (loading) {
     return (
@@ -501,7 +508,7 @@ export function App() {
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{gameScore}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{movesUsed}</strong></span>
           </div>
-          <button className="mode-switch mode-switch-to-daily" type="button" onClick={() => setDailyOpen(true)} aria-label="Switch to Daily challenge" title="Switch to Daily"><span>DAILY</span><span className="mode-switch-icon" aria-hidden="true">↗</span></button>
+          <button className="mode-switch mode-switch-to-daily" type="button" onClick={() => switchMode(true)} aria-label="Switch to Daily challenge" title="Switch to Daily"><span>DAILY</span><span className="mode-switch-icon" aria-hidden="true">↗</span></button>
           <button
             className="header-hint-button"
             type="button"
