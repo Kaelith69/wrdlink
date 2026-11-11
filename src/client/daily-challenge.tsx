@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import './daily.css';
 
@@ -115,15 +115,55 @@ function isShareResponse(value: unknown): value is { success: boolean; permalink
 async function request<T>(url: string, validate: (value: unknown) => value is T, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set('Content-Type', 'application/json');
-  const response = await fetch(url, { ...init, headers });
-  const payload: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message = isRecord(payload) && typeof payload.error === 'string'
-      ? payload.error : 'The daily challenge request failed.';
-    throw new Error(message);
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 15_000);
+  try {
+    const response = await fetch(url, { ...init, headers, signal: controller.signal });
+    const payload: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = isRecord(payload) && typeof payload.error === 'string'
+        ? payload.error : 'The daily challenge request failed.';
+      throw new Error(message);
+    }
+    if (!validate(payload)) throw new Error('The daily challenge response was invalid.');
+    return payload;
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') {
+      throw new Error('The request timed out. Check your connection and try again.', { cause });
+    }
+    throw cause;
+  } finally {
+    window.clearTimeout(timer);
   }
-  if (!validate(payload)) throw new Error('The daily challenge response was invalid.');
-  return payload;
+}
+
+function createDailyRequestId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return Date.now().toString(16) + '-' + Math.random().toString(16).slice(2) + '-' + Math.random().toString(16).slice(2);
+}
+
+function pendingDailyRequestId(date: string, word: string): string {
+  const key = `wrdlink-daily-pending:${date}`;
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (isRecord(parsed) && parsed.word === word && typeof parsed.id === 'string' &&
+        /^[a-f0-9-]{20,80}$/i.test(parsed.id)) return parsed.id;
+    const id = createDailyRequestId();
+    window.sessionStorage.setItem(key, JSON.stringify({ word, id }));
+    return id;
+  } catch {
+    return createDailyRequestId();
+  }
+}
+
+function clearPendingDailyRequestId(date: string, requestId: string): void {
+  try {
+    const key = `wrdlink-daily-pending:${date}`;
+    const raw = window.sessionStorage.getItem(key);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (isRecord(parsed) && parsed.id === requestId) window.sessionStorage.removeItem(key);
+  } catch { /* Session storage is optional. */ }
 }
 
 const badgeNames: Record<string, string> = {
@@ -171,18 +211,26 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [error, setError] = useState('');
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
+  const boardRequestId = useRef(0);
+  const puzzleLoadStarted = useRef(false);
+  const pendingMoveRequest = useRef<{ date: string; word: string; id: string } | null>(null);
 
   const loadBoard = useCallback(async () => {
+    const requestId = ++boardRequestId.current;
     setBoardLoading(true);
     setBoardError('');
+    setMyRank(null);
     try {
       const data = await request<BoardResponse>(`/api/daily/leaderboard?period=${period}&metric=${metric}`, isBoardResponse);
+      if (requestId !== boardRequestId.current) return;
       setBoard(data.entries);
       setMyRank(data.currentUserRank);
     } catch (cause) {
-      setBoardError(cause instanceof Error ? cause.message : 'Could not load leaderboard.');
+      if (requestId === boardRequestId.current) {
+        setBoardError(cause instanceof Error ? cause.message : 'Could not load leaderboard.');
+      }
     } finally {
-      setBoardLoading(false);
+      if (requestId === boardRequestId.current) setBoardLoading(false);
     }
   }, [period, metric]);
 
@@ -209,7 +257,11 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     }
   }, [sessionId]);
 
-  useEffect(() => { void Promise.resolve().then(() => loadPuzzle()); }, [loadPuzzle]);
+  useEffect(() => {
+    if (puzzleLoadStarted.current) return;
+    puzzleLoadStarted.current = true;
+    void Promise.resolve().then(() => loadPuzzle());
+  }, [loadPuzzle]);
   useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
 
   useEffect(() => {
@@ -240,11 +292,17 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     }
     setBusy(true);
     setError('');
+    const pending = pendingMoveRequest.current;
+    const requestId = pending?.date === date && pending.word === word
+      ? pending.id : pendingDailyRequestId(date, word);
+    pendingMoveRequest.current = { date, word, id: requestId };
     try {
       const data = await request('/api/daily/validate', isDailyMoveResponse, {
         method: 'POST',
-        body: JSON.stringify({ sessionId, date, puzzleId: puzzle.id, word }),
+        body: JSON.stringify({ sessionId, date, puzzleId: puzzle.id, word, requestId }),
       });
+      clearPendingDailyRequestId(date, requestId);
+      pendingMoveRequest.current = null;
       setWords(data.words);
       setScore(data.score);
       if (!data.valid) {

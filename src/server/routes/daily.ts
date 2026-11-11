@@ -28,6 +28,8 @@ type DailyState = {
   completed: boolean;
   startedAt: number;
   completedAt: number | null;
+  lastRequestId?: string | null;
+  lastResponse?: Record<string, unknown> | null;
 };
 
 type DailyResult = {
@@ -47,6 +49,7 @@ type DailyResult = {
 const SESSION_PATTERN = /^(?:[a-f0-9-]{20,80}|session-[a-z0-9-]{10,80})$/i;
 const DAILY_TTL_SECONDS = 60 * 24 * 60 * 60;
 const RATE_WINDOW_SECONDS = 60;
+const LOCK_TTL_MS = 60_000;
 const DEFAULT_PROFILE: DailyProfile = {
   totalCompleted: 0,
   totalScore: 0,
@@ -70,16 +73,24 @@ function isDailyResult(value: unknown): value is DailyResult {
   return isRecord(value) && typeof value.date === 'string' && parseDateKey(value.date) !== null &&
     typeof value.userId === 'string' && typeof value.username === 'string' &&
     typeof value.start === 'string' && typeof value.target === 'string' && isStringArray(value.words) &&
-    Number.isSafeInteger(value.moves) && Number.isSafeInteger(value.score) &&
-    Number.isSafeInteger(value.optimalMoves) && Number.isSafeInteger(value.hintsUsed) &&
+    Number.isSafeInteger(value.moves) && Number(value.moves) >= 1 &&
+    Number.isSafeInteger(value.score) && Number(value.score) >= 0 && Number(value.score) <= 50 &&
+    Number.isSafeInteger(value.optimalMoves) && Number(value.optimalMoves) >= 1 &&
+    Number.isSafeInteger(value.hintsUsed) && Number(value.hintsUsed) === 0 &&
+    value.words.length === Number(value.moves) + 1 &&
+    value.words[0] === value.start && value.words[value.words.length - 1] === value.target &&
     typeof value.completedAt === 'number' && Number.isFinite(value.completedAt);
 }
 
 function isDailyState(value: unknown, expectedPuzzle: Puzzle): value is DailyState {
   if (!isRecord(value) || !isStringArray(value.words) ||
-      typeof value.score !== 'number' || !Number.isSafeInteger(value.score) || value.score < 0 ||
+      typeof value.score !== 'number' || !Number.isSafeInteger(value.score) || value.score < 0 || value.score > 50 ||
       typeof value.completed !== 'boolean' || typeof value.startedAt !== 'number' || !Number.isFinite(value.startedAt) ||
-      !(value.completedAt === null || (typeof value.completedAt === 'number' && Number.isFinite(value.completedAt))) ||
+      !(value.completed ? (typeof value.completedAt === 'number' && Number.isFinite(value.completedAt)) : value.completedAt === null) ||
+      value.words.length > 200 ||
+      !(value.lastRequestId === undefined || value.lastRequestId === null ||
+        (typeof value.lastRequestId === 'string' && /^[a-f0-9-]{20,80}$/i.test(value.lastRequestId))) ||
+      !(value.lastResponse === undefined || value.lastResponse === null || isRecord(value.lastResponse)) ||
       !isRecord(value.puzzle) || value.puzzle.id !== expectedPuzzle.id ||
       value.puzzle.start !== expectedPuzzle.start || value.puzzle.target !== expectedPuzzle.target ||
       value.puzzle.wordLength !== expectedPuzzle.wordLength || value.puzzle.optimalMoves !== expectedPuzzle.optimalMoves ||
@@ -109,7 +120,7 @@ async function withLock<T>(key: string, operation: () => Promise<T>): Promise<T>
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (await redis.set(lockKey, token, {
       nx: true,
-      expiration: new Date(Date.now() + 30_000),
+      expiration: new Date(Date.now() + LOCK_TTL_MS),
     }) === 'OK') {
       acquired = true;
       break;
@@ -177,6 +188,8 @@ function defaultState(puzzle: Puzzle): DailyState {
     completed: false,
     startedAt: Date.now(),
     completedAt: null,
+    lastRequestId: null,
+    lastResponse: null,
   };
 }
 
@@ -187,17 +200,80 @@ async function readProfile(userId: string): Promise<DailyProfile> {
     const parsed: unknown = JSON.parse(raw);
     if (!isRecord(parsed)) return { ...DEFAULT_PROFILE, badges: [] };
     return {
-      totalCompleted: Number.isSafeInteger(parsed.totalCompleted) ? Number(parsed.totalCompleted) : 0,
-      totalScore: Number.isSafeInteger(parsed.totalScore) ? Number(parsed.totalScore) : 0,
-      totalMoves: Number.isSafeInteger(parsed.totalMoves) ? Number(parsed.totalMoves) : 0,
-      currentStreak: Number.isSafeInteger(parsed.currentStreak) ? Number(parsed.currentStreak) : 0,
-      bestStreak: Number.isSafeInteger(parsed.bestStreak) ? Number(parsed.bestStreak) : 0,
-      lastDailyDate: typeof parsed.lastDailyDate === 'string' ? parsed.lastDailyDate : null,
-      graceTokens: Number.isSafeInteger(parsed.graceTokens) ? Number(parsed.graceTokens) : 0,
+      totalCompleted: Number.isSafeInteger(parsed.totalCompleted) && Number(parsed.totalCompleted) >= 0 ? Number(parsed.totalCompleted) : 0,
+      totalScore: Number.isSafeInteger(parsed.totalScore) && Number(parsed.totalScore) >= 0 ? Number(parsed.totalScore) : 0,
+      totalMoves: Number.isSafeInteger(parsed.totalMoves) && Number(parsed.totalMoves) >= 0 ? Number(parsed.totalMoves) : 0,
+      currentStreak: Number.isSafeInteger(parsed.currentStreak) && Number(parsed.currentStreak) >= 0 ? Number(parsed.currentStreak) : 0,
+      bestStreak: Number.isSafeInteger(parsed.bestStreak) && Number(parsed.bestStreak) >= 0 ? Number(parsed.bestStreak) : 0,
+      lastDailyDate: typeof parsed.lastDailyDate === 'string' && parseDateKey(parsed.lastDailyDate) !== null ? parsed.lastDailyDate : null,
+      graceTokens: Number.isSafeInteger(parsed.graceTokens) ? Math.max(0, Math.min(2, Number(parsed.graceTokens))) : 0,
       badges: Array.isArray(parsed.badges) ? parsed.badges.filter((item): item is string => typeof item === 'string') : [],
     };
   } catch {
     return { ...DEFAULT_PROFILE, badges: [] };
+  }
+}
+
+type LeaderboardAggregate = {
+  username: string;
+  totalScore: number;
+  totalMoves: number;
+  completedCount: number;
+};
+
+type CompletionJournal = {
+  result: DailyResult;
+  profile: DailyProfile;
+  weekly: LeaderboardAggregate;
+  allTime: LeaderboardAggregate;
+  newBadges: string[];
+  graceUsed: boolean;
+  graceEarned: boolean;
+  complete: boolean;
+};
+
+function readAggregate(raw: string | null | undefined, username: string): LeaderboardAggregate {
+  if (!raw) return { username, totalScore: 0, totalMoves: 0, completedCount: 0 };
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (isRecord(value) &&
+        typeof value.username === 'string' &&
+        Number.isSafeInteger(value.totalScore) && Number(value.totalScore) >= 0 &&
+        Number.isSafeInteger(value.totalMoves) && Number(value.totalMoves) >= 0 &&
+        Number.isSafeInteger(value.completedCount) && Number(value.completedCount) >= 0) {
+      return {
+        username: value.username,
+        totalScore: Number(value.totalScore),
+        totalMoves: Number(value.totalMoves),
+        completedCount: Number(value.completedCount),
+      };
+    }
+  } catch { /* Rebuild a malformed aggregate from a clean baseline. */ }
+  return { username, totalScore: 0, totalMoves: 0, completedCount: 0 };
+}
+
+function parseCompletionJournal(raw: string | null | undefined): CompletionJournal | null {
+  if (!raw) return null;
+  try {
+    const value: unknown = JSON.parse(raw);
+    if (!isRecord(value) || !isDailyResult(value.result) || !isRecord(value.profile) ||
+        !isRecord(value.weekly) || !isRecord(value.allTime) ||
+        !Array.isArray(value.newBadges) || typeof value.graceUsed !== 'boolean' ||
+        typeof value.graceEarned !== 'boolean' || typeof value.complete !== 'boolean') return null;
+    const aggregateIsValid = (item: Record<string, unknown>) =>
+      typeof item.username === 'string' &&
+      Number.isSafeInteger(item.totalScore) && Number(item.totalScore) >= 0 &&
+      Number.isSafeInteger(item.totalMoves) && Number(item.totalMoves) >= 0 &&
+      Number.isSafeInteger(item.completedCount) && Number(item.completedCount) >= 0;
+    if (!aggregateIsValid(value.weekly) || !aggregateIsValid(value.allTime)) return null;
+    const profile = value.profile as unknown as DailyProfile;
+    if (!Number.isSafeInteger(profile.totalCompleted) || !Number.isSafeInteger(profile.totalScore) ||
+        !Number.isSafeInteger(profile.totalMoves) || !Number.isSafeInteger(profile.currentStreak) ||
+        !Number.isSafeInteger(profile.bestStreak) || !Number.isSafeInteger(profile.graceTokens) ||
+        !Array.isArray(profile.badges) || !profile.badges.every((badge) => typeof badge === 'string')) return null;
+    return value as unknown as CompletionJournal;
+  } catch {
+    return null;
   }
 }
 
@@ -207,110 +283,147 @@ async function saveVerifiedCompletion(
   username: string,
   state: DailyState
 ): Promise<{ result: DailyResult; profile: DailyProfile; newBadges: string[]; graceUsed: boolean; graceEarned: boolean }> {
-  const key = resultKey(date, userId);
-  const existing = await redis.get(key);
-  if (existing) {
-    try {
-      const previous: unknown = JSON.parse(existing);
-      if (!isDailyResult(previous)) throw new Error('Stored daily result is invalid.');
-      return {
-        result: previous,
-        profile: await readProfile(userId),
-        newBadges: [],
-        graceUsed: false,
-        graceEarned: false,
+  // A user wide lock prevents simultaneous completions on adjacent UTC days from
+  // overwriting profile and aggregate leaderboard totals.
+  return withLock(`wrdlink:v2:daily:user-lock:${userId}`, async () => {
+    const key = resultKey(date, userId);
+    const journalKey = `wrdlink:v2:daily:completion-journal:${date}:${userId}`;
+    let journal = parseCompletionJournal(await redis.get(journalKey));
+
+    if (!journal) {
+      const existingRaw = await redis.get(key);
+      if (existingRaw) {
+        try {
+          const existing: unknown = JSON.parse(existingRaw);
+          if (isDailyResult(existing)) {
+            return {
+              result: existing,
+              profile: await readProfile(userId),
+              newBadges: [],
+              graceUsed: false,
+              graceEarned: false,
+            };
+          }
+        } catch { /* Replace an invalid legacy record through a new journal. */ }
+        await redis.del(key);
+      }
+
+      const result: DailyResult = {
+        date,
+        userId,
+        username,
+        start: state.puzzle.start,
+        target: state.puzzle.target,
+        words: [...state.words],
+        moves: state.words.length - 1,
+        score: state.score,
+        optimalMoves: state.puzzle.optimalMoves,
+        hintsUsed: 0,
+        completedAt: state.completedAt ?? Date.now(),
       };
-    } catch {
-      // A malformed legacy result is not trusted. The immutable completion below replaces it.
+      const previousProfile = await readProfile(userId);
+      const streak = updateDailyStreak(previousProfile, date);
+      const profile: DailyProfile = {
+        totalCompleted: previousProfile.totalCompleted + 1,
+        totalScore: previousProfile.totalScore + result.score,
+        totalMoves: previousProfile.totalMoves + result.moves,
+        currentStreak: streak.currentStreak,
+        bestStreak: streak.bestStreak,
+        lastDailyDate: streak.lastDailyDate,
+        graceTokens: streak.graceTokens,
+        badges: previousProfile.badges,
+      };
+      profile.badges = earnedBadges(profile, result.moves, result.optimalMoves, result.hintsUsed, result.score);
+      const newBadges = profile.badges.filter((badge) => !previousProfile.badges.includes(badge));
+
+      const week = isoWeekKey(date);
+      const weeklyPrefix = `wrdlink:v2:leaderboard:weekly:${week}`;
+      const allPrefix = 'wrdlink:v2:leaderboard:alltime';
+      const [previousWeekRaw, previousAllRaw] = await Promise.all([
+        redis.hGet(weeklyPrefix + ':entries', userId),
+        redis.hGet(allPrefix + ':entries', userId),
+      ]);
+      const previousWeek = readAggregate(previousWeekRaw, username);
+      const previousAll = readAggregate(previousAllRaw, username);
+      const weekly = {
+        username,
+        totalScore: previousWeek.totalScore + result.score,
+        totalMoves: previousWeek.totalMoves + result.moves,
+        completedCount: previousWeek.completedCount + 1,
+      };
+      const allTime = {
+        username,
+        totalScore: previousAll.totalScore + result.score,
+        totalMoves: previousAll.totalMoves + result.moves,
+        completedCount: previousAll.completedCount + 1,
+      };
+      journal = {
+        result, profile, weekly, allTime, newBadges,
+        graceUsed: streak.graceUsed,
+        graceEarned: streak.graceEarned,
+        complete: false,
+      };
+      const created = await redis.set(journalKey, JSON.stringify(journal), {
+        nx: true,
+        expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
+      });
+      if (created !== 'OK') {
+        journal = parseCompletionJournal(await redis.get(journalKey));
+        if (!journal) throw new Error('Could not safely prepare your daily completion. Please retry.');
+      }
     }
-  }
 
-  const result: DailyResult = {
-    date,
-    userId,
-    username,
-    start: state.puzzle.start,
-    target: state.puzzle.target,
-    words: [...state.words],
-    moves: state.words.length - 1,
-    score: state.score,
-    optimalMoves: state.puzzle.optimalMoves,
-    hintsUsed: 0,
-    completedAt: state.completedAt ?? Date.now(),
-  };
-  const stored = await redis.set(key, JSON.stringify(result), {
-    nx: true,
-    expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
-  });
-  if (stored !== 'OK') {
-    const duplicate = await redis.get(key);
-    if (!duplicate) throw new Error('Could not safely record your daily result.');
-    const previous: unknown = JSON.parse(duplicate);
-    if (!isDailyResult(previous)) throw new Error('Stored daily result is invalid.');
+    // The journal is written before any derived records. Every operation below
+    // is an absolute/idempotent write, so a retry can safely finish an interrupted save.
+    await redis.set(key, JSON.stringify(journal.result), {
+      nx: true,
+      expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
+    });
+    const storedResult = await redis.get(key);
+    let verifiedStoredResult: unknown = null;
+    try { verifiedStoredResult = storedResult ? JSON.parse(storedResult) : null; }
+    catch { /* The journal remains available for a safe retry. */ }
+    if (!isDailyResult(verifiedStoredResult) ||
+        verifiedStoredResult.userId !== userId || verifiedStoredResult.date !== date ||
+        JSON.stringify(verifiedStoredResult) !== JSON.stringify(journal.result)) {
+      throw new Error('Could not verify your saved daily result. Please retry.');
+    }
+
+    await redis.hSet('wrdlink:v2:profiles', { [userId]: JSON.stringify(journal.profile) });
+
+    const dailyPrefix = `wrdlink:v2:leaderboard:daily:${date}`;
+    await redis.zAdd(dailyPrefix + ':score', { member: userId, score: dailyRankScore(journal.result.score, journal.result.moves, journal.result.completedAt, 'score') });
+    await redis.zAdd(dailyPrefix + ':moves', { member: userId, score: dailyRankScore(journal.result.score, journal.result.moves, journal.result.completedAt, 'moves') });
+    await redis.hSet(dailyPrefix + ':entries', { [userId]: JSON.stringify(journal.result) });
+    await redis.expire(dailyPrefix + ':score', DAILY_TTL_SECONDS);
+    await redis.expire(dailyPrefix + ':moves', DAILY_TTL_SECONDS);
+    await redis.expire(dailyPrefix + ':entries', DAILY_TTL_SECONDS);
+
+    const weeklyPrefix = `wrdlink:v2:leaderboard:weekly:${isoWeekKey(date)}`;
+    await redis.hSet(weeklyPrefix + ':entries', { [userId]: JSON.stringify(journal.weekly) });
+    await redis.zAdd(weeklyPrefix + ':score', { member: userId, score: aggregateRankScore(journal.weekly.totalScore, journal.weekly.totalMoves, journal.weekly.completedCount, 'score') });
+    await redis.zAdd(weeklyPrefix + ':moves', { member: userId, score: aggregateRankScore(journal.weekly.totalScore, journal.weekly.totalMoves, journal.weekly.completedCount, 'moves') });
+    await redis.expire(weeklyPrefix + ':entries', DAILY_TTL_SECONDS);
+    await redis.expire(weeklyPrefix + ':score', DAILY_TTL_SECONDS);
+    await redis.expire(weeklyPrefix + ':moves', DAILY_TTL_SECONDS);
+
+    const allPrefix = 'wrdlink:v2:leaderboard:alltime';
+    await redis.hSet(allPrefix + ':entries', { [userId]: JSON.stringify(journal.allTime) });
+    await redis.zAdd(allPrefix + ':score', { member: userId, score: aggregateRankScore(journal.allTime.totalScore, journal.allTime.totalMoves, journal.allTime.completedCount, 'score') });
+    await redis.zAdd(allPrefix + ':moves', { member: userId, score: aggregateRankScore(journal.allTime.totalScore, journal.allTime.totalMoves, journal.allTime.completedCount, 'moves') });
+
+    journal.complete = true;
+    await redis.set(journalKey, JSON.stringify(journal), {
+      expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
+    });
     return {
-      result: previous,
-      profile: await readProfile(userId),
-      newBadges: [],
-      graceUsed: false,
-      graceEarned: false,
+      result: journal.result,
+      profile: journal.profile,
+      newBadges: journal.newBadges,
+      graceUsed: journal.graceUsed,
+      graceEarned: journal.graceEarned,
     };
-  }
-
-  const previousProfile = await readProfile(userId);
-  const streak = updateDailyStreak(previousProfile, date);
-  const profile: DailyProfile = {
-    totalCompleted: previousProfile.totalCompleted + 1,
-    totalScore: previousProfile.totalScore + result.score,
-    totalMoves: previousProfile.totalMoves + result.moves,
-    currentStreak: streak.currentStreak,
-    bestStreak: streak.bestStreak,
-    lastDailyDate: streak.lastDailyDate,
-    graceTokens: streak.graceTokens,
-    badges: previousProfile.badges,
-  };
-  profile.badges = earnedBadges(profile, result.moves, result.optimalMoves, result.hintsUsed, result.score);
-  const newBadges = profile.badges.filter((badge) => !previousProfile.badges.includes(badge));
-  await redis.hSet('wrdlink:v2:profiles', { [userId]: JSON.stringify(profile) });
-
-  const dailyPrefix = `wrdlink:v2:leaderboard:daily:${date}`;
-  await redis.zAdd(dailyPrefix + ':score', { member: userId, score: dailyRankScore(result.score, result.moves, result.completedAt, 'score') });
-  await redis.zAdd(dailyPrefix + ':moves', { member: userId, score: dailyRankScore(result.score, result.moves, result.completedAt, 'moves') });
-  await redis.hSet(dailyPrefix + ':entries', { [userId]: JSON.stringify(result) });
-  await redis.expire(dailyPrefix + ':score', DAILY_TTL_SECONDS);
-  await redis.expire(dailyPrefix + ':moves', DAILY_TTL_SECONDS);
-  await redis.expire(dailyPrefix + ':entries', DAILY_TTL_SECONDS);
-
-  const week = isoWeekKey(date);
-  const weeklyPrefix = `wrdlink:v2:leaderboard:weekly:${week}`;
-  const previousWeekRaw = await redis.hGet(weeklyPrefix + ':entries', userId);
-  const previousWeek: { username: string; totalScore: number; totalMoves: number; completedCount: number } = previousWeekRaw ? JSON.parse(previousWeekRaw) : { username, totalScore: 0, totalMoves: 0, completedCount: 0 };
-  const weekly = {
-    username,
-    totalScore: previousWeek.totalScore + result.score,
-    totalMoves: previousWeek.totalMoves + result.moves,
-    completedCount: previousWeek.completedCount + 1,
-  };
-  await redis.hSet(weeklyPrefix + ':entries', { [userId]: JSON.stringify(weekly) });
-  await redis.zAdd(weeklyPrefix + ':score', { member: userId, score: aggregateRankScore(weekly.totalScore, weekly.totalMoves, weekly.completedCount, 'score') });
-  await redis.zAdd(weeklyPrefix + ':moves', { member: userId, score: aggregateRankScore(weekly.totalScore, weekly.totalMoves, weekly.completedCount, 'moves') });
-  await redis.expire(weeklyPrefix + ':entries', DAILY_TTL_SECONDS);
-  await redis.expire(weeklyPrefix + ':score', DAILY_TTL_SECONDS);
-  await redis.expire(weeklyPrefix + ':moves', DAILY_TTL_SECONDS);
-
-  const allPrefix = 'wrdlink:v2:leaderboard:alltime';
-  const previousAllRaw = await redis.hGet(allPrefix + ':entries', userId);
-  const previousAll: { username: string; totalScore: number; totalMoves: number; completedCount: number } = previousAllRaw ? JSON.parse(previousAllRaw) : { username, totalScore: 0, totalMoves: 0, completedCount: 0 };
-  const allTime = {
-    username,
-    totalScore: previousAll.totalScore + result.score,
-    totalMoves: previousAll.totalMoves + result.moves,
-    completedCount: previousAll.completedCount + 1,
-  };
-  await redis.hSet(allPrefix + ':entries', { [userId]: JSON.stringify(allTime) });
-  await redis.zAdd(allPrefix + ':score', { member: userId, score: aggregateRankScore(allTime.totalScore, allTime.totalMoves, allTime.completedCount, 'score') });
-  await redis.zAdd(allPrefix + ':moves', { member: userId, score: aggregateRankScore(allTime.totalScore, allTime.totalMoves, allTime.completedCount, 'moves') });
-
-  return { result, profile, newBadges, graceUsed: streak.graceUsed, graceEarned: streak.graceEarned };
+  });
 }
 
 function parseSession(raw: string | null | undefined, puzzle: Puzzle): DailyState | null {
@@ -377,7 +490,7 @@ dailyApi.post('/init', async (c) => {
     return next;
   });
   const currentUserId = context.userId;
-  if (currentUserId && state.completed && !await redis.get(resultKey(date, currentUserId))) {
+  if (currentUserId && state.completed) {
     const username = await reddit.getCurrentUsername() ?? 'WRDLINK Player';
     await withLock(key, async () => {
       const latest = parseSession(await redis.get(key), puzzle);
@@ -423,9 +536,11 @@ dailyApi.post('/validate', async (c) => {
   const body: unknown = await c.req.json().catch(() => null);
   if (!isRecord(body) || typeof body.sessionId !== 'string' || !SESSION_PATTERN.test(body.sessionId) ||
       typeof body.date !== 'string' || typeof body.puzzleId !== 'string' ||
-      typeof body.word !== 'string' || body.word.length > 12) {
+      typeof body.word !== 'string' || body.word.length > 12 ||
+      typeof body.requestId !== 'string' || !/^[a-f0-9-]{20,80}$/i.test(body.requestId)) {
     return c.json({ error: 'Invalid daily move.' }, 400);
   }
+  const requestId = body.requestId as string;
   const date = utcDateKey();
   if (body.date !== date || parseDateKey(body.date) === null) {
     return c.json({ error: 'This daily challenge has expired. Load today’s puzzle.' }, 409);
@@ -442,14 +557,45 @@ dailyApi.post('/validate', async (c) => {
 
   const response = await withLock(key, async () => {
     const state = parseSession(await redis.get(key), puzzle);
-    if (!state || state.completed) {
-      return { valid: false, complete: false, message: 'This daily puzzle is already complete or unavailable.', words: state?.words ?? [puzzle.start], score: state?.score ?? 25, result: null, profile: null, newBadges: [] as string[] };
+    if (!state) {
+      return { valid: false, complete: false, message: 'This daily puzzle is unavailable. Reload today’s challenge.', words: [puzzle.start], score: 25, result: null, profile: null, newBadges: [] as string[] };
     }
-    const next = { ...state, words: [...state.words], score: calculateMoveScore(state.score) };
+    if (state.lastRequestId === requestId && state.lastResponse) {
+      return state.lastResponse;
+    }
+    if (state.completed) {
+      const completion = context.userId
+        ? await saveVerifiedCompletion(date, context.userId, username ?? 'WRDLINK Player', state)
+        : null;
+      const response = {
+        valid: Boolean(completion),
+        complete: true,
+        message: 'Today’s challenge is already complete.',
+        words: state.words,
+        score: state.score,
+        result: completion?.result ?? {
+          date, start: puzzle.start, target: puzzle.target, words: state.words,
+          moves: state.words.length - 1, score: state.score, optimalMoves: puzzle.optimalMoves,
+          hintsUsed: 0, completedAt: state.completedAt ?? Date.now(),
+        },
+        profile: completion?.profile ?? null,
+        newBadges: completion?.newBadges ?? [],
+        graceUsed: completion?.graceUsed ?? false,
+        graceEarned: completion?.graceEarned ?? false,
+        ranked: Boolean(completion),
+      };
+      await redis.set(key, JSON.stringify({ ...state, lastRequestId: requestId, lastResponse: response }), {
+        expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
+      });
+      return response;
+    }
+    const next: DailyState = { ...state, words: [...state.words], score: calculateMoveScore(state.score), lastRequestId: requestId, lastResponse: null };
     const validation = validateSequence(puzzle, DICTIONARY, [...next.words, word]);
     if (!validation.valid) {
+      const response = { valid: false, complete: false, message: validation.message, words: next.words, score: next.score, result: null, profile: null, newBadges: [] as string[] };
+      next.lastResponse = response;
       await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
-      return { valid: false, complete: false, message: validation.message, words: next.words, score: next.score, result: null, profile: null, newBadges: [] as string[] };
+      return response;
     }
     next.words.push(word);
     next.completed = validation.complete;
@@ -457,11 +603,15 @@ dailyApi.post('/validate', async (c) => {
       next.score = calculateCompletionScore(next.score);
       next.completedAt = Date.now();
     }
-    await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
+    if (validation.complete && context.userId) {
+      // Persist the completed game before profile and leaderboard work. A retry
+      // can resume the journal if any later Redis write is interrupted.
+      await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
+    }
     const completion = validation.complete && context.userId
       ? await saveVerifiedCompletion(date, context.userId, username ?? 'WRDLINK Player', next)
       : null;
-    return {
+    const response = {
       valid: true,
       complete: validation.complete,
       message: validation.complete ? validation.message : 'Valid move.',
@@ -478,6 +628,9 @@ dailyApi.post('/validate', async (c) => {
       graceEarned: completion?.graceEarned ?? false,
       ranked: Boolean(context.userId),
     };
+    next.lastResponse = response;
+    await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
+    return response;
   });
   return c.json(response);
 });
