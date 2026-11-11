@@ -1,235 +1,384 @@
-.daily-screen{min-height:100vh;background:var(--canvas);color:var(--ink);padding:18px 16px 48px}
-.daily-shell{width:min(760px,100%);margin:0 auto}
-.daily-header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:4px 0 18px;border-bottom:2px solid var(--line-strong)}
-.daily-back{border:0;background:transparent;color:var(--ink);font-weight:850;cursor:pointer;padding:8px 0}
-.daily-kicker,.daily-date,.daily-eyebrow{font-size:10px;font-weight:950;letter-spacing:.14em;color:var(--muted)}
-.daily-intro{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:24px 0}
-.daily-intro h1{margin:4px 0;font-size:clamp(28px,6vw,42px);letter-spacing:-.06em;font-weight:950}
-.daily-intro p{margin:0;color:var(--muted);font-size:13px}
-.daily-streak{display:grid;place-items:center;min-width:76px;height:76px;border:2px solid var(--line-strong);border-radius:18px;background:var(--paper);box-shadow:4px 4px 0 var(--line-strong)}
-.daily-streak strong{font-size:28px;line-height:1;color:var(--success)}
-.daily-streak span{font-size:8px;font-weight:950;letter-spacing:.1em;color:var(--muted)}
-.daily-puzzle-card,.daily-leaderboard,.daily-achievements{padding:clamp(16px,3vw,24px);border:2px solid var(--line-strong);border-radius:20px;background:var(--paper);box-shadow:5px 6px 0 var(--line-strong)}
-.daily-endpoints{display:grid;grid-template-columns:1fr 34px 1fr;align-items:center;gap:10px}
-.daily-endpoints>div{display:grid;gap:7px}
-.daily-endpoints>div:last-child{text-align:right}
-.daily-endpoints span,.daily-stats span,.daily-profile span{font-size:9px;font-weight:950;letter-spacing:.13em;color:var(--muted)}
-.daily-endpoints strong{font-size:clamp(25px,6vw,40px);letter-spacing:.12em;font-weight:950;color:var(--tile)}
-.daily-endpoints>div:last-child strong{color:var(--accent)}
-.daily-endpoints i{text-align:center;color:var(--muted);font-style:normal;font-size:22px}
-.daily-stats{display:grid;grid-template-columns:repeat(3,1fr);margin:22px 0;padding:14px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
-.daily-stats div,.daily-profile div{display:grid;gap:4px;text-align:center}
-.daily-stats div+div,.daily-profile div+div{border-left:1px solid var(--line)}
-.daily-stats strong{font-size:22px;font-weight:950;font-variant-numeric:tabular-nums}
-.daily-chain{display:grid;gap:7px;max-height:220px;overflow:auto;list-style:none;margin:0 0 18px;padding:0}
-.daily-chain li{display:grid;grid-template-columns:34px 1fr;align-items:center;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--paper-strong)}
-.daily-chain li span{font-size:10px;color:var(--muted);font-weight:900}
-.daily-chain li b{font-size:17px;letter-spacing:.18em}
-.daily-chain li.is-target{border-color:var(--success);background:var(--success-bg)}
-.daily-chain li.is-target b{color:var(--success)}
-.daily-entry{display:grid;grid-template-columns:1fr auto;gap:9px}
-.daily-entry input{min-width:0;height:54px;padding:0 14px;border:2px solid var(--line-strong);border-radius:12px;background:var(--paper-strong);color:var(--ink);font-size:20px;font-weight:950;letter-spacing:.2em;text-transform:uppercase}
-.daily-entry button,.daily-share-actions button{border:2px solid var(--line-strong);border-radius:12px;padding:0 18px;background:var(--tile);color:#fff;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 var(--line-strong)}
-.daily-entry button:disabled,.daily-share-actions button:disabled{opacity:.5;cursor:wait}
-.daily-complete{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--success);border-radius:12px;background:var(--success-bg)}
-.daily-complete>span{display:grid;width:34px;height:34px;place-items:center;border-radius:50%;background:var(--success);color:#fff;font-weight:950}
-.daily-complete div{display:grid;gap:3px}.daily-complete small{color:var(--muted)}
-.daily-error,.daily-success{font-size:12px;font-weight:750;margin:12px 0 0}.daily-error{color:var(--error)}.daily-success{color:var(--success)}
-.daily-share{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-.daily-share-preview{display:grid;gap:8px;padding:16px;border:1px solid var(--line);border-radius:12px;background:var(--paper-strong)}
-.daily-share-preview strong{font-size:10px;letter-spacing:.12em;color:var(--muted)}
-.daily-share-preview>span{font-size:21px;font-weight:950;letter-spacing:.08em}
-.daily-share-preview small{font-size:11px;color:var(--muted)}
-.daily-share-preview code{white-space:normal;overflow-wrap:anywhere;font-family:inherit;font-size:12px;color:var(--ink-soft)}
-.daily-share-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
-.daily-share-actions button{min-height:42px}.daily-share-actions .daily-secondary{background:transparent;color:var(--ink);box-shadow:none}
-.daily-profile{display:grid;grid-template-columns:repeat(4,1fr);margin:18px 0;padding:16px 8px;border:1px solid var(--line);border-radius:14px;background:var(--paper)}
-.daily-profile strong{font-size:21px;font-weight:950;font-variant-numeric:tabular-nums}
-.daily-section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px}
-.daily-section-heading h2{margin:3px 0 0;font-size:22px;font-weight:950;letter-spacing:-.04em}
-.daily-rank{font-size:10px;font-weight:950;color:var(--success)}
-.daily-controls{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;margin:16px 0 8px}
-.daily-tabs{display:flex;gap:4px;padding:4px;border:1px solid var(--line);border-radius:11px;background:var(--paper-strong)}
-.daily-tabs button{border:0;border-radius:8px;padding:8px 11px;background:transparent;color:var(--muted);font-size:11px;font-weight:850;cursor:pointer}
-.daily-tabs button.active{background:var(--tile);color:#fff}
-.daily-muted{color:var(--muted);font-size:11px;line-height:1.5}
-.daily-board{display:grid;gap:6px;list-style:none;margin:12px 0;padding:0}
-.daily-board li{display:grid;grid-template-columns:32px 1fr auto;align-items:center;gap:10px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--paper-strong)}
-.daily-board-rank{font-size:11px;font-weight:950;color:var(--muted)}
-.daily-board li strong{font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.daily-board li>span:last-child{font-size:11px;font-weight:900;font-variant-numeric:tabular-nums}
-.daily-empty{padding:18px 0;color:var(--muted);font-size:12px}
-.daily-refresh{border:0;background:transparent;padding:8px 0;color:var(--tile);font-size:11px;font-weight:900;cursor:pointer}
-.daily-achievements{margin-top:18px}
-.daily-badges{display:flex;flex-wrap:wrap;gap:7px;margin:14px 0}
-.daily-badges span{padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--paper-strong);font-size:10px;font-weight:850}
-.daily-screen button:focus-visible,.daily-screen input:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
-@media(max-width:480px){.daily-date{font-size:9px}.daily-intro{padding:18px 0}.daily-profile{grid-template-columns:repeat(2,1fr);gap:14px}.daily-profile div:nth-child(3){border-left:0}.daily-controls{display:grid}.daily-tabs{width:100%;justify-content:space-between}.daily-tabs button{flex:1}.daily-share-actions{display:grid}.daily-share-actions button{min-height:44px}}
+/* Daily Challenge extensions. Core gameplay deliberately uses Campaign's
+   game-page, game-header, game-workspace, route, chain, entry and keyboard rules. */
 
-.daily-share-preview a{width:fit-content;color:var(--tile);font-size:11px;font-weight:950;text-decoration:none}.daily-share-preview a:hover{text-decoration:underline}
-
-/* Daily challenge mobile viewport and campaign keyboard parity. */
-.daily-screen{position:relative;width:100%;min-height:100dvh;height:100dvh;overflow-x:hidden;overflow-y:auto;overscroll-behavior-y:contain;-webkit-overflow-scrolling:touch;scrollbar-gutter:stable;padding-bottom:28px}
-.daily-shell{padding-bottom:18px}
-.daily-state{min-height:70dvh;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:14px}
-.daily-loading-track{width:min(280px,100%);height:5px;overflow:hidden;border-radius:99px;background:var(--line)}
-.daily-loading-track span{display:block;width:38%;height:100%;border-radius:inherit;background:var(--tile);animation:daily-loading 1.2s ease-in-out infinite alternate}
-@keyframes daily-loading{from{transform:translateX(-15%)}to{transform:translateX(190%)}}
-.daily-retry{min-height:44px;padding:0 18px;border:2px solid var(--line-strong);border-radius:11px;background:var(--tile);color:#fff;font-weight:900;box-shadow:3px 3px 0 var(--line-strong)}
-.daily-loading-message{padding:18px 0;color:var(--muted);font-size:12px}
-.daily-board-error{padding:10px 0}
-.daily-virtual-keyboard{display:none}
-@media(max-width:820px){.daily-screen{padding:14px 14px 24px}.daily-header{gap:8px}.daily-kicker{text-align:center;white-space:nowrap}.daily-date{white-space:nowrap}.daily-intro{gap:12px}.daily-puzzle-card,.daily-leaderboard,.daily-achievements{border-radius:17px;box-shadow:4px 5px 0 var(--line-strong)}}
-@media(any-pointer:coarse){
-.daily-virtual-keyboard{position:relative;width:min(700px,calc(100vw - 20px));margin:10px auto 0;padding:8px;display:grid;gap:5px;border:2px solid var(--line-strong);border-radius:14px;background:var(--paper-strong);box-shadow:3px 4px 0 var(--line-strong)}
-.daily-keyboard-label{margin:0 0 2px;color:var(--muted);font-size:8px;line-height:1.2;font-weight:950;letter-spacing:.12em;text-align:center}
-.daily-virtual-keyboard-row{display:flex;justify-content:center;gap:clamp(3px,.8vw,7px)}
-.daily-virtual-key{display:grid;min-width:0;min-height:38px;flex:1 1 0;place-items:center;padding:0 2px;border:1.5px solid var(--line-strong);border-radius:7px;background:var(--violet);color:#fff;font-size:clamp(12px,3.2vw,15px);font-weight:950;box-shadow:1px 2px 0 var(--line-strong);cursor:pointer;touch-action:manipulation;user-select:none;-webkit-tap-highlight-color:transparent}
-.daily-virtual-key:active:not(:disabled){transform:translate(1px,2px);box-shadow:1px 1px 0 var(--line-strong)}
-.daily-virtual-key:disabled{opacity:.38;cursor:not-allowed}
-.daily-virtual-key.daily-key-utility{flex:1.35 1 0;background:var(--tangerine);color:#111}
-.daily-entry input{caret-color:transparent}
-}
-@media(max-width:620px) and (any-pointer:coarse){
-.daily-screen{padding-bottom:calc(var(--daily-keyboard-height,clamp(146px,21dvh,176px)) + env(safe-area-inset-bottom,0px) + 18px)}
-.daily-virtual-keyboard{position:fixed;z-index:30;inset-inline:0;bottom:0;width:auto;max-width:none;height:var(--daily-keyboard-height,clamp(146px,21dvh,176px));margin:0;padding:8px 8px max(8px,env(safe-area-inset-bottom,0px));display:grid;grid-template-rows:10px repeat(3,minmax(0,1fr));gap:5px;transform:none;border:2px solid var(--line-strong);border-bottom:0;border-left:0;border-right:0;border-radius:16px 16px 0 0;background:var(--paper);box-shadow:0 -4px 0 var(--line-strong);box-sizing:border-box}
-.daily-keyboard-label{align-self:center;margin:0;font-size:8px;line-height:1}
-.daily-virtual-keyboard-row{min-height:0;height:100%;gap:clamp(3px,.8vw,7px)}
-.daily-virtual-key{min-height:0;height:100%;padding:0 1px;border-width:1.5px;border-radius:7px;font-size:clamp(12px,3.2vw,15px);box-shadow:1px 2px 0 var(--line-strong)}
-.daily-entry button{min-height:48px}
-.daily-chain{max-height:min(28dvh,220px)}
-}
-@media(max-width:620px) and (max-height:700px) and (any-pointer:coarse){.daily-screen{--daily-keyboard-height:140px}.daily-virtual-keyboard{padding:5px 7px max(5px,env(safe-area-inset-bottom,0px));gap:3px}.daily-virtual-key{border-radius:6px}}
-@media(max-width:620px) and (max-height:560px) and (any-pointer:coarse){.daily-screen{--daily-keyboard-height:124px}.daily-virtual-keyboard{grid-template-rows:8px repeat(3,minmax(0,1fr))}.daily-keyboard-label{font-size:6px}.daily-virtual-key{font-size:11px}}
-@media(prefers-reduced-motion:reduce){.daily-loading-track span{animation:none}}
-
-
-.daily-achievement-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0}
-.daily-achievement-item{display:grid;grid-template-columns:30px minmax(0,1fr);align-items:start;gap:9px;padding:11px;border:1px solid var(--line);border-radius:11px;background:var(--paper-strong);opacity:.72}
-.daily-achievement-item.is-earned{border-color:var(--success);background:var(--success-bg);opacity:1}
-.daily-achievement-icon{display:grid;width:28px;height:28px;place-items:center;border-radius:8px;background:var(--paper);color:var(--muted);font-size:16px;font-weight:950}
-.daily-achievement-item.is-earned .daily-achievement-icon{background:var(--success);color:#fff}
-.daily-achievement-item>div{display:grid;gap:4px;min-width:0}
-.daily-achievement-item strong{font-size:11px;font-weight:950}
-.daily-achievement-item small{color:var(--muted);font-size:9px;line-height:1.35}
-.daily-achievement-progress{color:var(--muted);font-size:9px;font-weight:900;font-variant-numeric:tabular-nums}
-@media(max-width:480px){.daily-achievement-grid{grid-template-columns:1fr}}
-
-@media(max-width:620px) and (any-pointer:coarse){.daily-screen.is-complete{padding-bottom:28px}}
-
-
-/* Daily Challenge uses the Campaign game shell and its shared keyboard. */
 .daily-game-page {
+  display: flex;
   min-height: 100dvh;
   height: auto;
+  flex-direction: column;
   overflow-x: hidden;
   overflow-y: auto;
-  padding: 0 0 30px;
-  background: var(--canvas);
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 24px;
 }
-.daily-game-page::before { position: fixed; }
-.daily-game-header { width: 100%; }
-.daily-header-right { gap: 8px; }
-.daily-date { white-space: nowrap; }
-.daily-shell { width: min(760px, 100%); margin: 0 auto; padding: 0 16px 28px; }
-.daily-context { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 20px 0 4px; }
-.daily-context h1 { margin: 3px 0; color: var(--ink); font-size: clamp(23px, 5vw, 32px); font-weight: 950; letter-spacing: -.055em; }
-.daily-context p:last-child { margin: 0; color: var(--muted); font-size: 11px; }
-.daily-context .daily-eyebrow { margin: 0; }
-.daily-streak { flex: 0 0 76px; }
-.daily-workspace {
+
+.daily-game-content {
+  display: flex;
+  width: 100%;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.daily-game-page .game-workspace {
+  width: 100%;
+  min-height: 520px;
+  height: min(680px, calc(100dvh - 76px));
+  flex: 0 0 auto;
+}
+
+.daily-date {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  white-space: nowrap;
+}
+
+.daily-streak-indicator {
+  cursor: default;
+  min-width: 58px;
+}
+
+.daily-streak-indicator > span:first-child {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.daily-extras {
   display: grid;
-  width: min(700px, 100%);
-  min-height: 0;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto auto auto;
+  width: min(760px, calc(100% - 32px));
+  gap: 14px;
+  margin: 0 auto 24px;
+  padding-bottom: 20px;
+}
+
+.daily-profile {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+  padding: 16px 8px;
+}
+
+.daily-profile div {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.daily-profile div + div {
+  border-left: 1px solid var(--line);
+}
+
+.daily-profile strong {
+  color: var(--ink);
+  font-size: 21px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-profile span {
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .1em;
+}
+
+.daily-leaderboard,
+.daily-achievements {
+  margin: 0;
+  padding: clamp(14px, 3vw, 22px);
+}
+
+.daily-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.daily-section-heading h2 {
+  margin: 3px 0 0;
+  font-size: 22px;
+  font-weight: 950;
+  letter-spacing: -.04em;
+}
+
+.daily-eyebrow,
+.daily-muted {
+  color: var(--muted);
+}
+
+.daily-eyebrow {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .14em;
+}
+
+.daily-rank {
+  color: var(--success);
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.daily-controls {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
   gap: 10px;
-  margin: 0 auto;
-  padding: 18px 0 20px;
-  overflow: visible;
+  margin: 16px 0 8px;
 }
-.daily-workspace .route-panel { padding-bottom: 10px; }
-.daily-workspace .chain-panel { min-height: 180px; max-height: 34vh; overflow: hidden; }
-.daily-workspace .chain-list { min-height: 0; overflow-y: auto; scrollbar-width: thin; }
-.daily-entry-panel { margin: 0; }
-.daily-entry-panel .daily-complete { margin: 4px 0; }
-.daily-entry-panel .daily-share { margin-top: 12px; }
-.daily-profile { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); margin: 0 0 16px; padding: 16px 8px; }
-.daily-profile strong { font-size: 21px; font-weight: 950; font-variant-numeric: tabular-nums; }
-.daily-profile span { font-size: 9px; font-weight: 950; letter-spacing: .1em; color: var(--muted); }
-.daily-leaderboard,.daily-achievements { margin: 0 0 16px; }
-.daily-section-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
-.daily-section-heading h2 { margin: 3px 0 0; font-size: 22px; font-weight: 950; letter-spacing: -.04em; }
-.daily-controls { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; margin: 16px 0 8px; }
-.daily-tabs { display: flex; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper-strong); }
-.daily-tabs button { border: 0; border-radius: 8px; padding: 8px 11px; background: transparent; color: var(--muted); font-size: 11px; font-weight: 850; cursor: pointer; }
-.daily-tabs button.active { background: var(--tile); color: #fff; }
-.daily-board { display: grid; gap: 6px; list-style: none; margin: 12px 0; padding: 0; }
-.daily-board li { display: grid; grid-template-columns: 32px 1fr auto; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper-strong); }
-.daily-board-rank { font-size: 11px; font-weight: 950; color: var(--muted); }
-.daily-board li strong { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
-.daily-board li>span:last-child { font-size: 11px; font-weight: 900; font-variant-numeric: tabular-nums; }
-.daily-achievement-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin: 14px 0; }
-.daily-achievement-item { display: grid; grid-template-columns: 30px minmax(0,1fr); align-items: start; gap: 9px; padding: 11px; border: 1px solid var(--line); border-radius: 11px; background: var(--paper-strong); opacity: .72; }
-.daily-achievement-item.is-earned { border-color: var(--success); background: var(--success-bg); opacity: 1; }
-.daily-achievement-icon { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; background: var(--paper); color: var(--muted); font-size: 16px; font-weight: 950; }
-.daily-achievement-item.is-earned .daily-achievement-icon { background: var(--success); color: #fff; }
-.daily-achievement-item>div { display: grid; gap: 4px; min-width: 0; }
-.daily-achievement-item strong { font-size: 11px; font-weight: 950; }
-.daily-achievement-item small,.daily-achievement-progress { color: var(--muted); font-size: 9px; line-height: 1.35; }
-.daily-achievement-progress { font-weight: 900; font-variant-numeric: tabular-nums; }
-.daily-game-page .virtual-keyboard { margin-top: 7px; }
+
+.daily-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper-strong);
+}
+
+.daily-tabs button {
+  border: 0;
+  border-radius: 8px;
+  padding: 8px 11px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.daily-tabs button.active {
+  background: var(--tile);
+  color: #fff;
+}
+
+.daily-muted {
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.daily-board {
+  display: grid;
+  gap: 6px;
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+}
+
+.daily-board li {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--paper-strong);
+}
+
+.daily-board-rank {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.daily-board li strong {
+  overflow: hidden;
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.daily-board li > span:last-child {
+  font-size: 11px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-empty {
+  padding: 18px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.daily-refresh {
+  border: 0;
+  padding: 8px 0;
+  background: transparent;
+  color: var(--tile);
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.daily-loading-message {
+  padding: 18px 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.daily-board-error {
+  padding: 10px 0;
+}
+
+.daily-error {
+  color: var(--error);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.daily-achievement-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+  margin: 14px 0;
+}
+
+.daily-achievement-item {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  align-items: start;
+  gap: 9px;
+  padding: 11px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper-strong);
+  opacity: .72;
+}
+
+.daily-achievement-item.is-earned {
+  border-color: var(--success);
+  background: var(--success-bg);
+  opacity: 1;
+}
+
+.daily-achievement-icon {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: 8px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.daily-achievement-item.is-earned .daily-achievement-icon {
+  background: var(--success);
+  color: #fff;
+}
+
+.daily-achievement-item > div {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.daily-achievement-item strong {
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.daily-achievement-item small,
+.daily-achievement-progress {
+  color: var(--muted);
+  font-size: 9px;
+  line-height: 1.35;
+}
+
+.daily-achievement-progress {
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-game-page .daily-extras .card-panel {
+  border-color: var(--line-strong);
+  background: var(--paper);
+  box-shadow: 5px 6px 0 var(--line-strong);
+}
+
+.daily-game-page .daily-streak-indicator {
+  box-shadow: 2px 3px 0 var(--line-strong);
+}
+
 @media (max-width: 620px) {
-  .daily-game-header { grid-template-columns: minmax(0,1fr) auto; min-height: 68px; padding: 10px 9px; gap: 6px; }
-  .daily-game-header .wordmark { gap: 6px; font-size: 13px; }
-  .daily-game-header .brand-mark { width: 27px; height: 27px; font-size: 14px; }
-  .daily-header-right { gap: 5px; }
-  .daily-date { font-size: 8px; letter-spacing: .04em; }
-  .daily-game-header .header-count { gap: 4px; }
-  .daily-game-header .score-pill,.daily-game-header .moves-pill { gap: 3px; padding: 0 5px; }
-  .daily-game-header .metric-label { font-size: 7px; }
-  .daily-game-header .score-pill strong,.daily-game-header .moves-pill strong { font-size: 11px; }
-  .daily-game-header .daily-launch-button { min-height: 34px; padding: 0 7px; font-size: 7px; }
-  .daily-shell { padding-inline: 14px; }
-  .daily-context { padding-top: 15px; }
-  .daily-context h1 { font-size: 24px; }
-  .daily-workspace { width: 100%; padding: 12px 0 20px; gap: 8px; }
-  .daily-workspace .route-panel { grid-template-columns: minmax(0,1fr) 25px minmax(0,1fr); gap: 4px; padding-bottom: 8px; }
-  .daily-workspace .route-label { font-size: 7px; }
-  .daily-workspace .word-display span { width: clamp(25px,7.6vw,34px); height: clamp(33px,9vw,39px); font-size: clamp(17px,5vw,21px); }
-  .daily-workspace .chain-panel { min-height: 150px; max-height: 34vh; padding: 10px; }
-  .daily-workspace .chain-list { margin-top: 7px; gap: 4px; }
-  .daily-workspace .chain-list li { min-height: 30px; flex: 0 0 30px; grid-template-columns: 25px 1fr; padding: 3px 7px; }
-  .daily-workspace .chain-list li b { font-size: 13px; }
-  .daily-entry-panel { padding: 9px; }
-  .daily-entry-panel .entry-heading { display: grid; gap: 2px; margin: 0 0 6px; }
-  .daily-entry-panel .entry-heading h2 { font-size: 17px; }
-  .daily-entry-panel .entry-heading p { display: none; }
-  .daily-entry-panel form { grid-template-columns: minmax(0,1fr) auto; gap: 6px; }
-  .daily-entry-panel input { height: 43px; padding: 0 10px; border-width: 2px; border-radius: 10px; font-size: 17px; }
-  .daily-entry-panel .ink-button { min-height: 43px; padding: 0 12px; border-width: 2px; border-radius: 10px; font-size: 9px; }
-  .daily-profile { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 14px; }
-  .daily-profile div:nth-child(3) { border-left: 0; }
-  .daily-controls { display: grid; }
-  .daily-tabs { width: 100%; justify-content: space-between; }
-  .daily-tabs button { flex: 1; padding-inline: 6px; }
-  .daily-achievement-grid { grid-template-columns: 1fr; }
-  .daily-game-page:not(.is-complete) { padding-bottom: calc(var(--keyboard-dock-height,clamp(146px,21dvh,176px)) + env(safe-area-inset-bottom,0px) + 24px); }
-  .daily-game-page .virtual-keyboard { position: fixed; z-index: 30; inset-inline: 0; bottom: 0; left: 0; right: 0; width: auto; max-width: none; height: var(--keyboard-dock-height,clamp(146px,21dvh,176px)); margin: 0; padding: 8px 8px max(8px,env(safe-area-inset-bottom,0px)); display: grid; grid-template-rows: 10px repeat(3,minmax(0,1fr)); gap: 5px; transform: none; border: 2px solid var(--line-strong); border-bottom: 0; border-left: 0; border-right: 0; border-radius: 16px 16px 0 0; background: var(--paper); box-shadow: 0 -4px 0 var(--line-strong); box-sizing: border-box; }
-  .daily-game-page .virtual-keyboard-label { align-self: center; margin: 0; font-size: 8px; line-height: 1; }
-  .daily-game-page .virtual-keyboard-row { min-height: 0; height: 100%; gap: clamp(3px,.8vw,7px); }
-  .daily-game-page .virtual-key { min-height: 0; height: 100%; padding: 0 1px; border-width: 2px; border-radius: 8px; font-size: clamp(12px,3.5vw,16px); }
-  .daily-game-page .daily-entry-panel input { caret-color: transparent; }
+  .daily-game-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow-y: auto;
+  }
+
+  .daily-game-page .game-header {
+    flex: 0 0 54px;
+    min-height: 54px;
+    height: 54px;
+    padding: 6px 9px;
+    gap: 5px;
+  }
+
+  .daily-game-page .daily-date {
+    display: none;
+  }
+
+  .daily-game-page .game-workspace {
+    height: calc(100dvh - 54px);
+    min-height: 440px;
+    flex: 0 0 auto;
+  }
+
+  .daily-extras {
+    width: calc(100% - 22px);
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .daily-profile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .daily-profile div:nth-child(3) {
+    border-left: 0;
+  }
+
+  .daily-controls {
+    display: grid;
+  }
+
+  .daily-tabs {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .daily-tabs button {
+    flex: 1;
+    padding-inline: 6px;
+  }
+
+  .daily-achievement-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .daily-game-page:not(.is-complete) {
+    padding-bottom: calc(var(--keyboard-dock-height, clamp(146px, 21dvh, 176px)) + env(safe-area-inset-bottom, 0px) + 24px);
+  }
 }
-@media (max-width: 620px) and (max-height: 700px) {
-  .daily-game-page { --keyboard-dock-height: 142px; }
+
+@media (max-width: 420px) {
+  .daily-profile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
-@media (max-width: 620px) and (max-height: 580px) {
-  .daily-game-page { --keyboard-dock-height: 126px; }
-}
-@media (max-width: 480px) {
-  .daily-profile { grid-template-columns: repeat(2,minmax(0,1fr)); }
-}
+
 @media (prefers-reduced-motion: reduce) {
-  .daily-game-page *,.daily-game-page *::before,.daily-game-page *::after { scroll-behavior: auto; }
+  .daily-game-page * ,
+  .daily-game-page *::before,
+  .daily-game-page *::after {
+    scroll-behavior: auto;
+  }
 }
