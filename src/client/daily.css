@@ -80,7 +80,7 @@
 .daily-board-error{padding:10px 0}
 .daily-virtual-keyboard{display:none}
 @media(max-width:820px){.daily-screen{padding:14px 14px 24px}.daily-header{gap:8px}.daily-kicker{text-align:center;white-space:nowrap}.daily-date{white-space:nowrap}.daily-intro{gap:12px}.daily-puzzle-card,.daily-leaderboard,.daily-achievements{border-radius:17px;box-shadow:4px 5px 0 var(--line-strong)}}
-@media(max-width:620px) and (any-pointer:coarse){
+@media(any-pointer:coarse){
 .daily-screen{padding-bottom:calc(var(--daily-keyboard-height,158px) + env(safe-area-inset-bottom,0px) + 18px)}
 .daily-virtual-keyboard{position:fixed;z-index:30;inset-inline:0;bottom:0;width:100%;height:var(--daily-keyboard-height,158px);display:grid;grid-template-rows:10px repeat(3,minmax(0,1fr));gap:4px;padding:7px 8px max(7px,env(safe-area-inset-bottom,0px));border:2px solid var(--line-strong);border-bottom:0;border-left:0;border-right:0;border-radius:15px 15px 0 0;background:var(--paper);box-shadow:0 -4px 0 var(--line-strong);box-sizing:border-box}
 .daily-keyboard-label{align-self:center;margin:0;color:var(--muted);font-size:7px;line-height:1;font-weight:950;letter-spacing:.12em;text-align:center}
