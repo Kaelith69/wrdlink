@@ -297,7 +297,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'This week' : 'All time';
 
   if (loading) {
-    return <main className={`daily-screen ${completed ? 'is-complete' : ''}`}><div className="daily-shell daily-state"><button className="daily-back" type="button" onClick={onClose}>← Campaign</button><p className="daily-muted">Preparing today’s shared puzzle…</p><div className="daily-loading-track"><span /></div></div></main>;
+    return <main className="daily-screen"><div className="daily-shell daily-state"><button className="daily-back" type="button" onClick={onClose}>← Campaign</button><p className="daily-muted">Preparing today’s shared puzzle…</p><div className="daily-loading-track"><span /></div></div></main>;
   }
 
   if (!puzzle) {
@@ -305,7 +305,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   }
 
   return (
-    <main className="daily-screen">
+    <main className={`daily-screen ${completed ? 'is-complete' : ''}`}>
       <div className="daily-shell">
         <header className="daily-header">
           <button className="daily-back" type="button" onClick={onClose}>← Campaign</button>
