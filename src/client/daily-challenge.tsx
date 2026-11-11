@@ -265,7 +265,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
 
   useEffect(() => {
-    const media = window.matchMedia('(pointer: coarse), (any-pointer: coarse)');
+    const media = window.matchMedia('(max-width: 620px), (pointer: coarse), (any-pointer: coarse)');
     const update = () => setUseVirtualKeyboard(media.matches);
     update();
     media.addEventListener('change', update);
@@ -354,146 +354,123 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   if (metric === 'moves') moveLabel = period === 'daily' ? 'Fewest moves' : 'Fewest average moves';
   const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'This week' : 'All time';
 
+
   if (loading) {
-    return <main className="daily-screen"><div className="daily-shell daily-state"><button className="daily-back" type="button" onClick={onClose}>← Campaign</button><p className="daily-muted">Preparing today’s shared puzzle…</p><div className="daily-loading-track"><span /></div></div></main>;
+    return <main className="game-page daily-screen daily-game-page state-page"><div className="state-mark">WRDLINK</div><section className="loading-progress"><div className="loading-heading"><span className="loading-kicker">WRDLINK DAILY</span><h1>Preparing today’s puzzle</h1><p>Connecting the shared word ladder.</p></div><div className="loading-track"><span className="loading-fill" /></div></section></main>;
   }
 
   if (!puzzle) {
-    return <main className="daily-screen"><div className="daily-shell daily-state"><button className="daily-back" type="button" onClick={onClose}>← Campaign</button><p className="daily-error" role="alert">{error || 'Daily puzzle unavailable.'}</p><button className="daily-retry" type="button" onClick={() => void loadPuzzle()}>Retry daily challenge</button></div></main>;
+    return <main className="game-page daily-screen daily-game-page state-page"><div className="state-mark">WRDLINK</div><p className="state-error" role="alert">{error || 'Daily puzzle unavailable.'}</p><button className="ink-button" type="button" onClick={() => void loadPuzzle()}>Retry daily challenge</button><button className="secondary-button" type="button" onClick={onClose}>← Campaign</button></main>;
   }
 
   return (
-    <main className={`daily-screen ${completed ? 'is-complete' : ''}`}>
-      <div className="daily-shell">
-        <header className="daily-header">
-          <button className="daily-back" type="button" onClick={onClose}>← Campaign</button>
-          <span className="daily-kicker">WRDLINK · DAILY</span>
+    <main className={`game-page daily-screen daily-game-page ${completed ? 'is-complete' : ''}`}>
+      <header className="game-header daily-game-header">
+        <div className="wordmark" aria-label="WRDLINK">
+          <span className="brand-mark" aria-hidden="true">W</span>
+          <span>WRDLINK</span>
+          <span className="level-badge">DAILY</span>
+        </div>
+        <div className="header-right daily-header-right">
           <span className="daily-date">{date}</span>
-        </header>
-
-        <section className="daily-intro">
-          <div>
-            <p className="daily-eyebrow">ONE SHARED PUZZLE</p>
-            <h1>Daily challenge</h1>
-            <p>Same words for everyone. One new path each day.</p>
+          <div className="header-count">
+            <span className="score-pill"><span className="metric-label">SCORE</span><strong>{score}</strong></span>
+            <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{words.length - 1}</strong></span>
           </div>
+          <button className="daily-launch-button" type="button" onClick={onClose}>CAMPAIGN</button>
+        </div>
+      </header>
+
+      <div className="daily-shell">
+        <div className="daily-context">
+          <div><p className="daily-eyebrow">ONE SHARED PUZZLE</p><h1>Daily challenge</h1><p>Same words for everyone. One new path each day.</p></div>
           <div className="daily-streak"><strong>{profile.currentStreak}</strong><span>DAY STREAK</span></div>
-        </section>
+        </div>
 
-        <section className="daily-puzzle-card">
-          <div className="daily-endpoints">
-            <div><span>START</span><strong>{puzzle.start}</strong></div>
-            <i aria-hidden="true">→</i>
-            <div><span>TARGET</span><strong>{puzzle.target}</strong></div>
-          </div>
-          <div className="daily-stats">
-            <div><strong>{words.length - 1}</strong><span>MOVES</span></div>
-            <div><strong>{score}</strong><span>SCORE</span></div>
-            <div><strong>{puzzle.optimalMoves}</strong><span>OPTIMAL</span></div>
-          </div>
-          <ol className="daily-chain">
-            {words.map((word, index) => <li className={word === puzzle.target ? 'is-target' : ''} key={`${word}-${index}`}><span>{String(index).padStart(2, '0')}</span><b>{word}</b></li>)}
-          </ol>
+        <div className="game-workspace daily-workspace">
+          <section className="route-panel" aria-label="Puzzle route">
+            <div className="route-end">
+              <span className="route-label"><span className="route-dot start-dot" /> START WORD</span>
+              <div className="word-display" aria-label={puzzle.start}>{[...puzzle.start].map((letter,index)=><span key={`${letter}-${index}`}>{letter}</span>)}</div>
+            </div>
+            <div className="route-connector" aria-hidden="true"><i /></div>
+            <div className="route-end route-end-target">
+              <span className="route-label"><span className="route-dot target-dot" /> TARGET WORD</span>
+              <div className="word-display word-display-target" aria-label={puzzle.target}>{[...puzzle.target].map((letter,index)=><span key={`${letter}-${index}`}>{letter}</span>)}</div>
+            </div>
+          </section>
 
-          {!completed ? (
-            <>
-            <form className="daily-entry" onSubmit={submitMove}>
-              <label className="sr-only" htmlFor="daily-word-entry">Next four letter word</label>
-              <input id="daily-word-entry" value={entry} onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 4))} placeholder="NEXT WORD" maxLength={4} autoComplete="off" autoCapitalize="characters" spellCheck={false} readOnly={useVirtualKeyboard} disabled={busy} aria-describedby={useVirtualKeyboard ? 'daily-keyboard-help' : undefined}/>
-              <button type="submit" disabled={busy || entry.length !== 4}>{busy ? 'Checking…' : 'Submit'}</button>
-            </form>
-            {useVirtualKeyboard && !completed && (
-              <div className="daily-virtual-keyboard" aria-label="On screen letter keyboard">
-                <p id="daily-keyboard-help" className="daily-keyboard-label">TAP LETTERS TO BUILD YOUR WORD</p>
-                {['QWERTYUIOP', 'ASDFGHJKL', 'ZXCVBNM'].map((row, index) => (
-                  <div className="daily-virtual-keyboard-row" key={row}>
-                    {[...row].map((letter) => (
-                      <button className="daily-virtual-key" key={letter} type="button"
-                        onPointerDown={(event) => event.preventDefault()}
-                        onClick={() => handleVirtualKey(letter)}
-                        disabled={busy || entry.length >= 4} aria-label={letter}>{letter}</button>
+          <section className="chain-panel card-panel" aria-label="Your word chain">
+            <div className="panel-heading"><h2>Word ladder</h2></div>
+            <ol className="chain-list">
+              {words.map((word,index)=><li className={word===puzzle.target?'chain-final':''} key={`${word}-${index}`}><span>{String(index).padStart(2,'0')}</span><b>{word}</b></li>)}
+            </ol>
+          </section>
+
+          <section className="entry-panel card-panel daily-entry-panel">
+            {!completed ? (
+              <>
+                <div className="entry-heading"><h2>Your next word</h2><p>Change exactly one letter. Reach the target to finish.</p></div>
+                <form onSubmit={submitMove}>
+                  <label className="sr-only" htmlFor="daily-word-entry">Next four letter word</label>
+                  <input id="daily-word-entry" value={entry} onChange={(event)=>setEntry(event.target.value.replace(/[^a-z]/gi,'').toUpperCase().slice(0,4))} placeholder="NEXT WORD" maxLength={4} autoComplete="off" autoCapitalize="characters" spellCheck={false} readOnly={useVirtualKeyboard} disabled={busy} aria-describedby={useVirtualKeyboard?'daily-keyboard-help':undefined}/>
+                  <button className="ink-button" type="submit" disabled={busy||entry.length!==4}>{busy?'Checking…':'Submit'} <span aria-hidden="true">→</span></button>
+                </form>
+                {useVirtualKeyboard && (
+                  <div className="virtual-keyboard" aria-label="On screen letter keyboard">
+                    <p id="daily-keyboard-help" className="virtual-keyboard-label">TAP LETTERS TO BUILD YOUR WORD</p>
+                    {['QWERTYUIOP','ASDFGHJKL','ZXCVBNM'].map((row,index)=>(
+                      <div className="virtual-keyboard-row" key={row}>
+                        {[...row].map((letter)=><button className="virtual-key" key={letter} type="button" onPointerDown={(event)=>event.preventDefault()} onClick={()=>handleVirtualKey(letter)} disabled={busy||entry.length>=4} aria-label={letter}>{letter}</button>)}
+                        {index===2&&<button className="virtual-key virtual-key-utility" type="button" onPointerDown={(event)=>event.preventDefault()} onClick={()=>handleVirtualKey('BACKSPACE')} disabled={busy||entry.length===0} aria-label="Delete last letter">⌫</button>}
+                      </div>
                     ))}
-                    {index === 2 && <button className="daily-virtual-key daily-key-utility" type="button"
-                      onPointerDown={(event) => event.preventDefault()}
-                      onClick={() => handleVirtualKey('BACKSPACE')}
-                      disabled={busy || entry.length === 0} aria-label="Delete last letter">⌫</button>}
                   </div>
-                ))}
-              </div>
+                )}
+                {error&&<p className="game-message error" role="alert">{error}</p>}
+                {shareMessage&&<p className="game-message" role="status">{shareMessage}</p>}
+              </>
+            ) : (
+              <>
+                <div className="daily-complete"><span>✓</span><div><strong>Connected!</strong><small>{result?.moves??words.length-1} moves · {result?.score??score} points</small></div></div>
+                {result&&<div className="daily-share">
+                  <div className="daily-share-preview">
+                    <strong>WRDLINK DAILY · {date}</strong><span>{result.start} → {result.target}</span><small>{result.moves} moves · {result.score} points · Completed</small><code>{result.words.join(' → ')}</code><a href="https://www.reddit.com/r/WRDLINK/" target="_blank" rel="noreferrer">Play WRDLINK ↗</a>
+                  </div>
+                  {ranked?<><p className="daily-muted">These actions publish under your Reddit account.</p><div className="daily-share-actions"><button type="button" onClick={()=>void shareResult('post')} disabled={busy}>Post result as you</button><button type="button" className="daily-secondary" onClick={()=>void shareResult('comment')} disabled={busy}>Comment as you</button></div></>:<p className="daily-muted">Sign in to save a ranked result and share it to Reddit.</p>}
+                </div>}
+                {shareMessage&&<p className="game-message" role="status">{shareMessage}</p>}
+                {error&&<p className="game-message error" role="alert">{error}</p>}
+              </>
             )}
-            </>
-          ) : (
-            <div className="daily-complete">
-              <span>✓</span>
-              <div><strong>Connected.</strong><small>{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points</small></div>
-            </div>
-          )}
-          {error && <p className="daily-error" role="alert">{error}</p>}
-          {shareMessage && <p className="daily-success" role="status">{shareMessage}</p>}
-          {completed && result && (
-            <div className="daily-share">
-              <div className="daily-share-preview">
-                <strong>WRDLINK DAILY · {date}</strong>
-                <span>{result.start} → {result.target}</span>
-                <small>{result.moves} moves · {result.score} points · Completed</small>
-                <code>{result.words.join(' → ')}</code>
-                <a href="https://www.reddit.com/r/WRDLINK/" target="_blank" rel="noreferrer">Play WRDLINK ↗</a>
-              </div>
-              {ranked ? (
-                <>
-                <p className="daily-muted">These actions publish under your Reddit account.</p>
-                <div className="daily-share-actions">
-                  <button type="button" onClick={() => void shareResult('post')} disabled={busy}>Post result as you</button>
-                  <button type="button" className="daily-secondary" onClick={() => void shareResult('comment')} disabled={busy}>Comment as you</button>
-                </div>
-                </>
-              ) : <p className="daily-muted">Sign in to save a ranked result and share it to Reddit.</p>}
-            </div>
-          )}
-        </section>
+          </section>
+        </div>
 
-        <section className="daily-profile">
+        <section className="daily-profile card-panel">
           <div><strong>{profile.totalCompleted}</strong><span>DAILY SOLVES</span></div>
           <div><strong>{profile.bestStreak}</strong><span>BEST STREAK</span></div>
           <div><strong>{profile.graceTokens}</strong><span>GRACE TOKENS</span></div>
           <div><strong>{profile.totalScore}</strong><span>TOTAL SCORE</span></div>
         </section>
 
-        <section className="daily-leaderboard">
-          <div className="daily-section-heading"><div><p className="daily-eyebrow">COMMUNITY RANKINGS</p><h2>Leaderboard</h2></div>{myRank !== null && <span className="daily-rank">YOUR RANK #{myRank}</span>}</div>
+        <section className="daily-leaderboard card-panel">
+          <div className="daily-section-heading"><div><p className="daily-eyebrow">COMMUNITY RANKINGS</p><h2>Leaderboard</h2></div>{myRank!==null&&<span className="daily-rank">YOUR RANK #{myRank}</span>}</div>
           <div className="daily-controls">
-            <div className="daily-tabs">
-              {(['daily', 'weekly', 'alltime'] as const).map((value) => <button type="button" className={period === value ? 'active' : ''} onClick={() => setPeriod(value)} key={value}>{value === 'daily' ? 'Daily' : value === 'weekly' ? 'Weekly' : 'Community'}</button>)}
-            </div>
-            <div className="daily-tabs metric-tabs">
-              <button type="button" className={metric === 'score' ? 'active' : ''} onClick={() => setMetric('score')}>Score</button>
-              <button type="button" className={metric === 'moves' ? 'active' : ''} onClick={() => setMetric('moves')}>Moves</button>
-            </div>
+            <div className="daily-tabs">{(['daily','weekly','alltime'] as const).map((value)=><button type="button" className={period===value?'active':''} onClick={()=>setPeriod(value)} key={value}>{value==='daily'?'Daily':value==='weekly'?'Weekly':'Community'}</button>)}</div>
+            <div className="daily-tabs metric-tabs"><button type="button" className={metric==='score'?'active':''} onClick={()=>setMetric('score')}>Score</button><button type="button" className={metric==='moves'?'active':''} onClick={()=>setMetric('moves')}>Moves</button></div>
           </div>
           <p className="daily-muted">{periodLabel} · {moveLabel}</p>
-          {boardLoading ? <p className="daily-loading-message" role="status">Loading community rankings…</p> : boardError ? <div className="daily-board-error"><p className="daily-error" role="alert">{boardError}</p><button className="daily-refresh" type="button" onClick={() => void loadBoard()}>Retry leaderboard</button></div> : board.length ? (
-            <ol className="daily-board">
-              {board.map((item) => <li key={item.rank}><span className="daily-board-rank">{String(item.rank).padStart(2, '0')}</span><strong>{item.username}</strong><span>{metric === 'score' ? item.score + ' pts' : item.moves + ' moves'}</span></li>)}
-            </ol>
-          ) : <p className="daily-empty">No completed runs yet. Set the first mark.</p>}
-          {!boardLoading && !boardError && <button className="daily-refresh" type="button" onClick={() => void loadBoard()}>Refresh leaderboard</button>}
+          {boardLoading?<p className="daily-loading-message" role="status">Loading community rankings…</p>:boardError?<div className="daily-board-error"><p className="daily-error" role="alert">{boardError}</p><button className="daily-refresh" type="button" onClick={()=>void loadBoard()}>Retry leaderboard</button></div>:board.length?<ol className="daily-board">{board.map((item)=><li key={item.rank}><span className="daily-board-rank">{String(item.rank).padStart(2,'0')}</span><strong>{item.username}</strong><span>{metric==='score'?item.score+' pts':item.moves+' moves'}</span></li>)}</ol>:<p className="daily-empty">No completed runs yet. Set the first mark.</p>}
+          {!boardLoading&&!boardError&&<button className="daily-refresh" type="button" onClick={()=>void loadBoard()}>Refresh leaderboard</button>}
         </section>
 
-        <section className="daily-achievements">
+        <section className="daily-achievements card-panel">
           <div className="daily-section-heading"><div><p className="daily-eyebrow">PLAYER PROGRESSION</p><h2>Achievements</h2></div></div>
-          <div className="daily-achievement-grid">
-            {achievementGoals.map((goal) => {
-              const progress = Math.min(goal.target, goal.value(profile));
-              const earned = profile.badges.includes(goal.id);
-              return <div className={`daily-achievement-item ${earned ? 'is-earned' : ''}`} key={goal.id}>
-                <span className="daily-achievement-icon" aria-hidden="true">{earned ? '✦' : '◇'}</span>
-                <div><strong>{badgeNames[goal.id]}</strong><small>{goal.description}</small><span className="daily-achievement-progress">{progress}/{goal.target}</span></div>
-              </div>;
-            })}
-          </div>
+          <div className="daily-achievement-grid">{achievementGoals.map((goal)=>{const progress=Math.min(goal.target,goal.value(profile));const earned=profile.badges.includes(goal.id);return <div className={`daily-achievement-item ${earned?'is-earned':''}`} key={goal.id}><span className="daily-achievement-icon" aria-hidden="true">{earned?'✦':'◇'}</span><div><strong>{badgeNames[goal.id]}</strong><small>{goal.description}</small><span className="daily-achievement-progress">{progress}/{goal.target}</span></div></div>;})}</div>
           <p className="daily-muted">A grace token protects one missed day. Earn one every seven consecutive completions, up to two. Daily puzzles reset at 00:00 UTC, which is 05:30 IST.</p>
         </section>
       </div>
     </main>
   );
+
 }
