@@ -70,6 +70,6 @@ void test('weekly and all time ranking uses aggregate score and average moves', 
   assert.ok(stronger < weaker);
 
   const fewerAverageMoves = aggregateRankScore(350, 25, 10, 'moves');
-  const moreAverageMoves = aggregateRankScore(400, 35, 10, 'moves');
+  const moreAverageMoves = aggregateRankScore(1_000_000, 26, 10, 'moves');
   assert.ok(fewerAverageMoves < moreAverageMoves);
 });
