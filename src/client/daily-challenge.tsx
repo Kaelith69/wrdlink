@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import './daily.css';
 
 type DailyResult = {
   date: string;
@@ -275,9 +276,10 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                 <small>Play again tomorrow · r/WRDLINK</small>
               </div>
               {ranked ? (
+                <p className="daily-muted">These actions publish under your Reddit account.</p>
                 <div className="daily-share-actions">
-                  <button type="button" onClick={() => void shareResult('post')} disabled={busy}>Share as Reddit post</button>
-                  <button type="button" className="daily-secondary" onClick={() => void shareResult('comment')} disabled={busy}>Share as comment</button>
+                  <button type="button" onClick={() => void shareResult('post')} disabled={busy}>Post result as you</button>
+                  <button type="button" className="daily-secondary" onClick={() => void shareResult('comment')} disabled={busy}>Comment as you</button>
                 </div>
               ) : <p className="daily-muted">Sign in to save a ranked result and share it to Reddit.</p>}
             </div>
