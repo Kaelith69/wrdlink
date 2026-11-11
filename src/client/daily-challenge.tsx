@@ -335,7 +335,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
         </section>
 
         <section className="daily-profile">
-          <div><strong>{profile.totalCompleted}</strong><span>PUZZLES</span></div>
+          <div><strong>{profile.totalCompleted}</strong><span>DAILY SOLVES</span></div>
           <div><strong>{profile.bestStreak}</strong><span>BEST STREAK</span></div>
           <div><strong>{profile.graceTokens}</strong><span>GRACE TOKENS</span></div>
           <div><strong>{profile.totalScore}</strong><span>TOTAL SCORE</span></div>
