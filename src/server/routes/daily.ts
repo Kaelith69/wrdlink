@@ -482,7 +482,7 @@ dailyApi.post('/init', async (c) => {
     return next;
   });
   const currentUserId = context.userId;
-  if (currentUserId && state.completed && !await redis.get(resultKey(date, currentUserId))) {
+  if (currentUserId && state.completed) {
     const username = await reddit.getCurrentUsername() ?? 'WRDLINK Player';
     await withLock(key, async () => {
       const latest = parseSession(await redis.get(key), puzzle);
@@ -547,8 +547,30 @@ dailyApi.post('/validate', async (c) => {
 
   const response = await withLock(key, async () => {
     const state = parseSession(await redis.get(key), puzzle);
-    if (!state || state.completed) {
-      return { valid: false, complete: false, message: 'This daily puzzle is already complete or unavailable.', words: state?.words ?? [puzzle.start], score: state?.score ?? 25, result: null, profile: null, newBadges: [] as string[] };
+    if (!state) {
+      return { valid: false, complete: false, message: 'This daily puzzle is unavailable. Reload today’s challenge.', words: [puzzle.start], score: 25, result: null, profile: null, newBadges: [] as string[] };
+    }
+    if (state.completed) {
+      const completion = context.userId
+        ? await saveVerifiedCompletion(date, context.userId, username ?? 'WRDLINK Player', state)
+        : null;
+      return {
+        valid: Boolean(completion),
+        complete: true,
+        message: 'Today’s challenge is already complete.',
+        words: state.words,
+        score: state.score,
+        result: completion?.result ?? {
+          date, start: puzzle.start, target: puzzle.target, words: state.words,
+          moves: state.words.length - 1, score: state.score, optimalMoves: puzzle.optimalMoves,
+          hintsUsed: 0, completedAt: state.completedAt ?? Date.now(),
+        },
+        profile: completion?.profile ?? null,
+        newBadges: completion?.newBadges ?? [],
+        graceUsed: completion?.graceUsed ?? false,
+        graceEarned: completion?.graceEarned ?? false,
+        ranked: Boolean(completion),
+      };
     }
     const next = { ...state, words: [...state.words], score: calculateMoveScore(state.score) };
     const validation = validateSequence(puzzle, DICTIONARY, [...next.words, word]);
