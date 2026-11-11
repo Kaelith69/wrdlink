@@ -509,7 +509,7 @@ function campaignShareText(state: SessionState): string {
     `${state.puzzle.start} → ${state.puzzle.target}`,
     `Moves: ${state.words.length - 1} · Score: ${state.gameScore}`,
     'Status: Completed',
-    state.words.join(' → '),
+    `Solution: >!${state.words.join(' → ')}!<`,
     `Play WRDLINK: https://www.reddit.com/r/WRDLINK/`,
   ].join('\\n\\n');
 }
