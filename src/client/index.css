@@ -1193,3 +1193,160 @@ button:focus-visible, input:focus-visible {
 @media (max-width: 620px) and (max-height: 580px) {
   .game-workspace { gap: 5px; }
 }
+
+
+/* Shared horizontal header metrics. Campaign and Daily use one compact
+   control row so the header consumes width, not unnecessary height. */
+.game-header .header-count {
+  display: flex;
+  width: auto;
+  min-width: 0;
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.game-header .header-count .score-pill,
+.game-header .header-count .moves-pill {
+  width: auto;
+  min-width: 86px;
+  min-height: 40px;
+  flex: 0 1 auto;
+  gap: 8px;
+  padding: 0 10px;
+  border-width: 1.5px;
+}
+
+.game-header .header-right {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  justify-self: end;
+  flex-wrap: nowrap;
+  gap: 9px;
+}
+
+.daily-launch-button {
+  display: inline-flex;
+  min-width: 48px;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.daily-mode-toggle { min-width: 48px; }
+
+/* Campaign active play stays grouped under the route and ladder. The keyboard
+   remains fixed to the bottom safe area, while the workspace scrolls if needed. */
+@media (max-width: 620px) {
+  .game-header,
+  .daily-game-page .game-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 5px;
+    padding: 6px 8px;
+  }
+
+  .wordmark { min-width: 0; gap: 5px; }
+  .header-right,
+  .daily-game-page .header-right {
+    min-width: 0;
+    gap: 4px;
+  }
+
+  .game-header .header-count {
+    width: 120px;
+    min-width: 0;
+    flex: 0 1 120px;
+    gap: 3px;
+  }
+
+  .game-header .header-count .score-pill,
+  .game-header .header-count .moves-pill {
+    min-width: 0;
+    min-height: 31px;
+    flex: 1 1 0;
+    gap: 2px;
+    padding: 0 4px;
+    border-radius: 8px;
+  }
+
+  .game-header .header-count .metric-label {
+    font-size: 6px;
+    letter-spacing: .035em;
+  }
+
+  .game-header .header-count .score-pill strong,
+  .game-header .header-count .moves-pill strong { font-size: 11px; }
+
+  .daily-launch-button,
+  .campaign-game-header .daily-launch-button {
+    width: 38px;
+    min-width: 38px;
+    min-height: 31px;
+    height: 31px;
+    padding: 0 2px;
+    border-radius: 8px;
+    font-size: 7px;
+    letter-spacing: 0;
+  }
+
+  .campaign-game-header .header-hint-button,
+  .daily-game-page .daily-streak-indicator {
+    width: 32px;
+    min-width: 32px;
+    height: 31px;
+    min-height: 31px;
+    gap: 1px;
+    padding: 0 2px;
+    border-radius: 8px;
+  }
+
+  .campaign-game-header .header-hint-button svg { width: 14px; height: 14px; }
+  .campaign-game-header .header-hint-cost,
+  .daily-game-page .daily-streak-indicator .header-hint-cost { font-size: 8px; }
+  .daily-game-page .daily-streak-indicator > span:first-child { font-size: 13px; }
+
+  .campaign-game-header .header-help-button,
+  .daily-game-page .header-help-button {
+    width: 28px;
+    min-width: 28px;
+    height: 31px;
+    font-size: 18px;
+  }
+
+  .game-page:not(.daily-game-page):not(.is-complete) .game-workspace {
+    grid-template-rows: auto auto auto;
+    align-content: start;
+    gap: 9px;
+    padding-bottom: calc(var(--keyboard-dock-height) + env(safe-area-inset-bottom, 0px) + 12px);
+    overflow-y: auto;
+  }
+
+  .game-page:not(.daily-game-page):not(.is-complete) .game-workspace > .entry-panel {
+    align-self: start;
+  }
+}
+
+@media (max-width: 420px) {
+  .campaign-game-header .wordmark > span:nth-child(2),
+  .daily-game-page .wordmark > span:nth-child(2) { display: none; }
+
+  .game-header .header-right,
+  .daily-game-page .header-right { gap: 3px; }
+}
+
+@media (max-width: 360px) {
+  .game-header .header-count { width: 116px; flex-basis: 116px; }
+  .game-header .header-count .score-pill,
+  .game-header .header-count .moves-pill { padding-inline: 3px; }
+  .daily-launch-button,
+  .campaign-game-header .daily-launch-button { width: 36px; min-width: 36px; }
+  .campaign-game-header .header-hint-button,
+  .daily-game-page .daily-streak-indicator { width: 30px; min-width: 30px; }
+  .campaign-game-header .header-help-button,
+  .daily-game-page .header-help-button { width: 27px; min-width: 27px; }
+}
