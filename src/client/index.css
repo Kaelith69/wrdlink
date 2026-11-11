@@ -1433,10 +1433,10 @@ button:focus-visible, input:focus-visible {
 
 
 /* Animate the mode change itself, not only the switch control. */
-::view-transition-old(root) {
+html.mode-switch-transition::view-transition-old(root) {
   animation: mode-view-out 150ms ease both;
 }
-::view-transition-new(root) {
+html.mode-switch-transition::view-transition-new(root) {
   animation: mode-view-in 220ms cubic-bezier(.2, .75, .25, 1) both;
 }
 @keyframes mode-view-out {
@@ -1447,6 +1447,6 @@ button:focus-visible, input:focus-visible {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) { animation: none; }
+  html.mode-switch-transition::view-transition-old(root),
+  html.mode-switch-transition::view-transition-new(root) { animation: none; }
 }
