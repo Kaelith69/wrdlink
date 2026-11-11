@@ -1,4 +1,5 @@
 import './index.css';
+import { DailyChallenge } from './daily-challenge';
 
 import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
@@ -155,6 +156,7 @@ export function App() {
   const finishHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const [completionAnnouncement, setCompletionAnnouncement] = useState('');
   const [sessionId, setSessionId] = useState(() => getSessionId());
+  const [dailyOpen, setDailyOpen] = useState(false);
 
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const entryFormRef = useRef<HTMLFormElement | null>(null);
@@ -436,6 +438,8 @@ export function App() {
     }
   }
 
+  if (dailyOpen) return <DailyChallenge sessionId={sessionId} onClose={() => setDailyOpen(false)} />;
+
   if (loading) {
     return (
       <main className="game-page state-page">
@@ -466,6 +470,7 @@ export function App() {
           <span className="level-badge">LV{level}</span>
         </div>
         <div className="header-right">
+          <button className="daily-launch-button" type="button" onClick={() => setDailyOpen(true)} aria-label="Open shared daily challenge">DAILY</button>
           <div className="header-count">
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{gameScore}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{movesUsed}</strong></span>
