@@ -1430,3 +1430,23 @@ button:focus-visible, input:focus-visible {
   .mode-switch, .mode-switch-icon { transition: none; }
   .mode-switch:hover, .mode-switch:active { transform: none; }
 }
+
+
+/* Animate the mode change itself, not only the switch control. */
+::view-transition-old(root) {
+  animation: mode-view-out 150ms ease both;
+}
+::view-transition-new(root) {
+  animation: mode-view-in 220ms cubic-bezier(.2, .75, .25, 1) both;
+}
+@keyframes mode-view-out {
+  to { opacity: 0; transform: translateY(-5px) scale(.995); }
+}
+@keyframes mode-view-in {
+  from { opacity: 0; transform: translateY(7px) scale(.995); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation: none; }
+}
