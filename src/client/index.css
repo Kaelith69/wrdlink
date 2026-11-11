@@ -1164,6 +1164,15 @@ button:focus-visible, input:focus-visible {
     gap: 12px;
   }
 
+  .game-page:not(.daily-game-page):not(.is-complete) .game-workspace {
+    grid-template-rows: auto auto minmax(0, 1fr);
+    align-content: stretch;
+  }
+
+  .game-page:not(.daily-game-page):not(.is-complete) .game-workspace > .entry-panel {
+    align-self: end;
+  }
+
   .entry-panel .entry-actions .secondary-button {
     border: 1.5px solid var(--line);
     background: transparent;
