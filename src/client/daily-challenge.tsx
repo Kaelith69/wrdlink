@@ -214,6 +214,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const boardRequestId = useRef(0);
   const puzzleLoadStarted = useRef(false);
   const pendingMoveRequest = useRef<{ date: string; word: string; id: string } | null>(null);
+  const chainListRef = useRef<HTMLOListElement | null>(null);
 
   const loadBoard = useCallback(async () => {
     const requestId = ++boardRequestId.current;
@@ -263,6 +264,15 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     void Promise.resolve().then(() => loadPuzzle());
   }, [loadPuzzle]);
   useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
+
+  useEffect(() => {
+    const list = chainListRef.current;
+    if (!list) return;
+    list.scrollTo({
+      top: list.scrollHeight,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    });
+  }, [words]);
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 620px), (pointer: coarse), (any-pointer: coarse)');
@@ -422,7 +432,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
 
           <section className="chain-panel card-panel" aria-label="Your word chain">
             <div className="panel-heading"><h2>Word ladder</h2></div>
-            <ol className="chain-list">
+            <ol className="chain-list" ref={chainListRef}>
               {words.map((word, index) => (
                 <li className={word === puzzle.target ? 'chain-final' : ''} key={`${word}-${index}`}>
                   <span>{String(index + 1).padStart(2, '0')}</span>
