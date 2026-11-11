@@ -9,6 +9,23 @@ export type DailyProfile = {
   badges: string[];
 };
 
+
+export function formatDailyShareText(
+  result: { date: string; start: string; target: string; moves: number; score: number },
+  currentStreak: number
+): string {
+  const streakLabel = currentStreak === 1 ? '1 day' : `${currentStreak} days`;
+  return [
+    'WRDLINK Daily Challenge',
+    `Puzzle: ${result.start} → ${result.target}`,
+    `Date: ${result.date}`,
+    `Finished in ${result.moves} moves`,
+    `Streak: ${streakLabel}`,
+    `Points: ${result.score}`,
+    'Think you can beat it? Give today’s puzzle a try!',
+  ].join('\\n\\n');
+}
+
 export type StreakUpdate = {
   currentStreak: number;
   bestStreak: number;
