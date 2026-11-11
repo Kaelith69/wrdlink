@@ -65,3 +65,5 @@
 .daily-badges span{padding:7px 10px;border:1px solid var(--line);border-radius:999px;background:var(--paper-strong);font-size:10px;font-weight:850}
 .daily-screen button:focus-visible,.daily-screen input:focus-visible{outline:3px solid var(--accent);outline-offset:3px}
 @media(max-width:480px){.daily-date{font-size:9px}.daily-intro{padding:18px 0}.daily-profile{grid-template-columns:repeat(2,1fr);gap:14px}.daily-profile div:nth-child(3){border-left:0}.daily-controls{display:grid}.daily-tabs{width:100%;justify-content:space-between}.daily-tabs button{flex:1}.daily-share-actions{display:grid}.daily-share-actions button{min-height:44px}}
+
+.daily-share-preview a{width:fit-content;color:var(--tile);font-size:11px;font-weight:950;text-decoration:none}.daily-share-preview a:hover{text-decoration:underline}
