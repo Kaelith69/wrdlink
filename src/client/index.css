@@ -1408,6 +1408,18 @@ button:focus-visible, input:focus-visible {
 .mode-switch.is-daily .mode-switch-thumb {
   background: var(--tangerine);
   transform: translateX(100%);
+  animation: mode-thumb-to-daily 240ms cubic-bezier(.2, .8, .2, 1) both;
+}
+.mode-switch.is-campaign .mode-switch-thumb {
+  animation: mode-thumb-to-campaign 240ms cubic-bezier(.2, .8, .2, 1) both;
+}
+@keyframes mode-thumb-to-daily {
+  from { background: var(--violet); transform: translateX(0); }
+  to { background: var(--tangerine); transform: translateX(100%); }
+}
+@keyframes mode-thumb-to-campaign {
+  from { background: var(--tangerine); transform: translateX(100%); }
+  to { background: var(--violet); transform: translateX(0); }
 }
 .mode-switch:hover {
   transform: translateY(-2px);
@@ -1435,7 +1447,7 @@ button:focus-visible, input:focus-visible {
   .mode-switch-option { font-size: 6px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .mode-switch, .mode-switch-thumb, .mode-switch-option { transition: none; }
+  .mode-switch, .mode-switch-thumb, .mode-switch-option { transition: none; animation: none !important; }
   .mode-switch:hover, .mode-switch:active { transform: none; }
 }
 
