@@ -11,6 +11,7 @@ import {
   aggregateRankScore,
   dailyRankScore,
   earnedBadges,
+  formatDailyShareText,
   isoWeekKey,
   parseDateKey,
   updateDailyStreak,
@@ -654,18 +655,6 @@ async function verifiedShareRecord(date: string): Promise<DailyResult | null> {
   } catch { return null; }
 }
 
-function shareText(result: DailyResult): string {
-  const path = result.words.join(' → ');
-  return [
-    `WRDLINK Daily Challenge · ${result.date}`,
-    `${result.start} → ${result.target}`,
-    `Moves: ${result.moves} · Score: ${result.score}`,
-    'Status: Completed',
-    `Solution: >!${path}!<`,
-    `Play WRDLINK: https://www.reddit.com/r/WRDLINK/`,
-  ].join('\n\n');
-}
-
 dailyApi.post('/share/post', async (c) => {
   const body: unknown = await c.req.json().catch(() => null);
   if (!isRecord(body) || typeof body.date !== 'string') return c.json({ error: 'Invalid share request.' }, 400);
@@ -675,7 +664,8 @@ dailyApi.post('/share/post', async (c) => {
   if (!await limited(userId, 'share-post', 3)) return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
   const result = await verifiedShareRecord(body.date);
   if (!result) return c.json({ error: 'A verified completion for today was not found.' }, 404);
-  const text = shareText(result);
+  const profile = await readProfile(userId);
+  const text = formatDailyShareText(result, profile.currentStreak);
   const post = await reddit.submitCustomPost({
     subredditName,
     title: `WRDLINK Daily ${result.date}: ${result.start} → ${result.target}`,
@@ -696,9 +686,10 @@ dailyApi.post('/share/comment', async (c) => {
   if (!await limited(userId, 'share-comment', 3)) return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
   const result = await verifiedShareRecord(body.date);
   if (!result) return c.json({ error: 'A verified completion for today was not found.' }, 404);
+  const profile = await readProfile(userId);
   const comment = await reddit.submitComment({
     id: postId,
-    text: shareText(result),
+    text: formatDailyShareText(result, profile.currentStreak),
     runAs: 'USER',
   });
   return c.json({ success: true, commentId: comment.id });

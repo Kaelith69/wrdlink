@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { aggregateRankScore, dailyRankScore, earnedBadges, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
+import { aggregateRankScore, dailyRankScore, earnedBadges, formatDailyShareText, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
 
 const profile = (patch: Partial<DailyProfile> = {}): DailyProfile => ({
   totalCompleted: 0, totalScore: 0, totalMoves: 0,
@@ -87,4 +87,24 @@ void test('perfect solve requires the maximum possible score without failed atte
   const penalized = earnedBadges(profile({ totalCompleted: 1 }), 4, 4, 0, 45);
   assert.equal(penalized.includes('PERFECT_SOLVE'), false);
   assert.ok(penalized.includes('OPTIMAL_PATH'));
+});
+
+
+void test('daily share copy contains progress only and never exposes the solution path', () => {
+  const message = formatDailyShareText({
+    date: '2026-11-12', start: 'LANK', target: 'HELM', moves: 9, score: 35,
+  }, 4);
+  assert.equal(message, [
+    'WRDLINK Daily Challenge',
+    'Puzzle: LANK → HELM',
+    'Date: 2026-11-12',
+    'Finished in 9 moves',
+    'Streak: 4 days',
+    'Points: 35',
+    'Think you can beat it? Give today’s puzzle a try!',
+  ].join('\n\n'));
+  assert.equal(message.includes('HOLK'), false);
+  assert.equal(message.includes('Solution:'), false);
+  assert.equal(message.includes('>!'), false);
+  assert.equal(message.includes('reddit.com'), false);
 });
