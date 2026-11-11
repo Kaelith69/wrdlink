@@ -324,8 +324,10 @@ function parseSession(raw: string | null, puzzle: Puzzle): DailyState | null {
 }
 
 async function leaderboard(period: 'daily' | 'weekly' | 'alltime', metric: 'score' | 'moves', date: string) {
-  const periodKey = period === 'daily' ? date : period === 'weekly' ? isoWeekKey(date) : 'alltime';
-  const prefix = `wrdlink:v2:leaderboard:${period}:${periodKey}`;
+  const periodKey = period === 'daily' ? date : isoWeekKey(date);
+  const prefix = period === 'alltime'
+    ? 'wrdlink:v2:leaderboard:alltime'
+    : `wrdlink:v2:leaderboard:${period}:${periodKey}`;
   const [ranked, currentUserId] = await Promise.all([
     redis.zRange(prefix + ':' + metric, 0, 19, { by: 'rank' }),
     Promise.resolve(context.userId),
