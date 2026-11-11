@@ -400,7 +400,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <h1 id="daily-guide-title">Daily challenge <span>{date}</span></h1>
           </div>
         </div>
-        <p className="daily-guide-summary">Everyone gets the same start and target words today. Build a ladder by changing exactly one letter per move until you reach the target. Your result counts toward your daily streak and the community leaderboard.</p>
+        <p className="daily-guide-summary">Everyone shares today's puzzle. Change one letter per move to reach the target and earn a community ranking.</p>
         <details className="daily-how-to">
           <summary>How to play today's puzzle</summary>
           <ul>
