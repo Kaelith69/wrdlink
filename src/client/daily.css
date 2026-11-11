@@ -871,7 +871,7 @@
 }
 .daily-finish-panel .daily-share-feedback.error {
   border-color: var(--error);
-  background: color-mix(in srgb, var(--error) 10%, var(--paper));
+  background: var(--error-bg);
   color: var(--error);
 }
 .daily-game-page .daily-finish-panel {
