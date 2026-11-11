@@ -34,6 +34,7 @@
         "SUBMIT_POST",
         "SUBMIT_COMMENT"
       ]
-    }
+    },
+    "redis": true
   }
 }
