@@ -183,7 +183,10 @@ export function App() {
   const movesUsed = words.length - 1;
   useEffect(() => {
     const list = chainListRef.current;
-    if (list) list.scrollTo({ top: list.scrollHeight, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    const latestWord = list?.lastElementChild as HTMLElement | null | undefined;
+    if (!list || !latestWord) return;
+    const top = latestWord.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop;
+    list.scrollTo({ top: Math.max(0, top), behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
   }, [words]);
   useEffect(() => { if (status === 'won') finishHeadingRef.current?.focus(); }, [status]);
   const hintTotalCost = 6 + hintsUsed;
