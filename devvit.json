@@ -28,6 +28,13 @@
     "subreddit": "wrdlink_dev"
   },
   "permissions": {
-    "reddit": true
+    "reddit": {
+      "enable": true,
+      "asUser": [
+        "SUBMIT_POST",
+        "SUBMIT_COMMENT"
+      ]
+    },
+    "redis": true
   }
 }

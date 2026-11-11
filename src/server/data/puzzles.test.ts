@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createRandomPuzzle, DICTIONARY } from './puzzles.ts';
+import { createDailyPuzzle, createRandomPuzzle, DICTIONARY } from './puzzles.ts';
 import { differsByOneLetter, shortestPath } from '../core/game.ts';
 
 void test('generates solvable dictionary puzzles with random endpoints', () => {
@@ -62,4 +62,25 @@ void test('late campaign levels always return a connected puzzle', () => {
     assert.ok(route, `Level ${level} returned disconnected endpoints.`);
     assert.equal(route.length - 1, puzzle.optimalMoves);
   }
+});
+
+void test('daily puzzle is deterministic for a UTC date and valid for every player', () => {
+  const first = createDailyPuzzle('2026-11-11');
+  const second = createDailyPuzzle('2026-11-11');
+  assert.deepEqual(first, second);
+  assert.equal(first.id, 'daily-2026-11-11');
+  assert.equal(first.wordLength, 4);
+  assert.ok(DICTIONARY.has(first.start));
+  assert.ok(DICTIONARY.has(first.target));
+  const route = shortestPath(first.start, first.target, DICTIONARY);
+  assert.ok(route);
+  assert.equal(route.length - 1, first.optimalMoves);
+  for (let index = 1; index < route.length; index += 1) {
+    assert.equal(differsByOneLetter(route[index - 1] ?? '', route[index] ?? ''), true);
+  }
+});
+
+void test('daily puzzle changes its identifier by UTC date and rejects invalid dates', () => {
+  assert.notEqual(createDailyPuzzle('2026-11-11').id, createDailyPuzzle('2026-11-12').id);
+  assert.throws(() => createDailyPuzzle('2026-13-40'), /valid UTC date/i);
 });

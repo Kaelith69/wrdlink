@@ -1,6 +1,6 @@
 # WRDLINK Privacy Policy
 
-_Last updated: 9 November 2026_
+_Last updated: 11 November 2026_
 
 This policy describes the information handled by the WRDLINK game when it is used through Reddit. It describes the current application implementation, not every category of information Reddit may process as the platform provider.
 
@@ -24,11 +24,13 @@ When a player submits a move, the server receives the session identifier, puzzle
 
 A confirmed hint is processed by the server. The hint count and updated campaign state are stored. The hint price increases with each hint, and the normal one point move cost is included in the hint's total deduction.
 
-### Reddit account identifier
+### Reddit account identifier and daily profile
 
-For signed in Reddit players, Devvit supplies an authenticated Reddit account identifier to the server. WRDLINK uses that identifier to associate the account with its campaign session in Redis and to scope authenticated rate limits. The identifier is not supplied by the browser, displayed in the game, or stored as a username, email address, or profile record by WRDLINK.
+For signed in Reddit players, Devvit supplies an authenticated Reddit account identifier to the server. WRDLINK uses it to associate campaign and daily challenge state with the account, prevent duplicate daily leaderboard submissions, and scope authenticated rate limits. The identifier is not supplied by the browser.
 
-WRDLINK does not request a player's Reddit username, email address, or profile information in the current implementation. Logged out play uses the browser session identifier and does not have an authenticated account mapping.
+For daily leaderboards, WRDLINK stores the player's public Reddit username, daily completion date, start and target words, accepted word chain, move count, server calculated score, completion timestamp, total daily completions, cumulative score and moves, streak, grace token balance, and earned achievement identifiers. The username and daily result are displayed in the community leaderboard. WRDLINK does not request an email address or private profile information.
+
+Logged out play uses the browser session identifier for temporary daily puzzle state. Logged out completions are not added to ranked leaderboards and do not create a persistent player profile.
 
 ### Operational and rate limit information
 
@@ -41,6 +43,11 @@ The server also uses a short lived Redis lock while updating campaign state, to 
 WRDLINK uses the information above only to:
 
 - Load and restore a player's campaign.
+- Provide one shared daily puzzle to players in the installed subreddit.
+- Validate daily completions and calculate daily, weekly, and all time community rankings.
+- Maintain daily streaks, grace tokens, and achievement badges.
+- Display public leaderboard entries and player progression.
+- Share a verified daily result to Reddit only after the player explicitly selects the post or comment sharing action.
 - Validate submitted word chains against the game's rules and embedded dictionary.
 - Calculate move deductions, hint costs, and level completion rewards.
 - Prevent duplicate or conflicting campaign updates.
@@ -49,9 +56,11 @@ WRDLINK uses the information above only to:
 
 ## 3. Storage and service providers
 
-Campaign data, account to campaign mappings, rate limit counters, and temporary session locks are stored using Reddit Devvit Redis.
+Campaign data, daily challenge sessions, verified completion records, player profiles, leaderboard indexes, account mappings, rate limit counters, and temporary session locks are stored using Reddit Devvit Redis.
 
 WRDLINK runs on Reddit's Devvit platform. Reddit and Devvit may process information independently to provide, secure, and operate Reddit and its developer platform. That processing is governed by Reddit's own terms, privacy policy, and platform rules. This policy does not replace those documents.
+
+A player can explicitly choose to share a verified daily result as a Reddit post or comment. Those actions are submitted as the player's Reddit account, not automatically. A shared result includes the daily date, start and target words, accepted word chain, move count, score, and a link to the WRDLINK community.
 
 The current WRDLINK application code does not integrate a separate advertising network, analytics SDK, or external word definition service. This statement describes the application code and should not be read as a promise about platform level processing by Reddit.
 
@@ -60,6 +69,8 @@ The current WRDLINK application code does not integrate a separate advertising n
 - Campaign session records expire after **7 days without an update**. Successful campaign interactions refresh the session expiry.
 - Signed in account to campaign mappings are configured to expire after **7 days** and are refreshed when the account campaign is resolved or used.
 - Session ownership records are temporary Redis records with a **7 day** expiry, refreshed when the account campaign is resolved.
+- Daily challenge sessions, daily completion records, and daily and weekly leaderboard records are configured to expire after **60 days**.
+- All time player profiles and all time leaderboard records persist until the app or its data is removed.
 - Rate limit counters expire after **60 seconds**.
 - Session update locks are temporary and use a **60 second** lease.
 - The browser session identifier remains in session storage for the lifetime of the browser tab's page session, subject to browser behavior and user clearing site data.

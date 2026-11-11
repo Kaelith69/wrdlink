@@ -1,4 +1,5 @@
 import './index.css';
+import { DailyChallenge } from './daily-challenge';
 
 import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
@@ -155,6 +156,8 @@ export function App() {
   const finishHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const [completionAnnouncement, setCompletionAnnouncement] = useState('');
   const [sessionId, setSessionId] = useState(() => getSessionId());
+  const [dailyOpen, setDailyOpen] = useState(false);
+  const [campaignShareMessage, setCampaignShareMessage] = useState('');
 
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const entryFormRef = useRef<HTMLFormElement | null>(null);
@@ -310,9 +313,31 @@ export function App() {
 
   async function startNextLevel() {
     if (busy || status !== 'won') return;
+    setCampaignShareMessage('');
     setBusy(true);
     try {
       await loadPuzzle(undefined, { nextLevel: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function shareCampaign(kind: 'post' | 'comment') {
+    if (!puzzle || status !== 'won' || busy) return;
+    setBusy(true);
+    setCampaignShareMessage('');
+    try {
+      const response = await fetchWithTimeout('/api/share/campaign/' + kind, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, puzzleId: puzzle.id }),
+      });
+      if (!response.ok) throw new Error(await responseError(response));
+      setCampaignShareMessage(kind === 'post'
+        ? 'Your result was posted under your Reddit account.'
+        : 'Your result was commented under your Reddit account.');
+    } catch (error) {
+      setCampaignShareMessage(error instanceof Error ? error.message : 'Could not share this result.');
     } finally {
       setBusy(false);
     }
@@ -436,6 +461,8 @@ export function App() {
     }
   }
 
+  if (dailyOpen) return <DailyChallenge sessionId={sessionId} onClose={() => setDailyOpen(false)} />;
+
   if (loading) {
     return (
       <main className="game-page state-page">
@@ -466,6 +493,7 @@ export function App() {
           <span className="level-badge">LV{level}</span>
         </div>
         <div className="header-right">
+          <button className="daily-launch-button" type="button" onClick={() => setDailyOpen(true)} aria-label="Open shared daily challenge">DAILY</button>
           <div className="header-count">
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{gameScore}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{movesUsed}</strong></span>
@@ -667,6 +695,21 @@ export function App() {
             <p>{puzzle.target} reached in {movesUsed} moves. {message.replace(/\s*\+25 points\.\s*Level balance: \d+\./, '').trim()}</p>
             <p className="finish-bonus">+25 points awarded</p>
             {hintsUsed > 0 && <p>You used {hintsUsed} campaign hints. Next hint costs {6 + hintsUsed} points.</p>}
+            <section className="campaign-share-card" aria-label="Share completed puzzle">
+              <div className="campaign-share-preview">
+                <strong>WRDLINK · LEVEL {level}</strong>
+                <b>{puzzle.start} → {puzzle.target}</b>
+                <span>{movesUsed} moves · {gameScore} points · Completed</span>
+                <small>{words.join(' → ')}</small>
+                <a href="https://www.reddit.com/r/WRDLINK/" target="_blank" rel="noreferrer">Play WRDLINK ↗</a>
+              </div>
+              <p>Sharing publishes under your Reddit account.</p>
+              <div className="campaign-share-actions">
+                <button type="button" onClick={() => void shareCampaign('post')} disabled={busy}>Post result as you</button>
+                <button type="button" onClick={() => void shareCampaign('comment')} disabled={busy}>Comment as you</button>
+              </div>
+              {campaignShareMessage && <p className="campaign-share-message" role="status">{campaignShareMessage}</p>}
+            </section>
             <button className="ink-button finish-next-button" type="button" onClick={() => void startNextLevel()} disabled={busy}>
               Next level · {level + 1} <span aria-hidden="true">→</span>
             </button>

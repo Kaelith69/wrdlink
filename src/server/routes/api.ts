@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
-import { context, redis } from '@devvit/web/server';
+import { context, reddit, redis } from '@devvit/web/server';
 import type { HintResponse, InitResponse, MoveValidationResponse, Puzzle } from '../../shared/api';
 import { createRandomPuzzle, DICTIONARY } from '../data/puzzles';
 import {
@@ -500,4 +500,75 @@ api.post('/hint', async (c) => {
     };
   });
   return c.json(result);
+});
+
+
+function campaignShareText(state: SessionState): string {
+  return [
+    `WRDLINK Campaign · Level ${state.level}`,
+    `${state.puzzle.start} → ${state.puzzle.target}`,
+    `Moves: ${state.words.length - 1} · Score: ${state.gameScore}`,
+    'Status: Completed',
+    `Solution: >!${state.words.join(' → ')}!<`,
+    `Play WRDLINK: https://www.reddit.com/r/WRDLINK/`,
+  ].join('\\n\\n');
+}
+
+async function getVerifiedCampaignCompletion(body: unknown): Promise<SessionState | null> {
+  if (!isSessionRequest(body) || !await sessionBelongsToCurrentUser(body.sessionId)) return null;
+  const raw = await redis.get(sessionKey(body.sessionId));
+  if (!raw) return null;
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!isSessionState(parsed) || !parsed.completed || parsed.puzzle.id !== body.puzzleId) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+api.post('/share/campaign/post', async (c) => {
+  const body: unknown = await readJson(c);
+  const userId = context.userId;
+  const subredditName = context.subredditName;
+  if (!userId || !subredditName) {
+    return c.json({ error: 'Sign in to share your campaign result.' }, 401);
+  }
+  if (!isSessionRequest(body)) return c.json({ error: 'Invalid campaign share request.' }, 400);
+  if (!await allowedRequest(body.sessionId, 'share-post', 3)) {
+    return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
+  }
+  const state = await getVerifiedCampaignCompletion(body);
+  if (!state) return c.json({ error: 'A verified completed campaign level was not found.' }, 404);
+  const text = campaignShareText(state);
+  const post = await reddit.submitCustomPost({
+    subredditName,
+    title: `WRDLINK Level ${state.level}: ${state.puzzle.start} → ${state.puzzle.target}`,
+    entry: 'default',
+    runAs: 'USER',
+    userGeneratedContent: { text },
+    textFallback: { text },
+  });
+  return c.json({ success: true, postId: post.id, permalink: post.permalink });
+});
+
+api.post('/share/campaign/comment', async (c) => {
+  const body: unknown = await readJson(c);
+  const userId = context.userId;
+  const postId = context.postId;
+  if (!userId || !postId) {
+    return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 401);
+  }
+  if (!isSessionRequest(body)) return c.json({ error: 'Invalid campaign share request.' }, 400);
+  if (!await allowedRequest(body.sessionId, 'share-comment', 3)) {
+    return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
+  }
+  const state = await getVerifiedCampaignCompletion(body);
+  if (!state) return c.json({ error: 'A verified completed campaign level was not found.' }, 404);
+  const comment = await reddit.submitComment({
+    id: postId,
+    text: campaignShareText(state),
+    runAs: 'USER',
+  });
+  return c.json({ success: true, commentId: comment.id });
 });
