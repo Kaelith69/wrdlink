@@ -102,15 +102,26 @@ export function earnedBadges(profile: DailyProfile, moves: number, optimalMoves:
   return [...earned].sort();
 }
 
-export function compareDailyResults(
-  a: { score: number; moves: number; completedAt: number; userId: string },
-  b: { score: number; moves: number; completedAt: number; userId: string },
+export function dailyRankScore(
+  score: number,
+  moves: number,
+  completedAt: number,
   metric: 'score' | 'moves'
 ): number {
-  if (metric === 'score' && a.score !== b.score) return b.score - a.score;
-  if (metric === 'moves' && a.moves !== b.moves) return a.moves - b.moves;
-  if (metric === 'score' && a.moves !== b.moves) return a.moves - b.moves;
-  if (metric === 'moves' && a.score !== b.score) return b.score - a.score;
-  if (a.completedAt !== b.completedAt) return a.completedAt - b.completedAt;
-  return a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0;
+  const seconds = Math.floor(completedAt / 1000) % 86_400;
+  return metric === 'score'
+    ? (1000 - score) * 1_000_000 + moves * 1000 + seconds
+    : moves * 1_000_000 + (1000 - score) * 1000 + seconds;
+}
+
+export function aggregateRankScore(
+  totalScore: number,
+  totalMoves: number,
+  completedCount: number,
+  metric: 'score' | 'moves'
+): number {
+  const averageMoves = completedCount ? Math.round((totalMoves / completedCount) * 1000) : 0;
+  return metric === 'score'
+    ? (1_000_000 - Math.min(totalScore, 1_000_000)) * 1_000_000 + averageMoves
+    : averageMoves * 1_000_000 + (1_000_000 - Math.min(totalScore, 1_000_000));
 }
