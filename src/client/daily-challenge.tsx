@@ -577,7 +577,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                   <div className="campaign-share-preview">
                     <strong>WRDLINK DAILY · {date}</strong>
                     <b>{result.start} → {result.target}</b>
-                    <a href="https://www.reddit.com/r/WRDLINK/" target="_blank" rel="noreferrer">Play WRDLINK ↗</a>
                   </div>
                   {ranked ? (
                     <>
