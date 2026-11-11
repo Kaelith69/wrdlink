@@ -424,7 +424,7 @@ dailyApi.post('/validate', async (c) => {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
     return c.json({ error: 'Too many attempts. Please wait before trying again.' }, 429);
   }
-  const puzzle = createDailyPuzzle(date);
+  const puzzle = await getSharedDailyPuzzle(date);
   if (body.puzzleId !== puzzle.id) return c.json({ error: 'Daily puzzle mismatch.' }, 409);
   const key = stateKey(date, body.sessionId);
   const username = context.userId ? await reddit.getCurrentUsername() : undefined;
