@@ -553,7 +553,7 @@
 
 @media (max-width: 420px) {
   .daily-game-page .game-header { gap: 3px; padding-inline: 7px; }
-  .daily-game-page .daily-header-count { width: 82px; flex-basis: 82px; }
+  .daily-game-page .game-header .daily-header-count { width: 82px; flex-basis: 82px; }
   .daily-game-page .daily-header-actions { gap: 3px; }
   .daily-game-page .daily-header-actions .daily-streak-indicator { width: 40px; min-width: 40px; }
   .daily-game-page .daily-header-actions .header-help-button { width: 30px; min-width: 30px; }
@@ -563,7 +563,7 @@
   .daily-game-page.game-page .game-header { grid-template-columns: minmax(0, 1fr) auto auto; }
   .daily-game-page .brand-mark { width: 24px; height: 24px; }
   .daily-game-page .level-badge { padding-inline: 4px; font-size: 7px; }
-  .daily-game-page .daily-header-count { width: 76px; flex-basis: 76px; }
+  .daily-game-page .game-header .daily-header-count { width: 76px; flex-basis: 76px; }
   .daily-game-page .daily-header-actions .daily-streak-indicator { width: 38px; min-width: 38px; }
   .daily-game-page .daily-header-actions .header-help-button { width: 30px; min-width: 30px; }
 }
