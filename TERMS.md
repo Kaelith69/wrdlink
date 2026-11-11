@@ -34,7 +34,7 @@ Rate limited requests, malformed requests rejected before move validation, and r
 
 ### Daily challenge, rankings, streaks, and sharing
 
-- The daily challenge is shared by players in the same installed subreddit and changes at 00:00 UTC.
+- The daily challenge is shared by players in the same installed subreddit and changes at 00:00 UTC. Daily mode starts at 25 points, deducts one point per submitted move, awards 25 points on completion, and disables hints for ranked runs.
 - Daily, weekly, and all time leaderboards are calculated from server validated daily completions. A player can submit only one ranked completion per day.
 - Daily rankings prioritize highest score or fewest moves. Ties are resolved deterministically using the other result metric, completion time, and stable account ordering.
 - Weekly and all time community rankings aggregate verified daily completions. Leaderboards are scoped to the subreddit installation where WRDLINK is installed; they are not global across every subreddit installation.
