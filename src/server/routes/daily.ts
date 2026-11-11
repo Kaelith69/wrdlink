@@ -70,16 +70,21 @@ function isDailyResult(value: unknown): value is DailyResult {
   return isRecord(value) && typeof value.date === 'string' && parseDateKey(value.date) !== null &&
     typeof value.userId === 'string' && typeof value.username === 'string' &&
     typeof value.start === 'string' && typeof value.target === 'string' && isStringArray(value.words) &&
-    Number.isSafeInteger(value.moves) && Number.isSafeInteger(value.score) &&
-    Number.isSafeInteger(value.optimalMoves) && Number.isSafeInteger(value.hintsUsed) &&
+    Number.isSafeInteger(value.moves) && Number(value.moves) >= 1 &&
+    Number.isSafeInteger(value.score) && Number(value.score) >= 0 && Number(value.score) <= 50 &&
+    Number.isSafeInteger(value.optimalMoves) && Number(value.optimalMoves) >= 1 &&
+    Number.isSafeInteger(value.hintsUsed) && Number(value.hintsUsed) === 0 &&
+    value.words.length === Number(value.moves) + 1 &&
+    value.words[0] === value.start && value.words[value.words.length - 1] === value.target &&
     typeof value.completedAt === 'number' && Number.isFinite(value.completedAt);
 }
 
 function isDailyState(value: unknown, expectedPuzzle: Puzzle): value is DailyState {
   if (!isRecord(value) || !isStringArray(value.words) ||
-      typeof value.score !== 'number' || !Number.isSafeInteger(value.score) || value.score < 0 ||
+      typeof value.score !== 'number' || !Number.isSafeInteger(value.score) || value.score < 0 || value.score > 50 ||
       typeof value.completed !== 'boolean' || typeof value.startedAt !== 'number' || !Number.isFinite(value.startedAt) ||
-      !(value.completedAt === null || (typeof value.completedAt === 'number' && Number.isFinite(value.completedAt))) ||
+      !(value.completed ? (typeof value.completedAt === 'number' && Number.isFinite(value.completedAt)) : value.completedAt === null) ||
+      value.words.length > 200 ||
       !isRecord(value.puzzle) || value.puzzle.id !== expectedPuzzle.id ||
       value.puzzle.start !== expectedPuzzle.start || value.puzzle.target !== expectedPuzzle.target ||
       value.puzzle.wordLength !== expectedPuzzle.wordLength || value.puzzle.optimalMoves !== expectedPuzzle.optimalMoves ||
@@ -292,6 +297,7 @@ async function saveVerifiedCompletion(
             };
           }
         } catch { /* Replace an invalid legacy record through a new journal. */ }
+        await redis.del(key);
       }
 
       const result: DailyResult = {
@@ -366,7 +372,11 @@ async function saveVerifiedCompletion(
       expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
     });
     const storedResult = await redis.get(key);
-    if (!storedResult || !isDailyResult(JSON.parse(storedResult))) {
+    let verifiedStoredResult: unknown = null;
+    try { verifiedStoredResult = storedResult ? JSON.parse(storedResult) : null; }
+    catch { /* The journal remains available for a safe retry. */ }
+    if (!isDailyResult(verifiedStoredResult) ||
+        verifiedStoredResult.userId !== userId || verifiedStoredResult.date !== date) {
       throw new Error('Could not verify your saved daily result. Please retry.');
     }
 
