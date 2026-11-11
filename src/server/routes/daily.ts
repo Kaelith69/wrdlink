@@ -504,6 +504,7 @@ function shareText(result: DailyResult): string {
     `WRDLINK Daily Challenge · ${result.date}`,
     `${result.start} → ${result.target}`,
     `Moves: ${result.moves} · Score: ${result.score}`,
+    'Status: Completed',
     path,
     `Play WRDLINK: https://www.reddit.com/r/WRDLINK/`,
   ].join('\n\n');
