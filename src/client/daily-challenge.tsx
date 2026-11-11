@@ -211,6 +211,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [error, setError] = useState('');
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
+  const shareFeedbackRef = useRef<HTMLParagraphElement | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const boardRequestId = useRef(0);
   const puzzleLoadStarted = useRef(false);
@@ -265,6 +266,20 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     void Promise.resolve().then(() => loadPuzzle());
   }, [loadPuzzle]);
   useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
+
+  useEffect(() => {
+    if (!completed || (!shareMessage && !error)) return;
+    const feedback = shareFeedbackRef.current;
+    if (!feedback) return;
+    const frame = window.requestAnimationFrame(() => {
+      feedback.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'nearest',
+        inline: 'nearest',
+      });
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [completed, shareMessage, error]);
 
   useEffect(() => {
     if (!helpOpen) return;
@@ -396,7 +411,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{score}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{words.length - 1}</strong></span>
           </div>
-          <button className="mode-switch mode-switch-to-campaign" type="button" onClick={onClose} aria-label="Switch to Campaign" title="Switch to Campaign"><span>CAMPAIGN</span><span className="mode-switch-icon" aria-hidden="true">↗</span></button>
+          <button className="mode-switch is-daily" type="button" onClick={onClose} aria-label="Daily mode selected. Switch to Campaign." aria-pressed={true} title="Switch to Campaign"><span className="mode-switch-option mode-switch-campaign-option" aria-hidden="true">CAMP</span><span className="mode-switch-option mode-switch-daily-option" aria-hidden="true">DAILY</span><span className="mode-switch-thumb" aria-hidden="true" /></button>
           <div className="header-hint-button daily-streak-indicator" aria-label={profile.currentStreak + ' day streak'} title={profile.currentStreak + ' day streak'}>
             <span aria-hidden="true">🔥</span><span className="header-hint-cost">{profile.currentStreak}</span>
           </div>
@@ -551,6 +566,8 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <section className="finish-panel daily-finish-panel" aria-labelledby="daily-completion-title">
               <h2 id="daily-completion-title">Daily challenge complete!</h2>
               <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
+              {shareMessage && <p ref={shareFeedbackRef} className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
+              {error && <p ref={shareFeedbackRef} className="game-message error daily-share-feedback" role="alert">{error}</p>}
               <p className="daily-campaign-prompt">Ready for another round? Your Campaign is waiting.</p>
               <button className="ink-button finish-next-button daily-campaign-button" type="button" onClick={onClose}>
                 Play Campaign <span aria-hidden="true">→</span>
@@ -571,8 +588,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                       </div>
                     </>
                   ) : <p>Sign in to save a ranked result and share it to Reddit.</p>}
-                  {shareMessage && <p className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
-                  {error && <p className="game-message error daily-share-feedback" role="alert">{error}</p>}
                 </section>
               )}
             </section>
