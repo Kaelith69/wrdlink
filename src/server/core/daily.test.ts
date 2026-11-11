@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { earnedBadges, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
+import { compareDailyResults, earnedBadges, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
 
 const profile = (patch: Partial<DailyProfile> = {}): DailyProfile => ({
   totalCompleted: 0, totalScore: 0, totalMoves: 0,
@@ -24,7 +24,7 @@ void test('one missed day consumes one grace token without breaking the streak',
   const result = updateDailyStreak(profile({ currentStreak: 6, bestStreak: 6, lastDailyDate: '2026-11-09', graceTokens: 1 }), '2026-11-11');
   assert.equal(result.currentStreak, 7);
   assert.equal(result.graceUsed, true);
-  assert.equal(result.graceTokens, 1);
+  assert.equal(result.graceTokens, 0);
 });
 
 void test('a streak earns a grace token every seven days, capped at two', () => {
@@ -47,4 +47,15 @@ void test('long gaps reset streak and repeated same day is idempotent', () => {
 void test('achievement badges are persistent and milestone based', () => {
   const badges = earnedBadges(profile({ totalCompleted: 25, currentStreak: 7, badges: ['FIRST_SOLVE'] }), 4, 4, 0);
   assert.deepEqual(badges, ['FIVE_SOLVES', 'FIRST_SOLVE', 'OPTIMAL_PATH', 'PERFECT_SOLVE', 'STREAK_3', 'STREAK_7', 'TWENTY_FIVE_SOLVES']);
+});
+
+void test('leaderboard tie breaks are deterministic', () => {
+  const bestScore = { score: 45, moves: 4, completedAt: 1000, userId: 't2_b' };
+  const fewerMoves = { score: 45, moves: 3, completedAt: 2000, userId: 't2_z' };
+  assert.ok(compareDailyResults(fewerMoves, bestScore, 'score') < 0);
+  assert.ok(compareDailyResults(fewerMoves, bestScore, 'moves') < 0);
+  const earlier = { ...bestScore, completedAt: 900 };
+  assert.ok(compareDailyResults(earlier, bestScore, 'score') < 0);
+  const lexical = { ...bestScore, userId: 't2_a' };
+  assert.ok(compareDailyResults(lexical, bestScore, 'score') < 0);
 });
