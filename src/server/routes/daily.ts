@@ -516,13 +516,15 @@ function shareText(result: DailyResult): string {
 dailyApi.post('/share/post', async (c) => {
   const body: unknown = await c.req.json().catch(() => null);
   if (!isRecord(body) || typeof body.date !== 'string') return c.json({ error: 'Invalid share request.' }, 400);
-  if (!context.userId || !context.subredditName) return c.json({ error: 'Sign in to share your result.' }, 401);
-  if (!await limited(context.userId, 'share-post', 3)) return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
+  const userId = context.userId;
+  const subredditName = context.subredditName;
+  if (!userId || !subredditName) return c.json({ error: 'Sign in to share your result.' }, 401);
+  if (!await limited(userId, 'share-post', 3)) return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
   const result = await verifiedShareRecord(body.date);
   if (!result) return c.json({ error: 'A verified completion for today was not found.' }, 404);
   const text = shareText(result);
   const post = await reddit.submitCustomPost({
-    subredditName: context.subredditName,
+    subredditName,
     title: `WRDLINK Daily ${result.date}: ${result.start} → ${result.target}`,
     entry: 'default',
     runAs: 'USER',
@@ -535,12 +537,14 @@ dailyApi.post('/share/post', async (c) => {
 dailyApi.post('/share/comment', async (c) => {
   const body: unknown = await c.req.json().catch(() => null);
   if (!isRecord(body) || typeof body.date !== 'string') return c.json({ error: 'Invalid share request.' }, 400);
-  if (!context.userId || !context.postId) return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 400);
-  if (!await limited(context.userId, 'share-comment', 3)) return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
+  const userId = context.userId;
+  const postId = context.postId;
+  if (!userId || !postId) return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 400);
+  if (!await limited(userId, 'share-comment', 3)) return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
   const result = await verifiedShareRecord(body.date);
   if (!result) return c.json({ error: 'A verified completion for today was not found.' }, 404);
   const comment = await reddit.submitComment({
-    id: context.postId,
+    id: postId,
     text: shareText(result),
     runAs: 'USER',
   });
