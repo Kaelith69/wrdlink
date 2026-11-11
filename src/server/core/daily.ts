@@ -57,7 +57,7 @@ export function updateDailyStreak(
       currentStreak: profile.currentStreak,
       bestStreak: profile.bestStreak,
       graceTokens: profile.graceTokens,
-      lastDailyDate: profile.lastDailyDate!,
+      lastDailyDate: profile.lastDailyDate ?? dateKey,
       graceUsed: false,
       graceEarned: false,
     };
@@ -111,5 +111,6 @@ export function compareDailyResults(
   if (metric === 'moves' && a.moves !== b.moves) return a.moves - b.moves;
   if (metric === 'score' && a.moves !== b.moves) return a.moves - b.moves;
   if (metric === 'moves' && a.score !== b.score) return b.score - a.score;
-  return a.completedAt - b.completedAt || a.userId.localeCompare(b.userId);
+  if (a.completedAt !== b.completedAt) return a.completedAt - b.completedAt;
+  return a.userId < b.userId ? -1 : a.userId > b.userId ? 1 : 0;
 }
