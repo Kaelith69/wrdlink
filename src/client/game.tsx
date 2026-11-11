@@ -163,7 +163,7 @@ export function App() {
   const entryFormRef = useRef<HTMLFormElement | null>(null);
 
   useEffect(() => {
-    const media = window.matchMedia('(pointer: coarse), (any-pointer: coarse)');
+    const media = window.matchMedia('(max-width: 620px), (pointer: coarse), (any-pointer: coarse)');
     const update = () => setUseVirtualKeyboard(media.matches);
     update();
     media.addEventListener('change', update);
