@@ -399,9 +399,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <p className="daily-guide-kicker">TODAY'S SHARED PUZZLE</p>
             <h1 id="daily-guide-title">Daily challenge <span>{date}</span></h1>
           </div>
-          <span className="daily-guide-streak" aria-label={`${profile.currentStreak} day current streak`}>
-            <span aria-hidden="true">🔥</span> {profile.currentStreak}
-          </span>
         </div>
         <p className="daily-guide-summary">Everyone gets the same start and target words today. Build a ladder by changing exactly one letter per move until you reach the target. Your result counts toward your daily streak and the community leaderboard.</p>
         <details className="daily-how-to">
@@ -435,7 +432,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <ol className="chain-list" ref={chainListRef}>
               {words.map((word, index) => (
                 <li className={word === puzzle.target ? 'chain-final' : ''} key={`${word}-${index}`}>
-                  <span>{String(index + 1).padStart(2, '0')}</span>
+                  <span>{String(index).padStart(2, '0')}</span>
                   <b>{word}</b>
                 </li>
               ))}

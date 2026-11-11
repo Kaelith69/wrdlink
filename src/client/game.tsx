@@ -183,7 +183,11 @@ export function App() {
   const movesUsed = words.length - 1;
   useEffect(() => {
     const list = chainListRef.current;
-    if (list) list.scrollTo({ top: list.scrollHeight, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    if (!list) return;
+    list.scrollTo({
+      top: list.scrollHeight,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+    });
   }, [words]);
   useEffect(() => { if (status === 'won') finishHeadingRef.current?.focus(); }, [status]);
   const hintTotalCost = 6 + hintsUsed;
