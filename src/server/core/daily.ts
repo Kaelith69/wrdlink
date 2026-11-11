@@ -88,14 +88,15 @@ export function updateDailyStreak(
   };
 }
 
-export function earnedBadges(profile: DailyProfile, moves: number, optimalMoves: number, hintsUsed: number): string[] {
+export function earnedBadges(profile: DailyProfile, moves: number, optimalMoves: number, hintsUsed: number, score: number): string[] {
   const earned = new Set(profile.badges);
   if (profile.totalCompleted >= 1) earned.add('FIRST_SOLVE');
   if (profile.totalCompleted >= 5) earned.add('FIVE_SOLVES');
   if (profile.totalCompleted >= 25) earned.add('TWENTY_FIVE_SOLVES');
   if (profile.totalCompleted >= 100) earned.add('HUNDRED_SOLVES');
   if (moves === optimalMoves) earned.add('OPTIMAL_PATH');
-  if (moves === optimalMoves && hintsUsed === 0) earned.add('PERFECT_SOLVE');
+  const maximumDailyScore = Math.max(0, 25 - optimalMoves) + 25;
+  if (moves === optimalMoves && hintsUsed === 0 && score === maximumDailyScore) earned.add('PERFECT_SOLVE');
   if (profile.currentStreak >= 3) earned.add('STREAK_3');
   if (profile.currentStreak >= 7) earned.add('STREAK_7');
   if (profile.currentStreak >= 30) earned.add('STREAK_30');
