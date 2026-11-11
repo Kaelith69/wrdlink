@@ -28,6 +28,8 @@ type DailyState = {
   completed: boolean;
   startedAt: number;
   completedAt: number | null;
+  lastRequestId?: string | null;
+  lastResponse?: Record<string, unknown> | null;
 };
 
 type DailyResult = {
@@ -85,6 +87,9 @@ function isDailyState(value: unknown, expectedPuzzle: Puzzle): value is DailySta
       typeof value.completed !== 'boolean' || typeof value.startedAt !== 'number' || !Number.isFinite(value.startedAt) ||
       !(value.completed ? (typeof value.completedAt === 'number' && Number.isFinite(value.completedAt)) : value.completedAt === null) ||
       value.words.length > 200 ||
+      !(value.lastRequestId === undefined || value.lastRequestId === null ||
+        (typeof value.lastRequestId === 'string' && /^[a-f0-9-]{20,80}$/i.test(value.lastRequestId))) ||
+      !(value.lastResponse === undefined || value.lastResponse === null || isRecord(value.lastResponse)) ||
       !isRecord(value.puzzle) || value.puzzle.id !== expectedPuzzle.id ||
       value.puzzle.start !== expectedPuzzle.start || value.puzzle.target !== expectedPuzzle.target ||
       value.puzzle.wordLength !== expectedPuzzle.wordLength || value.puzzle.optimalMoves !== expectedPuzzle.optimalMoves ||
@@ -182,6 +187,8 @@ function defaultState(puzzle: Puzzle): DailyState {
     completed: false,
     startedAt: Date.now(),
     completedAt: null,
+    lastRequestId: null,
+    lastResponse: null,
   };
 }
 
@@ -528,7 +535,8 @@ dailyApi.post('/validate', async (c) => {
   const body: unknown = await c.req.json().catch(() => null);
   if (!isRecord(body) || typeof body.sessionId !== 'string' || !SESSION_PATTERN.test(body.sessionId) ||
       typeof body.date !== 'string' || typeof body.puzzleId !== 'string' ||
-      typeof body.word !== 'string' || body.word.length > 12) {
+      typeof body.word !== 'string' || body.word.length > 12 ||
+      typeof body.requestId !== 'string' || !/^[a-f0-9-]{20,80}$/i.test(body.requestId)) {
     return c.json({ error: 'Invalid daily move.' }, 400);
   }
   const date = utcDateKey();
@@ -550,11 +558,14 @@ dailyApi.post('/validate', async (c) => {
     if (!state) {
       return { valid: false, complete: false, message: 'This daily puzzle is unavailable. Reload today’s challenge.', words: [puzzle.start], score: 25, result: null, profile: null, newBadges: [] as string[] };
     }
+    if (state.lastRequestId === body.requestId && state.lastResponse) {
+      return state.lastResponse;
+    }
     if (state.completed) {
       const completion = context.userId
         ? await saveVerifiedCompletion(date, context.userId, username ?? 'WRDLINK Player', state)
         : null;
-      return {
+      const response = {
         valid: Boolean(completion),
         complete: true,
         message: 'Today’s challenge is already complete.',
@@ -571,12 +582,18 @@ dailyApi.post('/validate', async (c) => {
         graceEarned: completion?.graceEarned ?? false,
         ranked: Boolean(completion),
       };
+      await redis.set(key, JSON.stringify({ ...state, lastRequestId: body.requestId, lastResponse: response }), {
+        expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
+      });
+      return response;
     }
-    const next = { ...state, words: [...state.words], score: calculateMoveScore(state.score) };
+    const next: DailyState = { ...state, words: [...state.words], score: calculateMoveScore(state.score), lastRequestId: body.requestId, lastResponse: null };
     const validation = validateSequence(puzzle, DICTIONARY, [...next.words, word]);
     if (!validation.valid) {
+      const response = { valid: false, complete: false, message: validation.message, words: next.words, score: next.score, result: null, profile: null, newBadges: [] as string[] };
+      next.lastResponse = response;
       await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
-      return { valid: false, complete: false, message: validation.message, words: next.words, score: next.score, result: null, profile: null, newBadges: [] as string[] };
+      return response;
     }
     next.words.push(word);
     next.completed = validation.complete;
@@ -588,7 +605,7 @@ dailyApi.post('/validate', async (c) => {
     const completion = validation.complete && context.userId
       ? await saveVerifiedCompletion(date, context.userId, username ?? 'WRDLINK Player', next)
       : null;
-    return {
+    const response = {
       valid: true,
       complete: validation.complete,
       message: validation.complete ? validation.message : 'Valid move.',
@@ -605,6 +622,9 @@ dailyApi.post('/validate', async (c) => {
       graceEarned: completion?.graceEarned ?? false,
       ranked: Boolean(context.userId),
     };
+    next.lastResponse = response;
+    await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
+    return response;
   });
   return c.json(response);
 });
