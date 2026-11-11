@@ -49,6 +49,7 @@ type DailyResult = {
 const SESSION_PATTERN = /^(?:[a-f0-9-]{20,80}|session-[a-z0-9-]{10,80})$/i;
 const DAILY_TTL_SECONDS = 60 * 24 * 60 * 60;
 const RATE_WINDOW_SECONDS = 60;
+const LOCK_TTL_MS = 60_000;
 const DEFAULT_PROFILE: DailyProfile = {
   totalCompleted: 0,
   totalScore: 0,
@@ -119,7 +120,7 @@ async function withLock<T>(key: string, operation: () => Promise<T>): Promise<T>
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (await redis.set(lockKey, token, {
       nx: true,
-      expiration: new Date(Date.now() + 30_000),
+      expiration: new Date(Date.now() + LOCK_TTL_MS),
     }) === 'OK') {
       acquired = true;
       break;
