@@ -131,6 +131,44 @@ async function limited(subject: string, action: string, limit: number): Promise<
   return count <= limit;
 }
 
+async function getSharedDailyPuzzle(date: string): Promise<Puzzle> {
+  const key = `wrdlink:v2:daily:puzzle:${date}`;
+  const readStored = async (): Promise<Puzzle | null> => {
+    const raw = await redis.get(key);
+    if (!raw) return null;
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (isRecord(parsed) && parsed.id === `daily-${date}` &&
+          parsed.title === 'WRDLINK Daily Challenge' && typeof parsed.start === 'string' &&
+          typeof parsed.target === 'string' && parsed.wordLength === 4 &&
+          typeof parsed.optimalMoves === 'number' && Number.isSafeInteger(parsed.optimalMoves) &&
+          DICTIONARY.has(parsed.start) && DICTIONARY.has(parsed.target)) {
+        return {
+          id: parsed.id,
+          title: parsed.title,
+          start: parsed.start,
+          target: parsed.target,
+          wordLength: 4,
+          optimalMoves: parsed.optimalMoves,
+        };
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  };
+
+  const existing = await readStored();
+  if (existing) return existing;
+  const generated = createDailyPuzzle(date);
+  const stored = await redis.set(key, JSON.stringify(generated), {
+    nx: true,
+    expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000),
+  });
+  if (stored === 'OK') return generated;
+  return await readStored() ?? generated;
+}
+
 function defaultState(puzzle: Puzzle): DailyState {
   return {
     puzzle,
@@ -324,7 +362,7 @@ dailyApi.post('/init', async (c) => {
     return c.json({ error: 'Invalid daily challenge session.' }, 400);
   }
   const date = utcDateKey();
-  const puzzle = createDailyPuzzle(date);
+  const puzzle = await getSharedDailyPuzzle(date);
   const key = stateKey(date, body.sessionId);
   if (!await limited(identityKey(body.sessionId), 'daily-init', 30)) {
     c.header('Retry-After', String(RATE_WINDOW_SECONDS));
