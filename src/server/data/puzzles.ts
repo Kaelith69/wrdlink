@@ -601,11 +601,16 @@ export function createRandomPuzzle(level = 1): Puzzle {
 
 /** Deterministic UTC daily puzzle. Every player in an installation receives the same
  * start and target for a date, independent of request order or server instance. */
+const dailyPuzzleCache = new Map<string, Puzzle>();
+
 export function createDailyPuzzle(dateKey: string): Puzzle {
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateKey) ||
-      new Date(dateKey + 'T00:00:00.000Z').toISOString().slice(0, 10) !== dateKey) {
+  const timestamp = Date.parse(dateKey + 'T00:00:00.000Z');
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateKey) || !Number.isFinite(timestamp) ||
+      new Date(timestamp).toISOString().slice(0, 10) !== dateKey) {
     throw new Error('WRDLINK daily puzzle requires a valid UTC date.');
   }
+  const cached = dailyPuzzleCache.get(dateKey);
+  if (cached) return { ...cached };
 
   let seed = 2166136261;
   for (const character of dateKey) {
@@ -627,7 +632,7 @@ export function createDailyPuzzle(dateKey: string): Puzzle {
   };
 
   let best: { start: string; target: string; optimalMoves: number } | null = null;
-  for (let attempt = 0; attempt < 300; attempt += 1) {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
     const start = pick(words);
     const route = [start];
     const visited = new Set(route);
@@ -650,7 +655,7 @@ export function createDailyPuzzle(dateKey: string): Puzzle {
       best = { start, target, optimalMoves };
     }
     if (optimalMoves >= 3 && optimalMoves <= 7) {
-      return {
+      const puzzle = {
         id: 'daily-' + dateKey,
         title: 'WRDLINK Daily Challenge',
         start,
@@ -658,14 +663,18 @@ export function createDailyPuzzle(dateKey: string): Puzzle {
         wordLength: 4,
         optimalMoves,
       };
+      dailyPuzzleCache.set(dateKey, puzzle);
+      return { ...puzzle };
     }
   }
 
   const fallback = best ?? { start: 'HEAD', target: 'TAIL', optimalMoves: 4 };
-  return {
+  const puzzle = {
     id: 'daily-' + dateKey,
     title: 'WRDLINK Daily Challenge',
     ...fallback,
     wordLength: 4,
   };
+  dailyPuzzleCache.set(dateKey, puzzle);
+  return { ...puzzle };
 }
