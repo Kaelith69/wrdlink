@@ -137,6 +137,35 @@ async function request<T>(url: string, validate: (value: unknown) => value is T,
   }
 }
 
+function createDailyRequestId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  return Date.now().toString(16) + '-' + Math.random().toString(16).slice(2) + '-' + Math.random().toString(16).slice(2);
+}
+
+function pendingDailyRequestId(date: string, word: string): string {
+  const key = `wrdlink-daily-pending:${date}`;
+  try {
+    const raw = window.sessionStorage.getItem(key);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (isRecord(parsed) && parsed.word === word && typeof parsed.id === 'string' &&
+        /^[a-f0-9-]{20,80}$/i.test(parsed.id)) return parsed.id;
+    const id = createDailyRequestId();
+    window.sessionStorage.setItem(key, JSON.stringify({ word, id }));
+    return id;
+  } catch {
+    return createDailyRequestId();
+  }
+}
+
+function clearPendingDailyRequestId(date: string, requestId: string): void {
+  try {
+    const key = `wrdlink-daily-pending:${date}`;
+    const raw = window.sessionStorage.getItem(key);
+    const parsed: unknown = raw ? JSON.parse(raw) : null;
+    if (isRecord(parsed) && parsed.id === requestId) window.sessionStorage.removeItem(key);
+  } catch { /* Session storage is optional. */ }
+}
+
 const badgeNames: Record<string, string> = {
   FIRST_SOLVE: 'First solve',
   FIVE_SOLVES: '5 puzzles',
@@ -184,6 +213,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [shareMessage, setShareMessage] = useState('');
   const boardRequestId = useRef(0);
   const puzzleLoadStarted = useRef(false);
+  const pendingMoveRequest = useRef<{ date: string; word: string; id: string } | null>(null);
 
   const loadBoard = useCallback(async () => {
     const requestId = ++boardRequestId.current;
@@ -262,11 +292,17 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     }
     setBusy(true);
     setError('');
+    const pending = pendingMoveRequest.current;
+    const requestId = pending?.date === date && pending.word === word
+      ? pending.id : pendingDailyRequestId(date, word);
+    pendingMoveRequest.current = { date, word, id: requestId };
     try {
       const data = await request('/api/daily/validate', isDailyMoveResponse, {
         method: 'POST',
-        body: JSON.stringify({ sessionId, date, puzzleId: puzzle.id, word }),
+        body: JSON.stringify({ sessionId, date, puzzleId: puzzle.id, word, requestId }),
       });
+      clearPendingDailyRequestId(date, requestId);
+      pendingMoveRequest.current = null;
       setWords(data.words);
       setScore(data.score);
       if (!data.valid) {
