@@ -169,7 +169,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
     request('/api/daily/init', isDailyInit, {
       method: 'POST',
       body: JSON.stringify({ sessionId }),
@@ -191,7 +190,19 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     return () => { active = false; };
   }, [sessionId]);
 
-  useEffect(() => { void loadBoard(); }, [loadBoard]);
+  useEffect(() => {
+    let active = true;
+    request<BoardResponse>('/api/daily/leaderboard?period=' + period + '&metric=' + metric, isBoardResponse)
+      .then((data) => {
+        if (!active) return;
+        setBoard(data.entries);
+        setMyRank(data.currentUserRank);
+      })
+      .catch((cause: unknown) => {
+        if (active) setError(cause instanceof Error ? cause.message : 'Could not load leaderboard.');
+      });
+    return () => { active = false; };
+  }, [period, metric]);
 
   async function submitMove(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
