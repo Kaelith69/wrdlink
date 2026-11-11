@@ -605,7 +605,7 @@ const dailyPuzzleCache = new Map<string, Puzzle>();
 
 export function createDailyPuzzle(dateKey: string): Puzzle {
   const timestamp = Date.parse(dateKey + 'T00:00:00.000Z');
-  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateKey) || !Number.isFinite(timestamp) ||
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dateKey) || !Number.isFinite(timestamp) ||
       new Date(timestamp).toISOString().slice(0, 10) !== dateKey) {
     throw new Error('WRDLINK daily puzzle requires a valid UTC date.');
   }
