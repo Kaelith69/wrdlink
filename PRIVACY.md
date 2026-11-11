@@ -1,6 +1,6 @@
 # WRDLINK Privacy Policy
 
-_Last updated: 9 November 2026_
+_Last updated: 11 November 2026_
 
 This policy describes the information handled by the WRDLINK game when it is used through Reddit. It describes the current application implementation, not every category of information Reddit may process as the platform provider.
 
