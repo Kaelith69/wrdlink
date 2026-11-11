@@ -693,9 +693,7 @@ button:focus-visible, input:focus-visible {
   .virtual-keyboard { display: grid; }
   .entry-panel input { caret-color: transparent; }
 }
-@media (pointer: fine) and (min-width: 621px) {
-  .virtual-keyboard { display: none; }
-}
+
 @media (max-width: 360px) {
   .virtual-keyboard { gap: 6px; padding: 9px; }
   .virtual-key { min-height: 42px; border-radius: 7px; }
