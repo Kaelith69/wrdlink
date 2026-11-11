@@ -266,7 +266,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
 
   useEffect(() => {
     const media = window.matchMedia('(max-width: 620px), (pointer: coarse), (any-pointer: coarse)');
-    const update = () => setUseVirtualKeyboard(media.matches);
+    const update = () => setUseVirtualKeyboard(media.matches || navigator.maxTouchPoints > 0 || /Android|iPhone|iPad|iPod/i.test(navigator.userAgent));
     update();
     media.addEventListener('change', update);
     return () => media.removeEventListener('change', update);
