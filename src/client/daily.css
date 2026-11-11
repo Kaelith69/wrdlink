@@ -306,83 +306,6 @@
   box-shadow: 2px 3px 0 var(--line-strong);
 }
 
-@media (max-width: 620px) {
-  .daily-game-page {
-    height: auto;
-    min-height: 100dvh;
-    overflow-y: auto;
-  }
-
-  .daily-game-page .game-header {
-    flex: 0 0 54px;
-    min-height: 54px;
-    height: 54px;
-    padding: 6px 9px;
-    gap: 5px;
-  }
-
-  .daily-game-page .daily-date {
-    display: none;
-  }
-
-  .daily-game-page .game-workspace {
-    height: calc(100dvh - 54px);
-    min-height: 440px;
-    flex: 0 0 auto;
-  }
-
-  .daily-extras {
-    width: calc(100% - 22px);
-    gap: 10px;
-    margin-bottom: 14px;
-  }
-
-  .daily-profile {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 14px;
-  }
-
-  .daily-profile div:nth-child(3) {
-    border-left: 0;
-  }
-
-  .daily-controls {
-    display: grid;
-  }
-
-  .daily-tabs {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .daily-tabs button {
-    flex: 1;
-    padding-inline: 6px;
-  }
-
-  .daily-achievement-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .daily-game-page:not(.is-complete) {
-    padding-bottom: calc(var(--keyboard-dock-height, clamp(146px, 21dvh, 176px)) + env(safe-area-inset-bottom, 0px) + 24px);
-  }
-}
-
-@media (max-width: 420px) {
-  .daily-profile {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .daily-game-page * ,
-  .daily-game-page *::before,
-  .daily-game-page *::after {
-    scroll-behavior: auto;
-  }
-}
-
 
 /* Daily identity and instructions. The guide sits above the shared Campaign
    gameplay surface without changing its route, chain, entry or keyboard styles. */
@@ -430,23 +353,6 @@
   letter-spacing: .04em;
 }
 
-.daily-guide-streak {
-  display: inline-flex;
-  min-width: 48px;
-  min-height: 34px;
-  align-items: center;
-  justify-content: center;
-  gap: 5px;
-  padding: 0 9px;
-  border: 2px solid var(--line-strong);
-  border-radius: 10px;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 12px;
-  font-weight: 950;
-  box-shadow: 2px 3px 0 var(--line-strong);
-}
-
 .daily-guide-summary {
   margin: 8px 0 0;
   color: var(--ink-soft);
@@ -486,194 +392,34 @@
   line-height: 1.45;
 }
 
-.daily-game-page .daily-guide + .daily-game-content .game-workspace {
-  padding-top: 12px;
-}
-
+/* Daily responsive layout. The guide, puzzle and progress panels form one
+   natural scroll surface. The fixed keyboard is reserved at the page end,
+   not duplicated as empty padding inside the game workspace. */
 @media (max-width: 620px) {
-  .daily-guide {
-    width: calc(100% - 18px);
-    margin-top: 9px;
-    padding: 9px 11px;
-    border-radius: 12px;
-    box-shadow: 2px 3px 0 var(--line-strong);
+  .daily-game-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: calc(var(--keyboard-dock-height, 176px) + env(safe-area-inset-bottom, 0px) + 24px);
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 
-  .daily-guide-kicker { font-size: 8px; }
-  .daily-guide-heading h1 { font-size: 16px; }
-  .daily-guide-heading h1 span { font-size: 9px; }
-  .daily-guide-streak { min-width: 42px; min-height: 29px; padding-inline: 7px; }
-  .daily-guide-summary { margin-top: 5px; font-size: 9px; line-height: 1.35; }
-  .daily-how-to { margin-top: 6px; padding-top: 5px; }
-  .daily-how-to summary { font-size: 9px; }
-  .daily-how-to ul,.daily-how-to p { font-size: 9px; }
-  .daily-game-page .daily-guide + .daily-game-content .game-workspace {
-    height: calc(100dvh - 190px);
-    min-height: 410px;
-    padding-top: 8px;
-  }
-}
+  .daily-game-page.is-complete { padding-bottom: 24px; }
 
-/* Campaign header: reserve real space for the Daily launcher instead of
-   allowing its intrinsic width to collide with the wordmark on phones. */
-.campaign-game-header {
-  grid-template-columns: minmax(0, 1fr) auto;
-}
-
-.campaign-game-header .wordmark {
-  min-width: 0;
-  flex-wrap: nowrap;
-}
-
-.campaign-game-header .header-right {
-  min-width: 0;
-  flex-wrap: nowrap;
-}
-
-@media (max-width: 620px) {
-  .campaign-game-header {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 4px;
-    padding: 6px 8px;
-  }
-
-  .campaign-game-header .wordmark {
-    gap: 5px;
-    font-size: 11px;
-  }
-
-  .campaign-game-header .brand-mark {
-    width: 24px;
-    height: 24px;
-    font-size: 12px;
-  }
-
-  .campaign-game-header .level-badge {
-    display: none;
-  }
-
-  .campaign-game-header .header-right {
-    gap: 3px;
-  }
-
-  .campaign-game-header .header-count {
-    gap: 2px;
-  }
-
-  .campaign-game-header .score-pill,
-  .campaign-game-header .moves-pill {
-    min-height: 30px;
-    gap: 3px;
-    padding-inline: 4px;
-  }
-
-  .campaign-game-header .metric-label {
-    font-size: 6px;
-    letter-spacing: .02em;
-  }
-
-  .campaign-game-header .score-pill strong,
-  .campaign-game-header .moves-pill strong {
-    font-size: 10px;
-  }
-
-  .campaign-game-header .daily-launch-button {
-    display: inline-flex;
-    width: 43px;
-    min-width: 43px;
-    min-height: 31px;
-    align-items: center;
-    justify-content: center;
-    padding: 0 3px;
-    border-radius: 8px;
-    font-size: 8px;
-    letter-spacing: .04em;
-    box-shadow: 2px 2px 0 var(--line-strong);
-  }
-
-  .campaign-game-header .header-hint-button {
-    width: 34px;
-    min-width: 34px;
-    height: 31px;
-    padding: 0 2px;
-  }
-
-  .campaign-game-header .header-hint-button svg {
-    width: 15px;
-    height: 15px;
-  }
-
-  .campaign-game-header .header-hint-cost {
-    font-size: 8px;
-  }
-
-  .campaign-game-header .header-help-button {
-    width: 27px;
-    min-width: 27px;
-    height: 31px;
-  }
-}
-
-@media (max-width: 360px) {
-  .campaign-game-header .wordmark > span:nth-child(2) {
-    display: none;
-  }
-
-  .campaign-game-header .header-right {
-    gap: 2px;
-  }
-
-  .campaign-game-header .daily-launch-button {
-    width: 39px;
-    min-width: 39px;
-  }
-}
-
-
-/* Daily uses the same compact mobile header and ladder geometry as Campaign.
-   Its header must reserve the full height of the stacked metrics, not the old
-   54px single row allocation. */
-@media (max-width: 620px) {
-  .daily-game-page .game-header {
-    flex: 0 0 74px;
-    height: 74px;
-    min-height: 74px;
-    align-items: center;
-  }
-
-  .daily-game-page .header-count {
-    flex: 0 0 68px;
-    height: 54px;
-    align-self: center;
-  }
-
-  .daily-game-page .daily-guide-heading {
-    justify-content: flex-start;
-  }
-
-  .daily-game-page .daily-guide-heading h1 {
-    gap: 6px;
-  }
-
-  .daily-game-page .daily-guide {
-    margin-top: 8px;
-    padding: 9px 11px;
-  }
-
-  .daily-game-page .daily-guide-summary {
-    max-width: 66ch;
-  }
-
-  .daily-game-page .daily-guide + .daily-game-content .game-workspace {
-    height: calc(100dvh - 210px);
-    min-height: 360px;
-    padding-top: 8px;
-  }
+  .daily-game-page .daily-date { display: none; }
 
   .daily-game-page .game-workspace {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
     grid-template-rows: auto auto auto;
-    align-content: space-between;
+    align-content: start;
     gap: 8px;
+    padding: 8px 11px 0;
+    overflow: visible;
   }
 
   .daily-game-page .chain-panel {
@@ -685,60 +431,93 @@
   }
 
   .daily-game-page .chain-list {
+    max-height: 76px;
     flex: 0 1 auto;
-    max-height: 68px;
+    margin-top: 7px;
     padding: 0 3px 4px 0;
+    gap: 4px;
     overflow-x: hidden;
     overflow-y: auto;
-    scroll-padding-bottom: 4px;
-    scroll-snap-type: none;
     overscroll-behavior-y: contain;
     scrollbar-width: none;
   }
 
-  .daily-game-page .chain-list li {
-    scroll-snap-align: none;
+  .daily-game-page .chain-list::-webkit-scrollbar { display: none; }
+
+  .daily-game-page.is-complete .game-workspace {
+    padding-bottom: 12px;
   }
 
-  .daily-game-page .chain-list::-webkit-scrollbar {
-    display: none;
+  .daily-game-page.is-complete .chain-panel {
+    max-height: min(32dvh, 220px);
   }
+
+  .daily-game-page.is-complete .chain-list {
+    max-height: min(25dvh, 180px);
+    padding-bottom: 8px;
+  }
+
+  .daily-guide {
+    width: calc(100% - 18px);
+    margin-top: 8px;
+    padding: 9px 11px;
+    border-radius: 12px;
+    box-shadow: 2px 3px 0 var(--line-strong);
+  }
+
+  .daily-guide-kicker { font-size: 8px; }
+  .daily-guide-heading h1 { font-size: 16px; gap: 6px; }
+  .daily-guide-heading h1 span { font-size: 9px; }
+  .daily-guide-summary { margin-top: 5px; font-size: 10px; line-height: 1.35; }
+  .daily-how-to { margin-top: 6px; padding-top: 5px; }
+  .daily-how-to summary { font-size: 9px; }
+  .daily-how-to ul,
+  .daily-how-to p { font-size: 9px; }
+
+  .daily-extras {
+    width: calc(100% - 22px);
+    gap: 10px;
+    margin-bottom: 14px;
+    padding-bottom: 0;
+  }
+
+  .daily-profile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .daily-profile div:nth-child(3) { border-left: 0; }
+  .daily-controls { display: grid; }
+  .daily-tabs { width: 100%; justify-content: space-between; }
+  .daily-tabs button { flex: 1; padding-inline: 6px; }
+  .daily-achievement-grid { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 420px) {
+  .daily-profile { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-game-page *,
+  .daily-game-page *::before,
+  .daily-game-page *::after { scroll-behavior: auto; }
+}
+
+
 @media (max-width: 620px) and (max-height: 700px) {
-  .daily-game-page .game-header {
-    flex-basis: 68px;
-    height: 68px;
-    min-height: 68px;
+  .daily-game-page .daily-guide-summary {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
-  .daily-game-page .header-count {
-    height: 52px;
-  }
-
-  .daily-game-page .daily-guide + .daily-game-content .game-workspace {
-    height: calc(100dvh - 204px);
-    min-height: 330px;
-  }
-
-  .daily-game-page .game-workspace { gap: 6px; }
-  .daily-game-page .chain-panel { max-height: min(25dvh, 135px); }
-  .daily-game-page .chain-list { max-height: 60px; }
+  .daily-game-page .daily-game-content .game-workspace { gap: 6px; }
+  .daily-game-page .daily-guide { padding-block: 8px; }
 }
 
 @media (max-width: 620px) and (max-height: 580px) {
-  .daily-game-page .game-header {
-    flex-basis: 62px;
-    height: 62px;
-    min-height: 62px;
-  }
-
-  .daily-game-page .header-count { height: 48px; }
-  .daily-game-page .daily-guide + .daily-game-content .game-workspace {
-    height: calc(100dvh - 190px);
-    min-height: 280px;
-  }
-
-  .daily-game-page .chain-panel { max-height: min(24dvh, 115px); }
-  .daily-game-page .chain-list { max-height: 54px; }
+  .daily-game-page .daily-guide-summary { -webkit-line-clamp: 2; }
+  .daily-game-page .daily-guide { margin-top: 6px; padding-block: 6px; }
+  .daily-game-page .daily-how-to { margin-top: 4px; padding-top: 4px; }
 }
