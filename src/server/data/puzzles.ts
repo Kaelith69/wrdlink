@@ -597,3 +597,75 @@ export function createRandomPuzzle(level = 1): Puzzle {
     wordLength: 4,
   };
 }
+
+
+/** Deterministic UTC daily puzzle. Every player in an installation receives the same
+ * start and target for a date, independent of request order or server instance. */
+export function createDailyPuzzle(dateKey: string): Puzzle {
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(dateKey) ||
+      new Date(dateKey + 'T00:00:00.000Z').toISOString().slice(0, 10) !== dateKey) {
+    throw new Error('WRDLINK daily puzzle requires a valid UTC date.');
+  }
+
+  let seed = 2166136261;
+  for (const character of dateKey) {
+    seed ^= character.charCodeAt(0);
+    seed = Math.imul(seed, 16777619);
+  }
+  let randomState = seed >>> 0;
+  const random = (): number => {
+    randomState += 0x6D2B79F5;
+    let value = randomState;
+    value = Math.imul(value ^ (value >>> 15), value | 1);
+    value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+    return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+  };
+  const pick = <T,>(items: readonly T[]): T => {
+    const item = items[Math.floor(random() * items.length)];
+    if (item === undefined) throw new Error('WRDLINK daily puzzle word pool is empty.');
+    return item;
+  };
+
+  let best: { start: string; target: string; optimalMoves: number } | null = null;
+  for (let attempt = 0; attempt < 300; attempt += 1) {
+    const start = pick(words);
+    const route = [start];
+    const visited = new Set(route);
+    const desiredMoves = 3 + Math.floor(random() * 9);
+
+    while (route.length - 1 < desiredMoves) {
+      const current = route[route.length - 1];
+      if (!current) break;
+      const choices = neighbors(current).filter((word) => !visited.has(word));
+      if (choices.length === 0) break;
+      const next = pick(choices);
+      route.push(next);
+      visited.add(next);
+    }
+
+    const target = route[route.length - 1];
+    const optimalMoves = target ? shortestDistance(start, target) : null;
+    if (!target || target === start || optimalMoves === null) continue;
+    if (!best || Math.abs(optimalMoves - 5) < Math.abs(best.optimalMoves - 5)) {
+      best = { start, target, optimalMoves };
+    }
+    if (optimalMoves >= 3 && optimalMoves <= 7) {
+      return {
+        id: 'daily-' + dateKey,
+        title: 'WRDLINK Daily Challenge',
+        start,
+        target,
+        wordLength: 4,
+        optimalMoves,
+      };
+    }
+  }
+
+  const fallback = best ?? { start: 'HEAD', target: 'TAIL', optimalMoves: 4 };
+  return {
+    id: 'daily-' + dateKey,
+    title: 'WRDLINK Daily Challenge',
+    ...fallback,
+    wordLength: 4,
+  };
+}
