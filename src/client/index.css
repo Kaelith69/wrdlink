@@ -693,7 +693,7 @@ button:focus-visible, input:focus-visible {
   .virtual-keyboard { display: grid; }
   .entry-panel input { caret-color: transparent; }
 }
-@media (pointer: fine) {
+@media (pointer: fine) and (min-width: 621px) {
   .virtual-keyboard { display: none; }
 }
 @media (max-width: 360px) {
@@ -999,7 +999,7 @@ button:focus-visible, input:focus-visible {
 /* Full bleed floating keyboard for Reddit's embedded mobile viewport.
    It is anchored to the app viewport, not the entry card, and reserves
    its own height in the workspace so game controls remain reachable. */
-@media (max-width: 620px) and (any-pointer: coarse) {
+@media (max-width: 620px) {
   :root {
     --keyboard-dock-height: clamp(146px, 21dvh, 176px);
   }
@@ -1076,7 +1076,7 @@ button:focus-visible, input:focus-visible {
     margin-top: 5px;
   }
 }
-@media (max-width: 620px) and (max-height: 700px) and (any-pointer: coarse) {
+@media (max-width: 620px) and (max-height: 700px) {
   :root { --keyboard-dock-height: 142px; }
   .virtual-keyboard {
     padding: 6px 7px max(6px, env(safe-area-inset-bottom, 0px));
@@ -1086,7 +1086,7 @@ button:focus-visible, input:focus-visible {
   .virtual-keyboard-label { font-size: 7px; }
   .virtual-key { border-radius: 7px; }
 }
-@media (max-width: 620px) and (max-height: 580px) and (any-pointer: coarse) {
+@media (max-width: 620px) and (max-height: 580px) {
   :root { --keyboard-dock-height: 126px; }
   .virtual-keyboard {
     padding: 5px 6px max(5px, env(safe-area-inset-bottom, 0px));
