@@ -117,11 +117,12 @@ button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); ou
 .entry-panel form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
 .entry-panel input { min-width: 0; height: 62px; padding: 0 17px; border: 3px solid var(--line-strong); border-radius: var(--radius-control); background: var(--paper-strong); color: var(--ink); font-size: 22px; font-weight: 950; letter-spacing: .24em; text-transform: uppercase; box-shadow: 3px 4px 0 var(--line); transition: box-shadow 140ms ease, border-color 140ms ease; }
 .entry-panel input:focus { border-color: var(--tile); box-shadow: 0 0 0 4px color-mix(in srgb, var(--tile) 22%, transparent); outline: none; }
+.entry-panel input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .entry-panel input::placeholder { color: var(--muted); font-size: 11px; letter-spacing: .13em; }
 .ink-button { display: inline-flex; min-height: 54px; align-items: center; justify-content: center; gap: 12px; padding: 0 20px; border: 3px solid var(--line-strong); border-radius: 14px; background: var(--accent); color: var(--accent-ink); cursor: pointer; font-size: 11px; font-weight: 950; letter-spacing: .08em; box-shadow: 3px 4px 0 var(--line-strong); transition: transform 120ms ease, box-shadow 120ms ease, filter 120ms ease; }
 .ink-button:hover:not(:disabled) { filter: brightness(1.04); transform: translate(-1px, -1px); box-shadow: 4px 5px 0 var(--line-strong); }
 .ink-button:active:not(:disabled) { transform: translate(2px, 2px); box-shadow: 1px 2px 0 var(--line-strong); }
-.ink-button:disabled { border-color: var(--line); background: var(--disabled); color: color-mix(in srgb, var(--ink) 60%, transparent); box-shadow: none; cursor: not-allowed; }
+.ink-button:disabled { border-color: var(--line); background: var(--disabled); color: var(--ink); box-shadow: none; cursor: not-allowed; }
 .secondary-button { min-height: 39px; padding: 0 12px; border: 1px solid var(--line); border-radius: 10px; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 11px; font-weight: 850; white-space: nowrap; }
 .secondary-button:hover:not(:disabled) { background: var(--paper-strong); }
 .secondary-button:disabled { border-color: var(--disabled); background: var(--disabled); color: var(--paper); cursor: not-allowed; }
