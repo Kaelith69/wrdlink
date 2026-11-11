@@ -1171,3 +1171,25 @@ button:focus-visible, input:focus-visible {
     flex-basis: 26px;
   }
 }
+
+
+.daily-launch-button {
+  min-height: 40px;
+  padding: 0 13px;
+  border: 2px solid var(--line-strong);
+  border-radius: 11px;
+  background: var(--tile);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .1em;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--line-strong);
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+.daily-launch-button:hover { transform: translateY(-1px); box-shadow: 3px 4px 0 var(--line-strong); }
+.daily-launch-button:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 480px) {
+  .daily-launch-button { min-height: 36px; padding: 0 9px; font-size: 9px; }
+  .header-right { gap: 7px; }
+}
