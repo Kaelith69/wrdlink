@@ -14,7 +14,7 @@ WRDLINK is a game application made available within Reddit. It is not an indepen
 
 You may use WRDLINK only if you are eligible to use Reddit under Reddit's applicable age requirements and terms. You are responsible for activity carried out through your Reddit account and for keeping access to your device and browser session secure.
 
-Some campaign recovery features use the authenticated Reddit account identifier supplied to the server by Devvit. Logged out play uses a browser session identifier and may not have the same cross tab or cross browser recovery behavior.
+Campaign recovery and ranked daily challenge features use the authenticated Reddit account identifier supplied to the server by Devvit. Daily leaderboard entries display the player's public Reddit username. Logged out players may play the daily puzzle, but their results are not ranked or stored in a persistent player profile.
 
 ## 3. Gameplay and scoring
 
@@ -32,11 +32,21 @@ The server validates submitted moves and maintains the authoritative campaign sc
 
 Rate limited requests, malformed requests rejected before move validation, and requests for unavailable or completed sessions are not accepted gameplay moves and do not incur the move deduction.
 
-Scores, levels, hints, and completion status are game progress only. They have no cash value, are not prizes, and do not represent a guarantee of ranking, reward, or eligibility for anything outside the game.
+### Daily challenge, rankings, streaks, and sharing
+
+- The daily challenge is shared by players in the same installed subreddit and changes at 00:00 UTC.
+- Daily, weekly, and all time leaderboards are calculated from server validated daily completions. A player can submit only one ranked completion per day.
+- Daily rankings prioritize highest score or fewest moves. Ties are resolved deterministically using the other result metric, completion time, and stable account ordering.
+- Weekly and all time community rankings aggregate verified daily completions. Leaderboards are scoped to the subreddit installation where WRDLINK is installed; they are not global across every subreddit installation.
+- Daily streaks increase on consecutive UTC challenge days. One missed day can be protected by a grace token. Grace tokens are earned after seven consecutive completed days and are capped at two.
+- Achievement badges are based on server recorded completion milestones, optimal move paths, and streak milestones.
+- Sharing a verified result is optional. Selecting Share as Reddit post or Share as comment explicitly publishes the result under your Reddit account. Shared results are visible according to Reddit's normal post and comment visibility settings.
+
+Scores, levels, hints, daily results, streaks, badges, and leaderboard positions are game progress only. They have no cash value, are not prizes, and do not represent a guarantee of reward or eligibility for anything outside the game.
 
 ## 4. Campaigns and saved progress
 
-Campaign progress is stored by the server in Reddit Devvit Redis. Session records and associated account mapping records are configured to expire after 7 days without an update. Progress may therefore be lost after inactivity, service changes, technical failures, or expiration.
+Campaign progress is stored by the server in Reddit Devvit Redis. Session records and associated account mapping records are configured to expire after 7 days without an update. Daily challenge sessions and daily and weekly result records expire after 60 days. All time leaderboard and player progression records persist until removed with the app data. Progress may therefore be lost after inactivity, service changes, technical failures, or expiration.
 
 Signed in Reddit players may be able to restore a campaign through the account mapping maintained by the server. Logged out campaigns depend on browser session storage and the corresponding server session. We do not guarantee permanent storage, uninterrupted availability, or recovery in every circumstance.
 
