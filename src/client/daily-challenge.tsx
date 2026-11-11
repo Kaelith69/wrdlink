@@ -571,8 +571,8 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                       </div>
                     </>
                   ) : <p>Sign in to save a ranked result and share it to Reddit.</p>}
-                  {shareMessage && <p className="game-message" role="status">{shareMessage}</p>}
-                  {error && <p className="game-message error" role="alert">{error}</p>}
+                  {shareMessage && <p className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
+                  {error && <p className="game-message error daily-share-feedback" role="alert">{error}</p>}
                 </section>
               )}
             </section>
