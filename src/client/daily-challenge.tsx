@@ -255,9 +255,8 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     }
   }
 
-  const moveLabel = metric === 'moves'
-    ? period === 'daily' ? 'Fewest moves' : 'Fewest average moves'
-    : 'Highest score';
+  let moveLabel = 'Highest score';
+  if (metric === 'moves') moveLabel = period === 'daily' ? 'Fewest moves' : 'Fewest average moves';
   const periodLabel = period === 'daily' ? 'Today' : period === 'weekly' ? 'This week' : 'All time';
 
   if (loading) {
