@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { compareDailyResults, earnedBadges, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
+import { aggregateRankScore, dailyRankScore, earnedBadges, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
 
 const profile = (patch: Partial<DailyProfile> = {}): DailyProfile => ({
   totalCompleted: 0, totalScore: 0, totalMoves: 0,
@@ -49,13 +49,27 @@ void test('achievement badges are persistent and milestone based', () => {
   assert.deepEqual(badges, ['FIVE_SOLVES', 'FIRST_SOLVE', 'OPTIMAL_PATH', 'PERFECT_SOLVE', 'STREAK_3', 'STREAK_7', 'TWENTY_FIVE_SOLVES']);
 });
 
-void test('leaderboard tie breaks are deterministic', () => {
-  const bestScore = { score: 45, moves: 4, completedAt: 1000, userId: 't2_b' };
-  const fewerMoves = { score: 45, moves: 3, completedAt: 2000, userId: 't2_z' };
-  assert.ok(compareDailyResults(fewerMoves, bestScore, 'score') < 0);
-  assert.ok(compareDailyResults(fewerMoves, bestScore, 'moves') < 0);
-  const earlier = { ...bestScore, completedAt: 900 };
-  assert.ok(compareDailyResults(earlier, bestScore, 'score') < 0);
-  const lexical = { ...bestScore, userId: 't2_a' };
-  assert.ok(compareDailyResults(lexical, bestScore, 'score') < 0);
+
+void test('daily score and move rankings use deterministic composite scores', () => {
+  const highScore = dailyRankScore(48, 2, 1000, 'score');
+  const lowScore = dailyRankScore(42, 2, 1000, 'score');
+  assert.ok(highScore < lowScore);
+
+  const fewerMoves = dailyRankScore(45, 3, 2000, 'moves');
+  const moreMoves = dailyRankScore(45, 4, 1000, 'moves');
+  assert.ok(fewerMoves < moreMoves);
+
+  const earlierTie = dailyRankScore(45, 3, 1000, 'score');
+  const laterTie = dailyRankScore(45, 3, 2000, 'score');
+  assert.ok(earlierTie < laterTie);
+});
+
+void test('weekly and all time ranking uses aggregate score and average moves', () => {
+  const stronger = aggregateRankScore(400, 30, 10, 'score');
+  const weaker = aggregateRankScore(350, 30, 10, 'score');
+  assert.ok(stronger < weaker);
+
+  const fewerAverageMoves = aggregateRankScore(350, 25, 10, 'moves');
+  const moreAverageMoves = aggregateRankScore(400, 35, 10, 'moves');
+  assert.ok(fewerAverageMoves < moreAverageMoves);
 });
