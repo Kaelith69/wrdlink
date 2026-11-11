@@ -102,7 +102,7 @@ void test('daily share copy contains progress only and never exposes the solutio
     'Streak: 4 days',
     'Points: 35',
     'Think you can beat it? Give today’s puzzle a try!',
-  ].join('\\n\\n'));
+  ].join('\n\n'));
   assert.equal(message.includes('HOLK'), false);
   assert.equal(message.includes('Solution:'), false);
   assert.equal(message.includes('>!'), false);
