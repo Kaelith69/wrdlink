@@ -1229,3 +1229,193 @@ button:focus-visible, input:focus-visible {
 .daily-launch-button{min-height:34px;padding-inline:9px;font-size:9px}
 .header-help-button{width:32px;min-width:32px;height:34px}
 }
+
+
+/* Compact vertical score stack shared by Campaign and Daily. Keep score and
+   moves visually distinct while reducing the header's horizontal footprint. */
+.game-header .header-count {
+  display: flex;
+  flex: 0 0 78px;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: center;
+  gap: 3px;
+}
+
+.game-header .header-count .score-pill,
+.game-header .header-count .moves-pill {
+  display: flex;
+  width: 100%;
+  min-height: 25px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+  padding: 0 7px;
+  border-width: 1.5px;
+  border-radius: 7px;
+  box-sizing: border-box;
+}
+
+.game-header .header-count .score-pill {
+  border-color: var(--mint);
+  background: var(--mint-soft);
+}
+
+.game-header .header-count .score-pill strong {
+  color: var(--mint);
+  font-size: 12px;
+}
+
+.game-header .header-count .moves-pill {
+  border-color: var(--tangerine);
+  background: var(--tangerine-soft);
+}
+
+.game-header .header-count .moves-pill strong {
+  color: var(--tangerine);
+  font-size: 12px;
+}
+
+.game-header .header-count .metric-label {
+  font-size: 7px;
+  letter-spacing: .06em;
+}
+
+@media (max-width: 620px) {
+  .game-header,
+  .daily-game-page .game-header {
+    min-height: 74px;
+    height: auto;
+    padding: 6px 9px;
+    gap: 5px;
+  }
+
+  .campaign-game-header .level-badge {
+    display: inline-flex !important;
+    flex: 0 0 auto;
+    margin-left: 0;
+    padding: 2px 5px;
+    font-size: 7px;
+    white-space: nowrap;
+  }
+
+  .campaign-game-header .wordmark {
+    gap: 5px;
+    font-size: 12px;
+  }
+
+  .campaign-game-header .brand-mark {
+    width: 26px;
+    height: 26px;
+    font-size: 13px;
+  }
+
+  .campaign-game-header .header-right,
+  .daily-game-page .header-right {
+    gap: 4px;
+  }
+
+  .game-header .header-count {
+    flex-basis: 72px;
+    gap: 2px;
+  }
+
+  .game-header .header-count .score-pill,
+  .game-header .header-count .moves-pill {
+    min-height: 24px;
+    padding-inline: 5px;
+  }
+
+  .game-header .header-count .metric-label {
+    font-size: 6px;
+  }
+
+  .game-header .header-count .score-pill strong,
+  .game-header .header-count .moves-pill strong {
+    font-size: 11px;
+  }
+
+  .campaign-game-header .daily-launch-button {
+    min-width: 42px;
+    width: 42px;
+    min-height: 32px;
+    padding-inline: 3px;
+    font-size: 8px;
+  }
+
+  .campaign-game-header .header-hint-button {
+    min-width: 38px;
+    width: 38px;
+    height: 32px;
+    padding-inline: 3px;
+  }
+
+  .campaign-game-header .header-help-button {
+    width: 29px;
+    min-width: 29px;
+    height: 32px;
+  }
+
+  .daily-game-page .daily-streak-indicator {
+    min-width: 47px;
+    width: 47px;
+    height: 32px;
+    padding-inline: 4px;
+    gap: 3px;
+  }
+
+  .daily-game-page .header-help-button {
+    width: 29px;
+    min-width: 29px;
+    height: 32px;
+  }
+}
+
+@media (max-width: 420px) {
+  .game-header,
+  .daily-game-page .game-header {
+    padding-inline: 7px;
+    gap: 3px;
+  }
+
+  .campaign-game-header .wordmark {
+    gap: 4px;
+    font-size: 11px;
+  }
+
+  .campaign-game-header .level-badge {
+    padding-inline: 4px;
+    font-size: 6px;
+  }
+
+  .game-header .header-count {
+    flex-basis: 66px;
+  }
+
+  .campaign-game-header .header-right,
+  .daily-game-page .header-right {
+    gap: 3px;
+  }
+}
+
+@media (max-width: 360px) {
+  .campaign-game-header .wordmark > span:nth-child(2),
+  .daily-game-page .wordmark > span:nth-child(2) {
+    display: none;
+  }
+
+  .campaign-game-header .level-badge {
+    display: inline-flex !important;
+    font-size: 7px;
+  }
+
+  .campaign-game-header .daily-launch-button {
+    min-width: 38px;
+    width: 38px;
+    font-size: 7px;
+  }
+
+  .game-header .header-count {
+    flex-basis: 62px;
+  }
+}
