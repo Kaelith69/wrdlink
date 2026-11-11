@@ -123,5 +123,5 @@ export function aggregateRankScore(
   const averageMoves = completedCount ? Math.round((totalMoves / completedCount) * 1000) : 0;
   return metric === 'score'
     ? (1_000_000 - Math.min(totalScore, 1_000_000)) * 1_000_000 + averageMoves
-    : averageMoves * 1_000_000 + (1_000_000 - Math.min(totalScore, 1_000_000));
+    : averageMoves * 2_000_000 + (1_000_000 - Math.min(totalScore, 1_000_000));
 }
