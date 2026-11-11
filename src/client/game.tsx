@@ -183,8 +183,21 @@ export function App() {
   const switchMode = (nextDaily: boolean) => {
     const update = () => setDailyOpen(nextDaily);
     const startViewTransition = Reflect.get(document, 'startViewTransition');
-    if (typeof startViewTransition === 'function') startViewTransition.call(document, update);
-    else update();
+    if (typeof startViewTransition !== 'function') {
+      update();
+      return;
+    }
+
+    document.documentElement.classList.add('mode-switch-transition');
+    try {
+      const transition = startViewTransition.call(document, update) as { finished?: Promise<void> };
+      const clearTransitionClass = () => document.documentElement.classList.remove('mode-switch-transition');
+      if (transition?.finished) void transition.finished.then(clearTransitionClass, clearTransitionClass);
+      else clearTransitionClass();
+    } catch {
+      document.documentElement.classList.remove('mode-switch-transition');
+      update();
+    }
   };
 
   const movesUsed = words.length - 1;
