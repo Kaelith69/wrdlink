@@ -45,7 +45,7 @@ void test('long gaps reset streak and repeated same day is idempotent', () => {
 });
 
 void test('achievement badges are persistent and milestone based', () => {
-  const badges = earnedBadges(profile({ totalCompleted: 25, currentStreak: 7, badges: ['FIRST_SOLVE'] }), 4, 4, 0);
+  const badges = earnedBadges(profile({ totalCompleted: 25, currentStreak: 7, badges: ['FIRST_SOLVE'] }), 4, 4, 0, 46);
   assert.deepEqual(badges, ['FIVE_SOLVES', 'FIRST_SOLVE', 'OPTIMAL_PATH', 'PERFECT_SOLVE', 'STREAK_3', 'STREAK_7', 'TWENTY_FIVE_SOLVES']);
 });
 
@@ -72,4 +72,12 @@ void test('weekly and all time ranking uses aggregate score and average moves', 
   const fewerAverageMoves = aggregateRankScore(350, 25, 10, 'moves');
   const moreAverageMoves = aggregateRankScore(1_000_000, 26, 10, 'moves');
   assert.ok(fewerAverageMoves < moreAverageMoves);
+});
+
+void test('perfect solve requires the maximum possible score without failed attempts', () => {
+  const perfect = earnedBadges(profile({ totalCompleted: 1 }), 4, 4, 0, 46);
+  assert.ok(perfect.includes('PERFECT_SOLVE'));
+  const penalized = earnedBadges(profile({ totalCompleted: 1 }), 4, 4, 0, 45);
+  assert.equal(penalized.includes('PERFECT_SOLVE'), false);
+  assert.ok(penalized.includes('OPTIMAL_PATH'));
 });
