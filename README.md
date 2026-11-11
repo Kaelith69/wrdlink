@@ -13,7 +13,7 @@ WRDLINK is a Reddit word transformation game built with **Devvit Web**. Change o
 ## Campaign scoring
 
 - A new campaign starts with **25 points**.
-- Every accepted move costs **1 point**, immediately.
+- Every submitted move costs **1 point**, whether accepted or rejected.
 - Completing a level awards **25 additional points**.
 - The remaining score carries into the next level. It never drops below zero.
 - Starting a new game resets the score to 25, level to 1, and campaign hint count to zero.
