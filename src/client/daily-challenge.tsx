@@ -383,6 +383,29 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
         </div>
       </header>
 
+      <section className="daily-guide" aria-labelledby="daily-guide-title">
+        <div className="daily-guide-heading">
+          <div>
+            <p className="daily-guide-kicker">TODAY'S SHARED PUZZLE</p>
+            <h1 id="daily-guide-title">Daily challenge <span>{date}</span></h1>
+          </div>
+          <span className="daily-guide-streak" aria-label={`${profile.currentStreak} day current streak`}>
+            <span aria-hidden="true">🔥</span> {profile.currentStreak}
+          </span>
+        </div>
+        <p className="daily-guide-summary">Everyone gets the same start and target words today. Build a ladder by changing exactly one letter per move until you reach the target. Your result counts toward your daily streak and the community leaderboard.</p>
+        <details className="daily-how-to">
+          <summary>How to play today's puzzle</summary>
+          <ul>
+            <li>Change <strong>exactly one letter</strong> from the previous word.</li>
+            <li>Every entry must be a <strong>real four letter word</strong>.</li>
+            <li>Do not reuse a word. Reach the target to complete the puzzle.</li>
+            <li>Use the on screen keyboard on touch devices, then tap Submit.</li>
+          </ul>
+          <p>The daily puzzle resets at <strong>00:00 UTC (05:30 IST)</strong>. Complete it before the reset to keep your streak alive. A grace token can protect one missed day.</p>
+        </details>
+      </section>
+
       <div className="daily-game-content">
         <div className="game-workspace">
           <section className="route-panel" aria-label="Puzzle route">
