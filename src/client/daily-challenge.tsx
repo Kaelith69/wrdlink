@@ -319,7 +319,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                 <span>{result.start} → {result.target}</span>
                 <small>{result.moves} moves · {result.score} points · Completed</small>
                 <code>{result.words.join(' → ')}</code>
-                <small>Play again tomorrow · r/WRDLINK</small>
+                <a href="https://www.reddit.com/r/WRDLINK/" target="_blank" rel="noreferrer">Play WRDLINK ↗</a>
               </div>
               {ranked ? (
                 <p className="daily-muted">These actions publish under your Reddit account.</p>
