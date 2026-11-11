@@ -508,7 +508,7 @@ function shareText(result: DailyResult): string {
     `${result.start} → ${result.target}`,
     `Moves: ${result.moves} · Score: ${result.score}`,
     'Status: Completed',
-    path,
+    `Solution: >!${path}!<`,
     `Play WRDLINK: https://www.reddit.com/r/WRDLINK/`,
   ].join('\n\n');
 }
