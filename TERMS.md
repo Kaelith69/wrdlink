@@ -1,6 +1,6 @@
 # WRDLINK Terms and Conditions
 
-_Last updated: 9 November 2026_
+_Last updated: 11 November 2026_
 
 These Terms govern use of WRDLINK, a word transformation puzzle game made available through Reddit and powered by Reddit Devvit. By accessing or playing WRDLINK, you agree to these Terms. If you do not agree, do not use the game.
 
