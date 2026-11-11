@@ -1355,10 +1355,10 @@ button:focus-visible, input:focus-visible {
 /* Shared mode switch. It occupies the same header slot in Campaign and Daily. */
 .mode-switch {
   display: inline-flex;
-  width: 84px;
-  min-width: 84px;
+  width: 96px;
+  min-width: 96px;
   height: 40px;
-  flex: 0 0 84px;
+  flex: 0 0 96px;
   align-items: center;
   justify-content: center;
   gap: 6px;
