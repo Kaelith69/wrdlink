@@ -411,7 +411,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{score}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{words.length - 1}</strong></span>
           </div>
-          <button className="mode-switch is-daily" type="button" onClick={onClose} aria-label="Switch to Campaign" aria-pressed={true} title="Switch to Campaign"><span className="mode-switch-option mode-switch-campaign-option" aria-hidden="true">CAMP</span><span className="mode-switch-option mode-switch-daily-option" aria-hidden="true">DAILY</span><span className="mode-switch-thumb" aria-hidden="true" /></button>
+          <button className="mode-switch is-daily" type="button" onClick={onClose} aria-label="Daily mode selected. Switch to Campaign." aria-pressed={true} title="Switch to Campaign"><span className="mode-switch-option mode-switch-campaign-option" aria-hidden="true">CAMP</span><span className="mode-switch-option mode-switch-daily-option" aria-hidden="true">DAILY</span><span className="mode-switch-thumb" aria-hidden="true" /></button>
           <div className="header-hint-button daily-streak-indicator" aria-label={profile.currentStreak + ' day streak'} title={profile.currentStreak + ' day streak'}>
             <span aria-hidden="true">🔥</span><span className="header-hint-cost">{profile.currentStreak}</span>
           </div>
