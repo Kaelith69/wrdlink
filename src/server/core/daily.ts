@@ -109,10 +109,15 @@ export function dailyRankScore(
   completedAt: number,
   metric: 'score' | 'moves'
 ): number {
-  const seconds = Math.floor(completedAt / 1000) % 86_400;
+  const dayMilliseconds = DAY_MS;
+  const timeOfDay = Math.floor(completedAt) % dayMilliseconds;
+  // A primary metric must always outrank every possible secondary metric,
+  // and a secondary metric must always outrank the completion timestamp.
+  // Daily chains are capped at 200 words by validateSequence().
+  const primaryScale = 1_000_000_000_000;
   return metric === 'score'
-    ? (1000 - score) * 1_000_000 + moves * 1000 + seconds
-    : moves * 1_000_000 + (1000 - score) * 1000 + seconds;
+    ? (1000 - score) * primaryScale + moves * dayMilliseconds + timeOfDay
+    : moves * primaryScale + (1000 - score) * dayMilliseconds + timeOfDay;
 }
 
 export function aggregateRankScore(
