@@ -268,7 +268,7 @@ async function saveVerifiedCompletion(
     graceTokens: streak.graceTokens,
     badges: previousProfile.badges,
   };
-  profile.badges = earnedBadges(profile, result.moves, result.optimalMoves, result.hintsUsed);
+  profile.badges = earnedBadges(profile, result.moves, result.optimalMoves, result.hintsUsed, result.score);
   const newBadges = profile.badges.filter((badge) => !previousProfile.badges.includes(badge));
   await redis.hSet('wrdlink:v2:profiles', { [userId]: JSON.stringify(profile) });
 
