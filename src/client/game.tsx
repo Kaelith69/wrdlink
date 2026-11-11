@@ -501,7 +501,7 @@ export function App() {
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{gameScore}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{movesUsed}</strong></span>
           </div>
-          <button className="daily-launch-button" type="button" onClick={() => setDailyOpen(true)} aria-label="Switch to the shared daily challenge" title="Switch to Daily">DAILY</button>
+          <button className="mode-switch mode-switch-to-daily" type="button" onClick={() => setDailyOpen(true)} aria-label="Switch to Daily challenge" title="Switch to Daily"><span>DAILY</span><span className="mode-switch-icon" aria-hidden="true">↗</span></button>
           <button
             className="header-hint-button"
             type="button"
