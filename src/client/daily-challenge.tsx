@@ -209,8 +209,8 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     }
   }, [sessionId]);
 
-  useEffect(() => { void loadPuzzle(); }, [loadPuzzle]);
-  useEffect(() => { void loadBoard(); }, [loadBoard]);
+  useEffect(() => { void Promise.resolve().then(() => loadPuzzle()); }, [loadPuzzle]);
+  useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
 
   useEffect(() => {
     const media = window.matchMedia('(pointer: coarse), (any-pointer: coarse)');
