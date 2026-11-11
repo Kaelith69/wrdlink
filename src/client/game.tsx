@@ -313,6 +313,7 @@ export function App() {
 
   async function startNextLevel() {
     if (busy || status !== 'won') return;
+    setCampaignShareMessage('');
     setBusy(true);
     try {
       await loadPuzzle(undefined, { nextLevel: true });
