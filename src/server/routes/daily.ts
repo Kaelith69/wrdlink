@@ -374,11 +374,12 @@ dailyApi.post('/init', async (c) => {
     await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
     return next;
   });
-  if (context.userId && state.completed && !await redis.get(resultKey(date, context.userId))) {
+  const currentUserId = context.userId;
+  if (currentUserId && state.completed && !await redis.get(resultKey(date, currentUserId))) {
     const username = await reddit.getCurrentUsername() ?? 'WRDLINK Player';
     await withLock(key, async () => {
       const latest = parseSession(await redis.get(key), puzzle);
-      if (latest?.completed) await saveVerifiedCompletion(date, context.userId!, username, latest);
+      if (latest?.completed) await saveVerifiedCompletion(date, currentUserId, username, latest);
     });
   }
   let profile: DailyProfile = DEFAULT_PROFILE;
