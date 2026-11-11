@@ -1504,7 +1504,7 @@ button:focus-visible, input:focus-visible {
 
   .game-workspace { gap: 6px; }
   .chain-panel { max-height: min(25dvh, 135px); }
-  .chain-list { max-height: 58px; }
+  .chain-list { max-height: 60px; }
   .game-page.is-complete .chain-panel { max-height: min(25dvh, 170px); }
   .game-page.is-complete .chain-list { max-height: min(18dvh, 125px); }
 }
@@ -1518,7 +1518,7 @@ button:focus-visible, input:focus-visible {
   }
 
   .chain-panel { max-height: min(24dvh, 115px); }
-  .chain-list { max-height: 52px; }
+  .chain-list { max-height: 54px; }
   .game-page.is-complete .chain-panel { max-height: min(24dvh, 140px); }
   .game-page.is-complete .chain-list { max-height: min(16dvh, 95px); }
 }
