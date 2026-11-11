@@ -486,7 +486,7 @@ export function App() {
 
   return (
     <main className={`game-page ${status === 'won' ? 'is-complete' : ''} ${celebrationPoints !== null ? 'is-celebrating' : ''}`}>
-      <header className="game-header">
+      <header className="game-header campaign-game-header">
         <div className="wordmark" aria-label="WRDLINK">
           <span className="brand-mark" aria-hidden="true">W</span>
           <span>WRDLINK</span>
