@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import './daily.css';
 
@@ -138,6 +138,18 @@ const badgeNames: Record<string, string> = {
   STREAK_30: '30 day streak',
 };
 
+const achievementGoals = [
+  { id: 'FIRST_SOLVE', target: 1, description: 'Complete your first daily puzzle', value: (p: DailyProfile) => p.totalCompleted },
+  { id: 'FIVE_SOLVES', target: 5, description: 'Complete five daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
+  { id: 'TWENTY_FIVE_SOLVES', target: 25, description: 'Complete 25 daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
+  { id: 'HUNDRED_SOLVES', target: 100, description: 'Complete 100 daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
+  { id: 'STREAK_3', target: 3, description: 'Maintain a three day streak', value: (p: DailyProfile) => p.bestStreak },
+  { id: 'STREAK_7', target: 7, description: 'Maintain a seven day streak', value: (p: DailyProfile) => p.bestStreak },
+  { id: 'STREAK_30', target: 30, description: 'Maintain a 30 day streak', value: (p: DailyProfile) => p.bestStreak },
+  { id: 'OPTIMAL_PATH', target: 1, description: 'Solve a puzzle in the optimal number of moves', value: (p: DailyProfile) => p.badges.includes('OPTIMAL_PATH') ? 1 : 0 },
+  { id: 'PERFECT_SOLVE', target: 1, description: 'Find an optimal path without hints or penalties', value: (p: DailyProfile) => p.badges.includes('PERFECT_SOLVE') ? 1 : 0 },
+];
+
 export function DailyChallenge({ sessionId, onClose }: Props) {
   const [date, setDate] = useState('');
   const [puzzle, setPuzzle] = useState<{ id: string; start: string; target: string; optimalMoves: number } | null>(null);
@@ -158,7 +170,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [boardError, setBoardError] = useState('');
   const [error, setError] = useState('');
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
   const [shareMessage, setShareMessage] = useState('');
 
   const loadBoard = useCallback(async () => {
@@ -327,9 +338,10 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           </ol>
 
           {!completed ? (
+            <>
             <form className="daily-entry" onSubmit={submitMove}>
               <label className="sr-only" htmlFor="daily-word-entry">Next four letter word</label>
-              <input ref={inputRef} id="daily-word-entry" value={entry} onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 4))} placeholder="NEXT WORD" maxLength={4} autoComplete="off" autoCapitalize="characters" spellCheck={false} readOnly={useVirtualKeyboard} disabled={busy} aria-describedby={useVirtualKeyboard ? 'daily-keyboard-help' : undefined}/>
+              <input id="daily-word-entry" value={entry} onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 4))} placeholder="NEXT WORD" maxLength={4} autoComplete="off" autoCapitalize="characters" spellCheck={false} readOnly={useVirtualKeyboard} disabled={busy} aria-describedby={useVirtualKeyboard ? 'daily-keyboard-help' : undefined}/>
               <button type="submit" disabled={busy || entry.length !== 4}>{busy ? 'Checking…' : 'Submit'}</button>
             </form>
             {useVirtualKeyboard && !completed && (
@@ -351,6 +363,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                 ))}
               </div>
             )}
+            </>
           ) : (
             <div className="daily-complete">
               <span>✓</span>
@@ -410,7 +423,16 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
 
         <section className="daily-achievements">
           <div className="daily-section-heading"><div><p className="daily-eyebrow">PLAYER PROGRESSION</p><h2>Achievements</h2></div></div>
-          {profile.badges.length ? <div className="daily-badges">{profile.badges.map((badge) => <span key={badge}>✦ {badgeNames[badge] ?? badge}</span>)}</div> : <p className="daily-muted">Complete daily puzzles to unlock badges.</p>}
+          <div className="daily-achievement-grid">
+            {achievementGoals.map((goal) => {
+              const progress = Math.min(goal.target, goal.value(profile));
+              const earned = profile.badges.includes(goal.id);
+              return <div className={`daily-achievement-item ${earned ? 'is-earned' : ''}`} key={goal.id}>
+                <span className="daily-achievement-icon" aria-hidden="true">{earned ? '✦' : '◇'}</span>
+                <div><strong>{badgeNames[goal.id]}</strong><small>{goal.description}</small><span className="daily-achievement-progress">{progress}/{goal.target}</span></div>
+              </div>;
+            })}
+          </div>
           <p className="daily-muted">A grace token protects one missed day. Earn one every seven consecutive completions, up to two. Daily puzzles reset at 00:00 UTC, which is 05:30 IST.</p>
         </section>
       </div>
