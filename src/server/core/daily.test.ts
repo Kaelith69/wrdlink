@@ -55,13 +55,20 @@ void test('daily score and move rankings use deterministic composite scores', ()
   const lowScore = dailyRankScore(42, 2, 1000, 'score');
   assert.ok(highScore < lowScore);
 
-  const fewerMoves = dailyRankScore(45, 3, 2000, 'moves');
-  const moreMoves = dailyRankScore(45, 4, 1000, 'moves');
-  assert.ok(fewerMoves < moreMoves);
+  const fewerMovesEvenWhenLater = dailyRankScore(45, 3, 86_399_000, 'score');
+  const moreMovesEvenWhenEarlier = dailyRankScore(45, 4, 1_000, 'score');
+  assert.ok(fewerMovesEvenWhenLater < moreMovesEvenWhenEarlier);
 
-  const earlierTie = dailyRankScore(45, 3, 1000, 'score');
-  const laterTie = dailyRankScore(45, 3, 2000, 'score');
+  const higherScoreEvenWhenLater = dailyRankScore(46, 4, 86_399_000, 'moves');
+  const lowerScoreEvenWhenEarlier = dailyRankScore(45, 4, 1_000, 'moves');
+  assert.ok(higherScoreEvenWhenLater < lowerScoreEvenWhenEarlier);
+
+  const earlierTie = dailyRankScore(45, 3, 1_000, 'score');
+  const laterTie = dailyRankScore(45, 3, 2_000, 'score');
   assert.ok(earlierTie < laterTie);
+
+  const millisecondTie = dailyRankScore(45, 3, 1_001, 'score');
+  assert.ok(earlierTie < millisecondTie);
 });
 
 void test('weekly and all time ranking uses aggregate score and average moves', () => {
