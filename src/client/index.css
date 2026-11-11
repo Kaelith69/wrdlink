@@ -1350,3 +1350,83 @@ button:focus-visible, input:focus-visible {
   .campaign-game-header .header-help-button,
   .daily-game-page .header-help-button { width: 27px; min-width: 27px; }
 }
+
+
+/* Shared mode switch. It occupies the same header slot in Campaign and Daily. */
+.mode-switch {
+  display: inline-flex;
+  width: 84px;
+  min-width: 84px;
+  height: 40px;
+  flex: 0 0 84px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+  border: 2px solid var(--line-strong);
+  border-radius: 11px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 950;
+  letter-spacing: .055em;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 3px 3px 0 var(--line-strong);
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.mode-switch-to-daily { background: var(--violet); }
+.mode-switch-to-campaign { background: var(--tangerine); color: #17120d; }
+.mode-switch-icon {
+  display: grid;
+  width: 17px;
+  height: 17px;
+  flex: 0 0 17px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  transition: transform 180ms ease, background-color 180ms ease;
+}
+.mode-switch:hover {
+  filter: brightness(1.08);
+  transform: translateY(-2px);
+  box-shadow: 3px 5px 0 var(--line-strong);
+}
+.mode-switch:hover .mode-switch-icon { transform: rotate(45deg); }
+.mode-switch:active {
+  transform: translate(2px, 2px) scale(.97);
+  box-shadow: 1px 1px 0 var(--line-strong);
+}
+.mode-switch:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 620px) {
+  .mode-switch {
+    width: 68px;
+    min-width: 68px;
+    height: 31px;
+    flex-basis: 68px;
+    gap: 3px;
+    padding-inline: 4px;
+    border-radius: 8px;
+    font-size: 7px;
+    letter-spacing: 0;
+    box-shadow: 2px 2px 0 var(--line-strong);
+  }
+  .mode-switch-icon { width: 13px; height: 13px; flex-basis: 13px; font-size: 9px; }
+}
+@media (max-width: 360px) {
+  .mode-switch {
+    width: 59px;
+    min-width: 59px;
+    flex-basis: 59px;
+    gap: 2px;
+    padding-inline: 3px;
+    font-size: 6px;
+  }
+  .mode-switch-icon { width: 11px; height: 11px; flex-basis: 11px; font-size: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-switch, .mode-switch-icon { transition: none; }
+  .mode-switch:hover, .mode-switch:active { transform: none; }
+}
