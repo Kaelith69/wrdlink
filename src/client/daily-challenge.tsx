@@ -396,10 +396,10 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{score}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{words.length - 1}</strong></span>
           </div>
+          <button className="mode-switch mode-switch-to-campaign" type="button" onClick={onClose} aria-label="Switch to Campaign" title="Switch to Campaign"><span>CAMPAIGN</span><span className="mode-switch-icon" aria-hidden="true">↗</span></button>
           <div className="header-hint-button daily-streak-indicator" aria-label={profile.currentStreak + ' day streak'} title={profile.currentStreak + ' day streak'}>
             <span aria-hidden="true">🔥</span><span className="header-hint-cost">{profile.currentStreak}</span>
           </div>
-          <button className="daily-launch-button daily-mode-toggle" type="button" onClick={onClose} aria-label="Switch to Campaign" title="Switch to Campaign">CAMP</button>
           <button className="header-help-button daily-guide-button" type="button" onClick={() => setHelpOpen(true)} aria-label="How to play today's daily challenge" title="How to play" aria-haspopup="dialog" aria-controls="daily-how-to-dialog" aria-expanded={helpOpen}>!</button>
         </div>
       </header>
@@ -410,27 +410,54 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <span className="help-kicker">WRDLINK DAILY FIELD GUIDE</span>
             <button className="help-close-button" type="button" aria-label="Close daily guide" onClick={() => setHelpOpen(false)}>×</button>
           </div>
-          <h2 id="daily-help-title">How to play today's challenge</h2>
-          <p id="daily-help-intro">Everyone gets the same four letter puzzle. Build a valid word ladder from today's start word to its target.</p>
+          <h2 id="daily-help-title">How to play</h2>
+          <p id="daily-help-intro">Build a word ladder from today's shared start word to its target. Every step must be a real word and change exactly one letter.</p>
+
           <div className="help-section">
             <h3>The rules</h3>
             <ol className="help-rules">
-              <li><strong>Change one letter.</strong> Every move must change exactly one letter from the previous word.</li>
-              <li><strong>Use real words.</strong> Each entry must be a valid four letter word.</li>
-              <li><strong>No repeats.</strong> Each word can appear only once in your ladder.</li>
-              <li><strong>Reach the target.</strong> The target word completes today's challenge.</li>
+              <li><strong>Change one letter.</strong> Each new word must be the same length as the previous word and differ by exactly one letter.</li>
+              <li><strong>Use real words.</strong> Every entry must be a valid four letter word in the game's word list.</li>
+              <li><strong>No repeats.</strong> A word can appear only once in your chain.</li>
+              <li><strong>Reach the target.</strong> The target word must be the final word in your chain. You cannot continue after reaching it.</li>
             </ol>
           </div>
+
           <div className="help-section">
-            <h3>Daily progress</h3>
+            <h3>Example ladder</h3>
+            <div className="help-example" aria-label="COLD changes to CORD, then CARD, WARD, and WARM">
+              {['COLD', 'CORD', 'CARD', 'WARD', 'WARM'].map((word, index) => (
+                <span className="help-example-step" key={word}>
+                  <strong>{word}</strong>
+                  {index < 4 && <span aria-hidden="true">→</span>}
+                </span>
+              ))}
+            </div>
+            <p className="help-example-note">COLD → CORD changes L to R. CORD → CARD changes O to A. Continue one letter at a time until WARM.</p>
+          </div>
+
+          <div className="help-section">
+            <h3>Scoring</h3>
             <ul className="help-rules">
-              <li>Your score and move count stay visible in the header.</li>
-              <li>Your completed result contributes to the community leaderboard and daily streak.</li>
-              <li>A grace token can protect one missed day. You can hold up to two.</li>
-              <li>The puzzle resets at <strong>00:00 UTC (05:30 IST)</strong>.</li>
+              <li>You begin each daily puzzle with <strong>25 points</strong>.</li>
+              <li>Every submitted move costs <strong>1 point</strong>, whether the word is accepted or rejected.</li>
+              <li>Completing the puzzle awards <strong>25 points</strong>.</li>
+              <li>Your score and move count are saved with your daily result and used for community rankings.</li>
             </ul>
           </div>
-          <p>On touch devices, tap the on screen letter keys to build your next word, then tap Submit.</p>
+
+          <div className="help-section">
+            <h3>Daily challenge rules</h3>
+            <ul className="help-rules">
+              <li>Everyone gets the <strong>same four letter puzzle</strong> for the day. There is one shared start word and target word.</li>
+              <li>The puzzle resets at <strong>00:00 UTC (05:30 IST)</strong>. A new shared puzzle is then available.</li>
+              <li>Daily results count toward your <strong>daily, weekly and all time</strong> community leaderboard standings.</li>
+              <li>Complete consecutive daily puzzles to build your streak. A grace token can protect one missed day, and you can hold up to <strong>two</strong>.</li>
+              <li>Daily puzzles do not use Campaign hints. Find the word ladder yourself, one letter at a time.</li>
+            </ul>
+          </div>
+
+          <p>On touch devices, tap the on screen letter keys to build your word, then tap Submit. Your current chain remains visible as you play.</p>
           <button className="ink-button help-done-button" type="button" onClick={() => setHelpOpen(false)}>Got it</button>
         </section>
       </div>
@@ -544,8 +571,8 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                       </div>
                     </>
                   ) : <p>Sign in to save a ranked result and share it to Reddit.</p>}
-                  {shareMessage && <p className="game-message" role="status">{shareMessage}</p>}
-                  {error && <p className="game-message error" role="alert">{error}</p>}
+                  {shareMessage && <p className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
+                  {error && <p className="game-message error daily-share-feedback" role="alert">{error}</p>}
                 </section>
               )}
             </section>
