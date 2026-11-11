@@ -46,7 +46,7 @@ void test('long gaps reset streak and repeated same day is idempotent', () => {
 
 void test('achievement badges are persistent and milestone based', () => {
   const badges = earnedBadges(profile({ totalCompleted: 25, currentStreak: 7, badges: ['FIRST_SOLVE'] }), 4, 4, 0, 46);
-  assert.deepEqual(badges, ['FIVE_SOLVES', 'FIRST_SOLVE', 'OPTIMAL_PATH', 'PERFECT_SOLVE', 'STREAK_3', 'STREAK_7', 'TWENTY_FIVE_SOLVES']);
+  assert.deepEqual(badges, ['FIRST_SOLVE', 'FIVE_SOLVES', 'OPTIMAL_PATH', 'PERFECT_SOLVE', 'STREAK_3', 'STREAK_7', 'TWENTY_FIVE_SOLVES']);
 });
 
 
