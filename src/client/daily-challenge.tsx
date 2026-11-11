@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import './daily.css';
 
@@ -171,18 +171,25 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [error, setError] = useState('');
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const [shareMessage, setShareMessage] = useState('');
+  const boardRequestId = useRef(0);
+  const puzzleLoadStarted = useRef(false);
 
   const loadBoard = useCallback(async () => {
+    const requestId = ++boardRequestId.current;
     setBoardLoading(true);
     setBoardError('');
+    setMyRank(null);
     try {
       const data = await request<BoardResponse>(`/api/daily/leaderboard?period=${period}&metric=${metric}`, isBoardResponse);
+      if (requestId !== boardRequestId.current) return;
       setBoard(data.entries);
       setMyRank(data.currentUserRank);
     } catch (cause) {
-      setBoardError(cause instanceof Error ? cause.message : 'Could not load leaderboard.');
+      if (requestId === boardRequestId.current) {
+        setBoardError(cause instanceof Error ? cause.message : 'Could not load leaderboard.');
+      }
     } finally {
-      setBoardLoading(false);
+      if (requestId === boardRequestId.current) setBoardLoading(false);
     }
   }, [period, metric]);
 
@@ -209,7 +216,11 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     }
   }, [sessionId]);
 
-  useEffect(() => { void Promise.resolve().then(() => loadPuzzle()); }, [loadPuzzle]);
+  useEffect(() => {
+    if (puzzleLoadStarted.current) return;
+    puzzleLoadStarted.current = true;
+    void Promise.resolve().then(() => loadPuzzle());
+  }, [loadPuzzle]);
   useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
 
   useEffect(() => {
