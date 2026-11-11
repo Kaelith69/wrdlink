@@ -601,7 +601,11 @@ dailyApi.post('/validate', async (c) => {
       next.score = calculateCompletionScore(next.score);
       next.completedAt = Date.now();
     }
-    await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
+    if (validation.complete && context.userId) {
+      // Persist the completed game before profile and leaderboard work. A retry
+      // can resume the journal if any later Redis write is interrupted.
+      await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
+    }
     const completion = validation.complete && context.userId
       ? await saveVerifiedCompletion(date, context.userId, username ?? 'WRDLINK Player', next)
       : null;
