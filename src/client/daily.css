@@ -107,3 +107,5 @@
 .daily-achievement-item small{color:var(--muted);font-size:9px;line-height:1.35}
 .daily-achievement-progress{color:var(--muted);font-size:9px;font-weight:900;font-variant-numeric:tabular-nums}
 @media(max-width:480px){.daily-achievement-grid{grid-template-columns:1fr}}
+
+@media(any-pointer:coarse){.daily-screen.is-complete{padding-bottom:28px}}
