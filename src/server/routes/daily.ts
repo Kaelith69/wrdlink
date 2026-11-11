@@ -354,7 +354,7 @@ async function leaderboard(period: 'daily' | 'weekly' | 'alltime', metric: 'scor
     period,
     metric,
     entries: entries.filter((entry): entry is NonNullable<typeof entry> => entry !== null),
-    currentUserRank: rank == null ? null : rank + 1,
+    currentUserRank: rank === null || rank === undefined ? null : rank + 1,
   };
 }
 
