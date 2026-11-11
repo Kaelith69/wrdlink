@@ -497,11 +497,11 @@ export function App() {
           <span className="level-badge">LV{level}</span>
         </div>
         <div className="header-right">
-          <button className="daily-launch-button" type="button" onClick={() => setDailyOpen(true)} aria-label="Open shared daily challenge">DAILY</button>
-          <div className="header-count">
+          <div className="header-count" aria-label={'Score ' + gameScore + ', moves ' + movesUsed}>
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{gameScore}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{movesUsed}</strong></span>
           </div>
+          <button className="daily-launch-button" type="button" onClick={() => setDailyOpen(true)} aria-label="Switch to the shared daily challenge" title="Switch to Daily">DAILY</button>
           <button
             className="header-hint-button"
             type="button"
