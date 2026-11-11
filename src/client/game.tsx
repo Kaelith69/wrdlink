@@ -157,6 +157,7 @@ export function App() {
   const [completionAnnouncement, setCompletionAnnouncement] = useState('');
   const [sessionId, setSessionId] = useState(() => getSessionId());
   const [dailyOpen, setDailyOpen] = useState(false);
+  const [campaignShareMessage, setCampaignShareMessage] = useState('');
 
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const entryFormRef = useRef<HTMLFormElement | null>(null);
@@ -315,6 +316,27 @@ export function App() {
     setBusy(true);
     try {
       await loadPuzzle(undefined, { nextLevel: true });
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function shareCampaign(kind: 'post' | 'comment') {
+    if (!puzzle || status !== 'won' || busy) return;
+    setBusy(true);
+    setCampaignShareMessage('');
+    try {
+      const response = await fetchWithTimeout('/api/share/campaign/' + kind, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId, puzzleId: puzzle.id }),
+      });
+      if (!response.ok) throw new Error(await responseError(response));
+      setCampaignShareMessage(kind === 'post'
+        ? 'Your result was posted under your Reddit account.'
+        : 'Your result was commented under your Reddit account.');
+    } catch (error) {
+      setCampaignShareMessage(error instanceof Error ? error.message : 'Could not share this result.');
     } finally {
       setBusy(false);
     }
@@ -672,6 +694,20 @@ export function App() {
             <p>{puzzle.target} reached in {movesUsed} moves. {message.replace(/\s*\+25 points\.\s*Level balance: \d+\./, '').trim()}</p>
             <p className="finish-bonus">+25 points awarded</p>
             {hintsUsed > 0 && <p>You used {hintsUsed} campaign hints. Next hint costs {6 + hintsUsed} points.</p>}
+            <section className="campaign-share-card" aria-label="Share completed puzzle">
+              <div className="campaign-share-preview">
+                <strong>WRDLINK · LEVEL {level}</strong>
+                <b>{puzzle.start} → {puzzle.target}</b>
+                <span>{movesUsed} moves · {gameScore} points · Completed</span>
+                <small>{words.join(' → ')}</small>
+              </div>
+              <p>Sharing publishes under your Reddit account.</p>
+              <div className="campaign-share-actions">
+                <button type="button" onClick={() => void shareCampaign('post')} disabled={busy}>Post result as you</button>
+                <button type="button" onClick={() => void shareCampaign('comment')} disabled={busy}>Comment as you</button>
+              </div>
+              {campaignShareMessage && <p className="campaign-share-message" role="status">{campaignShareMessage}</p>}
+            </section>
             <button className="ink-button finish-next-button" type="button" onClick={() => void startNextLevel()} disabled={busy}>
               Next level · {level + 1} <span aria-hidden="true">→</span>
             </button>
