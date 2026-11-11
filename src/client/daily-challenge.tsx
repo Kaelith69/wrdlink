@@ -115,15 +115,26 @@ function isShareResponse(value: unknown): value is { success: boolean; permalink
 async function request<T>(url: string, validate: (value: unknown) => value is T, init?: RequestInit): Promise<T> {
   const headers = new Headers(init?.headers);
   headers.set('Content-Type', 'application/json');
-  const response = await fetch(url, { ...init, headers });
-  const payload: unknown = await response.json().catch(() => null);
-  if (!response.ok) {
-    const message = isRecord(payload) && typeof payload.error === 'string'
-      ? payload.error : 'The daily challenge request failed.';
-    throw new Error(message);
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), 15_000);
+  try {
+    const response = await fetch(url, { ...init, headers, signal: controller.signal });
+    const payload: unknown = await response.json().catch(() => null);
+    if (!response.ok) {
+      const message = isRecord(payload) && typeof payload.error === 'string'
+        ? payload.error : 'The daily challenge request failed.';
+      throw new Error(message);
+    }
+    if (!validate(payload)) throw new Error('The daily challenge response was invalid.');
+    return payload;
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'AbortError') {
+      throw new Error('The request timed out. Check your connection and try again.', { cause });
+    }
+    throw cause;
+  } finally {
+    window.clearTimeout(timer);
   }
-  if (!validate(payload)) throw new Error('The daily challenge response was invalid.');
-  return payload;
 }
 
 const badgeNames: Record<string, string> = {
