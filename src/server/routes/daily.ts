@@ -374,6 +374,13 @@ dailyApi.post('/init', async (c) => {
     await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
     return next;
   });
+  if (context.userId && state.completed && !await redis.get(resultKey(date, context.userId))) {
+    const username = await reddit.getCurrentUsername() ?? 'WRDLINK Player';
+    await withLock(key, async () => {
+      const latest = parseSession(await redis.get(key), puzzle);
+      if (latest?.completed) await saveVerifiedCompletion(date, context.userId!, username, latest);
+    });
+  }
   let profile: DailyProfile = DEFAULT_PROFILE;
   let currentResult: string | null = null;
   if (context.userId) {
@@ -478,11 +485,6 @@ dailyApi.get('/leaderboard', async (c) => {
   const metric = metricValue === 'moves' ? 'moves' : 'score';
   const date = utcDateKey();
   return c.json(await leaderboard(period, metric, date));
-});
-
-dailyApi.get('/profile', async (c) => {
-  if (!context.userId) return c.json({ error: 'Sign in to view your WRDLINK stats.' }, 401);
-  return c.json(await readProfile(context.userId));
 });
 
 async function verifiedShareRecord(date: string): Promise<DailyResult | null> {
