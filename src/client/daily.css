@@ -847,3 +847,37 @@
     font-size: 11px;
   }
 }
+
+
+/* Keep publishing feedback in the upper part of the completion panel. The
+   message wraps inside the panel and is brought into view after a share action. */
+.daily-finish-panel .daily-share-feedback {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+  margin: 4px 0 8px;
+  padding: 9px 12px;
+  overflow-wrap: anywhere;
+  white-space: normal;
+  line-height: 1.4;
+  text-align: center;
+  border: 1px solid var(--success);
+  border-radius: 10px;
+  background: var(--success-bg);
+  color: var(--success);
+  scroll-margin-block: 12px;
+}
+.daily-finish-panel .daily-share-feedback.error {
+  border-color: var(--error);
+  background: color-mix(in srgb, var(--error) 10%, var(--paper));
+  color: var(--error);
+}
+.daily-game-page .daily-finish-panel {
+  min-width: 0;
+}
+.daily-game-page .daily-finish-panel > * {
+  min-width: 0;
+  max-width: 100%;
+}
