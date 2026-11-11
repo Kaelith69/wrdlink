@@ -537,10 +537,10 @@ dailyApi.post('/validate', async (c) => {
   if (!isRecord(body) || typeof body.sessionId !== 'string' || !SESSION_PATTERN.test(body.sessionId) ||
       typeof body.date !== 'string' || typeof body.puzzleId !== 'string' ||
       typeof body.word !== 'string' || body.word.length > 12 ||
-      typeof requestId !== 'string' || !/^[a-f0-9-]{20,80}$/i.test(requestId)) {
+      typeof body.requestId !== 'string' || !/^[a-f0-9-]{20,80}$/i.test(body.requestId)) {
     return c.json({ error: 'Invalid daily move.' }, 400);
   }
-  const requestId = requestId as string;
+  const requestId = body.requestId as string;
   const date = utcDateKey();
   if (body.date !== date || parseDateKey(body.date) === null) {
     return c.json({ error: 'This daily challenge has expired. Load today’s puzzle.' }, 409);
