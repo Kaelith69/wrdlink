@@ -624,108 +624,63 @@ button:focus-visible, input:focus-visible {
 }
 
 
-/* Touch devices use the in game keyboard instead of opening the system keyboard. */
+/* Touch keyboard base styling. The mobile dock geometry is defined once in the
+   shared responsive layout below. */
 .virtual-keyboard {
   display: grid;
-  gap: 8px;
-  margin-top: 14px;
-  padding: 12px;
+  position: relative;
+  left: 50%;
+  width: min(700px, calc(100vw - 20px));
+  max-width: none;
+  gap: 5px;
+  margin: 10px 0 0;
+  padding: 8px;
   border: 2px solid var(--line-strong);
   border-radius: 14px;
   background: var(--paper-strong);
   box-shadow: 3px 4px 0 var(--line-strong);
+  transform: translateX(-50%);
 }
 .virtual-keyboard-label {
-  margin: 0 0 2px;
+  margin: 0;
   color: var(--muted);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 950;
   letter-spacing: .12em;
+  line-height: 1.2;
   text-align: center;
 }
 .virtual-keyboard-row {
   display: flex;
+  width: 100%;
   justify-content: center;
-  gap: clamp(3px, 1vw, 7px);
+  gap: clamp(3px, .8vw, 7px);
 }
 .virtual-key {
   display: grid;
   min-width: 0;
-  min-height: 44px;
+  min-height: 38px;
   flex: 1 1 0;
   place-items: center;
-  padding: 0 3px;
-  border: 2px solid var(--line-strong);
-  border-radius: 8px;
+  padding: 0 2px;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 7px;
   background: var(--violet);
-  color: #FFFFFF;
-  box-shadow: 2px 3px 0 var(--line-strong);
+  color: #fff;
+  box-shadow: 1px 2px 0 var(--line-strong);
   font: inherit;
-  font-size: clamp(12px, 3.4vw, 16px);
+  font-size: clamp(12px, 3.2vw, 15px);
   font-weight: 950;
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
   -webkit-tap-highlight-color: transparent;
 }
-.virtual-key:active:not(:disabled) {
-  transform: translate(1px, 2px);
-  box-shadow: 1px 1px 0 var(--line-strong);
-}
-.virtual-key:disabled {
-  opacity: .38;
-  cursor: not-allowed;
-}
-.virtual-key-utility {
-  flex: 1.35 1 0;
-  background: var(--tangerine);
-  color: #111111;
-}
-.virtual-keyboard-actions {
-  display: grid;
-  grid-template-columns: 1fr 1.6fr;
-  gap: 8px;
-}
-.virtual-key-enter {
-  background: var(--mint);
-  color: #111111;
-}
-@media (pointer: coarse) {
-  .virtual-keyboard { display: grid; }
-  .entry-panel input { caret-color: transparent; }
-}
-
-@media (max-width: 360px) {
-  .virtual-keyboard { gap: 6px; padding: 9px; }
-  .virtual-key { min-height: 42px; border-radius: 7px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .virtual-key { transition: none; }
-}
-
-
-/* Compact touch keyboard: wider footprint, shorter rows, letter entry only. */
-.virtual-keyboard {
-  position: relative;
-  left: 50%;
-  width: min(700px, calc(100vw - 20px));
-  margin: 10px 0 0;
-  padding: 8px;
-  gap: 5px;
-  transform: translateX(-50%);
-}
-.virtual-keyboard-label { margin: 0; font-size: 8px; line-height: 1.2; }
-.virtual-keyboard-row { width: 100%; gap: clamp(3px, .8vw, 7px); }
-.virtual-key {
-  min-height: 38px;
-  padding-inline: 2px;
-  border-width: 1.5px;
-  border-radius: 7px;
-  font-size: clamp(12px, 3.2vw, 15px);
-  box-shadow: 1px 2px 0 var(--line-strong);
-}
-.virtual-key-utility { flex: 1 1 0; }
-.virtual-keyboard-actions, .virtual-key-enter { display: none !important; }
+.virtual-key:active:not(:disabled) { transform: translate(1px, 2px); box-shadow: 1px 1px 0 var(--line-strong); }
+.virtual-key:disabled { opacity: .38; cursor: not-allowed; }
+.virtual-key-utility { flex: 1.35 1 0; background: var(--tangerine); color: #111; }
+.virtual-keyboard-actions,
+.virtual-key-enter { display: none !important; }
 .entry-heading {
   display: grid;
   justify-content: start;
@@ -734,24 +689,18 @@ button:focus-visible, input:focus-visible {
 }
 .entry-heading h2 { line-height: 1.1; }
 .entry-heading p { margin: 0; color: var(--muted); font-size: 11px; line-height: 1.35; }
-@media (max-width: 360px) {
-  .virtual-keyboard { padding: 7px; gap: 4px; }
-  .virtual-key { min-height: 35px; }
-}
 
-
-/* Final touch layout: use the full viewport and support hybrid touch devices. */
-.virtual-keyboard {
-  width: calc(100vw - 20px);
-  max-width: none;
-}
 @media (pointer: coarse), (any-pointer: coarse) {
   .virtual-keyboard { display: grid; }
   .entry-panel input { caret-color: transparent; }
 }
-
-
-
+@media (max-width: 360px) {
+  .virtual-keyboard { padding: 7px; gap: 4px; }
+  .virtual-key { min-height: 35px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .virtual-key { transition: none; }
+}
 
 /* Daily launcher */
 .daily-launch-button {
