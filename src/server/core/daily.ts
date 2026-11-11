@@ -23,7 +23,7 @@ export function formatDailyShareText(
     `Streak: ${streakLabel}`,
     `Points: ${result.score}`,
     'Think you can beat it? Give today’s puzzle a try!',
-  ].join('\\n\\n');
+  ].join('\n\n');
 }
 
 export type StreakUpdate = {
