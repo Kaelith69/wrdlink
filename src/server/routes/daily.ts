@@ -313,7 +313,8 @@ async function leaderboard(period: 'daily' | 'weekly' | 'alltime', metric: 'scor
     const raw = await redis.hGet(prefix + ':entries', item.member);
     if (!raw) return null;
     try {
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const parsed: unknown = JSON.parse(raw);
+      if (!isRecord(parsed)) return null;
       return {
         rank: index + 1,
         username: typeof parsed.username === 'string' ? parsed.username : 'WRDLINK Player',
@@ -352,9 +353,14 @@ dailyApi.post('/init', async (c) => {
     await redis.set(key, JSON.stringify(next), { expiration: new Date(Date.now() + DAILY_TTL_SECONDS * 1000) });
     return next;
   });
-  const [profile, currentResult] = context.userId
-    ? await Promise.all([readProfile(context.userId), redis.get(resultKey(date, context.userId))])
-    : [DEFAULT_PROFILE, null] as const;
+  let profile: DailyProfile = DEFAULT_PROFILE;
+  let currentResult: string | null = null;
+  if (context.userId) {
+    [profile, currentResult] = await Promise.all([
+      readProfile(context.userId),
+      redis.get(resultKey(date, context.userId)),
+    ]);
+  }
   let result: DailyResult | null = null;
   if (currentResult) {
     try {
