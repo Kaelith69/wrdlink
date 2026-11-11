@@ -521,7 +521,7 @@ export function App() {
             <span className="score-pill"><span className="metric-label">SCORE</span><strong>{gameScore}</strong></span>
             <span className="moves-pill"><span className="metric-label">MOVES</span><strong>{movesUsed}</strong></span>
           </div>
-          <button className="mode-switch is-campaign" type="button" onClick={() => switchMode(true)} aria-label="Switch to Daily challenge" aria-pressed={false} title="Switch to Daily"><span className="mode-switch-option mode-switch-campaign-option" aria-hidden="true">CAMP</span><span className="mode-switch-option mode-switch-daily-option" aria-hidden="true">DAILY</span><span className="mode-switch-thumb" aria-hidden="true" /></button>
+          <button className="mode-switch is-campaign" type="button" onClick={() => switchMode(true)} aria-label="Campaign mode selected. Switch to Daily challenge." aria-pressed={false} title="Switch to Daily"><span className="mode-switch-option mode-switch-campaign-option" aria-hidden="true">CAMP</span><span className="mode-switch-option mode-switch-daily-option" aria-hidden="true">DAILY</span><span className="mode-switch-thumb" aria-hidden="true" /></button>
           <button
             className="header-hint-button"
             type="button"
