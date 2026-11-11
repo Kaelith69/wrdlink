@@ -1193,3 +1193,26 @@ button:focus-visible, input:focus-visible {
   .daily-launch-button { min-height: 36px; padding: 0 9px; font-size: 9px; }
   .header-right { gap: 7px; }
 }
+
+
+.campaign-share-card {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-strong);
+}
+.campaign-share-preview { display: grid; gap: 6px; }
+.campaign-share-preview strong { color: var(--muted); font-size: 9px; font-weight: 950; letter-spacing: .13em; }
+.campaign-share-preview b { font-size: 20px; font-weight: 950; letter-spacing: .08em; }
+.campaign-share-preview span,.campaign-share-preview small { color: var(--muted); font-size: 11px; }
+.campaign-share-preview small { overflow-wrap: anywhere; color: var(--ink-soft); }
+.campaign-share-card>p { margin: 0; color: var(--muted); font-size: 10px; }
+.campaign-share-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.campaign-share-actions button { min-height: 38px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--tile); color: #fff; font-size: 10px; font-weight: 900; cursor: pointer; }
+.campaign-share-actions button+button { background: transparent; color: var(--ink); }
+.campaign-share-actions button:disabled { opacity: .5; cursor: wait; }
+.campaign-share-message { color: var(--success) !important; font-weight: 800; }
+@media(max-width:420px){.campaign-share-actions{display:grid}.campaign-share-actions button{min-height:42px}}
