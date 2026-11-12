@@ -287,8 +287,8 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   letter-spacing: .06em;
   line-height: 1;
 }
-.daily-start-word { color: var(--violet); }
-.daily-target-word { color: var(--yellow); }
+.daily-start-word { color: #FFFFFF; background: var(--violet); border-radius: 9px; padding: 7px 8px; }
+.daily-target-word { color: var(--ink); background: var(--yellow); border-radius: 9px; padding: 7px 8px; }
 .daily-word-bridge > span {
   color: var(--muted);
   font-size: 25px;
@@ -368,7 +368,7 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   border-color: color-mix(in srgb, var(--yellow) 55%, var(--line));
   background: color-mix(in srgb, var(--yellow) 10%, var(--paper));
 }
-.daily-high-score strong { color: var(--yellow); }
+.daily-high-score strong { color: var(--ink); }
 .daily-post-challenge {
   margin: 15px 0 0;
   color: var(--ink);
