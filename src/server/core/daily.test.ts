@@ -128,7 +128,7 @@ void test('daily Reddit post promotes the shared puzzle without revealing its so
     '**Today’s high score is up for grabs. Can you set the record?**',
     'Open this post and tap **PLAY TODAY’S PUZZLE** to enter the game.',
     'Can you solve it? Can you beat the score? Your move.',
-  ].join('\\n\\n'));
+  ].join('\n\n'));
   assert.equal(post.body.includes('Optimal'), false);
   assert.equal(post.body.includes('Solution'), false);
   assert.equal(post.body.includes('>!'), false);
