@@ -88,23 +88,24 @@ export function Splash() {
 
   if (isDailyPost) {
     const highScoreLabel = previewLoading
-      ? 'Loading…'
+      ? '…'
       : preview?.hasHighScore && preview.highScore !== null
-        ? `${preview.highScore} pts`
+        ? String(preview.highScore)
         : preview
-          ? 'No record yet'
+          ? '—'
           : '—';
+    const profile = preview?.profile;
 
     return (
       <main className="splash-page daily-splash">
-        <section className="splash-stage daily-splash-stage" aria-label="Today's WRDLINK Daily challenge">
-          <div className="daily-post-kicker">
-            <span>WRDLINK DAILY</span>
-            <span>{formatDate(dailyDate)}</span>
-          </div>
+        <section className="splash-stage daily-splash-stage" aria-label="Today's WRDLINK Daily puzzle">
+          <header className="daily-post-kicker">
+            <strong>WRDLINK DAILY</strong>
+            <time dateTime={dailyDate}>{formatDate(dailyDate)}</time>
+          </header>
 
-          <h1>Today's word challenge</h1>
-          <p className="daily-post-intro">Change one letter at a time. Reach the target.</p>
+          <h1>Today's challenge</h1>
+          <p className="daily-post-intro">One letter at a time. Connect the words.</p>
 
           <div className="daily-word-bridge" aria-label={`Start word ${dailyStart}, target word ${dailyTarget}`}>
             <strong className="daily-start-word">{dailyStart}</strong>
@@ -112,19 +113,33 @@ export function Splash() {
             <strong className="daily-target-word">{dailyTarget}</strong>
           </div>
 
-          <div className="daily-record" aria-live="polite">
-            <span>TODAY'S HIGH SCORE</span>
-            <strong>{highScoreLabel}</strong>
-            {preview?.highScoreMoves !== null && preview?.highScoreMoves !== undefined && (
-              <small>{preview.highScoreMoves} moves</small>
-            )}
+          <div className="daily-mini-stats" aria-label="Your stats and today's community record">
+            <div className="daily-mini-stat">
+              <span>STREAK</span>
+              <strong>{profile ? profile.currentStreak : '—'}</strong>
+            </div>
+            <div className="daily-mini-stat">
+              <span>BEST</span>
+              <strong>{profile ? profile.bestStreak : '—'}</strong>
+            </div>
+            <div className="daily-mini-stat">
+              <span>POINTS</span>
+              <strong>{profile ? profile.totalPoints.toLocaleString('en-US') : '—'}</strong>
+            </div>
+            <div className="daily-mini-stat daily-mini-record" aria-live="polite">
+              <span>HIGH SCORE</span>
+              <strong>{highScoreLabel}</strong>
+              {preview?.highScoreMoves !== null && preview?.highScoreMoves !== undefined && (
+                <small>{preview.highScoreMoves} moves</small>
+              )}
+            </div>
           </div>
 
           <button className="start-button daily-play-button" onClick={play} disabled={launching} aria-busy={launching}>
             {launching ? 'Opening puzzle…' : "PLAY TODAY'S PUZZLE"}
             {!launching && <span aria-hidden="true">→</span>}
           </button>
-          {launching && <div className="daily-launch-progress" role="status" aria-live="polite">Opening your daily challenge…</div>}
+          {launching && <div className="daily-launch-progress" role="status" aria-live="polite">Opening daily challenge…</div>}
           {error && <p className="launch-error" role="alert">{error}</p>}
         </section>
       </main>
