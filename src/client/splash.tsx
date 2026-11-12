@@ -21,6 +21,8 @@ type DailyPreview = {
   highScore: number | null;
   highScoreMoves: number | null;
   hasHighScore: boolean;
+  completionCount: number;
+  bestMoves: number | null;
 };
 
 const postData = context.postData as unknown as DailyPostData | undefined;
@@ -137,15 +139,23 @@ export function Splash() {
                 <small>{preview.highScoreMoves} moves</small>
               )}
             </div>
+            <div className="daily-post-stat daily-community-stat">
+              <span>PLAYERS COMPLETED TODAY</span>
+              <strong>{previewLoading ? 'Loading…' : preview ? preview.completionCount.toLocaleString('en-US') : 'Unavailable'}</strong>
+            </div>
+            <div className="daily-post-stat daily-community-stat">
+              <span>FEWEST MOVES TODAY</span>
+              <strong>{previewLoading ? 'Loading…' : preview?.bestMoves !== null && preview?.bestMoves !== undefined ? `${preview.bestMoves} moves` : preview ? 'Set the first record' : 'Unavailable'}</strong>
+            </div>
           </div>
           {previewLoading && (
-            <div className="daily-preview-progress" role="status" aria-label="Loading your stats and today's high score">
+            <div className="daily-preview-progress" role="status" aria-label="Loading your personal stats and today's community records">
               <span />
             </div>
           )}
 
           <p className="daily-post-challenge">
-            Can you beat today's high score? Can you solve it in fewer moves?
+            Can you beat today's high score? Can you set the fewest moves record?
           </p>
 
           <button className="start-button daily-play-button" onClick={play} disabled={launching} aria-busy={launching}>
@@ -154,7 +164,7 @@ export function Splash() {
           </button>
           {launching && <div className="daily-launch-progress" role="status" aria-live="polite">Opening your daily challenge…</div>}
           {error && <p className="launch-error" role="alert">{error}</p>}
-          <p className="daily-post-footnote">Your streak and points are personal. Today's high score is shared with everyone.</p>
+          <p className="daily-post-footnote">Your streak and points are personal. Today's scores and completion records are shared with everyone.</p>
         </section>
       </main>
     );
