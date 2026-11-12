@@ -645,6 +645,29 @@ dailyApi.get('/leaderboard', async (c) => {
   return c.json(await leaderboard(period, metric, date));
 });
 
+dailyApi.get('/post-preview', async (c) => {
+  const date = c.req.query('date') ?? utcDateKey();
+  if (parseDateKey(date) === null || date > utcDateKey()) {
+    return c.json({ error: 'Invalid daily challenge date.' }, 400);
+  }
+  const [profile, board] = await Promise.all([
+    context.userId ? readProfile(context.userId) : Promise.resolve(null),
+    leaderboard('daily', 'score', date),
+  ]);
+  const leader = board.entries[0] ?? null;
+  return c.json({
+    date,
+    profile: profile ? {
+      currentStreak: profile.currentStreak,
+      bestStreak: profile.bestStreak,
+      totalPoints: profile.totalScore,
+    } : null,
+    highScore: leader?.score ?? null,
+    highScoreMoves: leader?.moves ?? null,
+    hasHighScore: Boolean(leader),
+  });
+});
+
 async function verifiedShareRecord(date: string): Promise<DailyResult | null> {
   if (!context.userId || parseDateKey(date) === null) return null;
   const raw = await redis.get(resultKey(date, context.userId));
