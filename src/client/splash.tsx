@@ -87,14 +87,13 @@ export function Splash() {
   }
 
   if (isDailyPost) {
-    const profile = preview?.profile;
     const highScoreLabel = previewLoading
       ? 'Loading…'
-      : preview
-        ? preview.hasHighScore && preview.highScore !== null
-          ? `${preview.highScore} pts`
-          : 'UP FOR GRABS'
-        : 'Unavailable';
+      : preview?.hasHighScore && preview.highScore !== null
+        ? `${preview.highScore} pts`
+        : preview
+          ? 'No record yet'
+          : '—';
 
     return (
       <main className="splash-page daily-splash">
@@ -103,8 +102,9 @@ export function Splash() {
             <span>WRDLINK DAILY</span>
             <span>{formatDate(dailyDate)}</span>
           </div>
-          <h1>Can you connect these words?</h1>
-          <p className="daily-post-intro">One letter at a time. Find the word bridge that gets you to the target.</p>
+
+          <h1>Today's word challenge</h1>
+          <p className="daily-post-intro">Change one letter at a time. Reach the target.</p>
 
           <div className="daily-word-bridge" aria-label={`Start word ${dailyStart}, target word ${dailyTarget}`}>
             <strong className="daily-start-word">{dailyStart}</strong>
@@ -112,51 +112,13 @@ export function Splash() {
             <strong className="daily-target-word">{dailyTarget}</strong>
           </div>
 
-          <div className="daily-post-rules">
-            <span>THE RULES</span>
-            <p>Change exactly one letter per move.</p>
-            <p>Every step must be a valid four letter word.</p>
-            <p>Do not reuse a word.</p>
+          <div className="daily-record" aria-live="polite">
+            <span>TODAY'S HIGH SCORE</span>
+            <strong>{highScoreLabel}</strong>
+            {preview?.highScoreMoves !== null && preview?.highScoreMoves !== undefined && (
+              <small>{preview.highScoreMoves} moves</small>
+            )}
           </div>
-
-          <div className="daily-post-stats">
-            <div className="daily-post-stat">
-              <span>YOUR CURRENT STREAK</span>
-              <strong>{previewLoading ? 'Loading…' : profile ? `${profile.currentStreak} days` : preview ? 'Sign in to track' : 'Unavailable'}</strong>
-            </div>
-            <div className="daily-post-stat">
-              <span>YOUR BEST STREAK</span>
-              <strong>{previewLoading ? 'Loading…' : profile ? `${profile.bestStreak} days` : preview ? 'Sign in to track' : 'Unavailable'}</strong>
-            </div>
-            <div className="daily-post-stat">
-              <span>YOUR TOTAL POINTS</span>
-              <strong>{previewLoading ? 'Loading…' : profile ? profile.totalPoints.toLocaleString('en-US') : preview ? 'Sign in to track' : 'Unavailable'}</strong>
-            </div>
-            <div className="daily-post-stat daily-high-score">
-              <span>TODAY'S HIGH SCORE</span>
-              <strong>{highScoreLabel}</strong>
-              {preview?.highScoreMoves !== null && preview?.highScoreMoves !== undefined && (
-                <small>{preview.highScoreMoves} moves</small>
-              )}
-            </div>
-            <div className="daily-post-stat daily-community-stat">
-              <span>PLAYERS COMPLETED TODAY</span>
-              <strong>{previewLoading ? 'Loading…' : preview ? preview.completionCount.toLocaleString('en-US') : 'Unavailable'}</strong>
-            </div>
-            <div className="daily-post-stat daily-community-stat">
-              <span>FEWEST MOVES TODAY</span>
-              <strong>{previewLoading ? 'Loading…' : preview?.bestMoves !== null && preview?.bestMoves !== undefined ? `${preview.bestMoves} moves` : preview ? 'Set the first record' : 'Unavailable'}</strong>
-            </div>
-          </div>
-          {previewLoading && (
-            <div className="daily-preview-progress" role="status" aria-label="Loading your personal stats and today's community records">
-              <span />
-            </div>
-          )}
-
-          <p className="daily-post-challenge">
-            Can you beat today's high score? Can you set the fewest moves record?
-          </p>
 
           <button className="start-button daily-play-button" onClick={play} disabled={launching} aria-busy={launching}>
             {launching ? 'Opening puzzle…' : "PLAY TODAY'S PUZZLE"}
@@ -164,7 +126,6 @@ export function Splash() {
           </button>
           {launching && <div className="daily-launch-progress" role="status" aria-live="polite">Opening your daily challenge…</div>}
           {error && <p className="launch-error" role="alert">{error}</p>}
-          <p className="daily-post-footnote">Your streak and points are personal. Today's scores and completion records are shared with everyone.</p>
         </section>
       </main>
     );
