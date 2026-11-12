@@ -1271,3 +1271,57 @@
     scroll-behavior: auto;
   }
 }
+
+
+/* Primary next step after a successful daily solve. This CTA is rendered only
+   inside the completed state and intentionally leads the sharing controls. */
+.daily-game-page.is-complete .daily-finish-panel .daily-campaign-button {
+  display: flex;
+  width: 100%;
+  min-height: 62px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 10px 0 8px;
+  padding: 12px 20px;
+  border: 2px solid var(--line-strong);
+  border-radius: 14px;
+  background: var(--mint);
+  color: #10251f;
+  box-shadow: 4px 5px 0 var(--line-strong);
+  cursor: pointer;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 950;
+  letter-spacing: .075em;
+  transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+}
+.daily-game-page.is-complete .daily-finish-panel .daily-campaign-button:hover:not(:disabled) {
+  filter: brightness(1.06) saturate(1.05);
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 7px 0 var(--line-strong);
+}
+.daily-game-page.is-complete .daily-finish-panel .daily-campaign-button:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 3px 0 var(--line-strong);
+}
+.daily-campaign-button-arrow {
+  font-size: 24px;
+  line-height: 1;
+}
+.daily-game-page.is-complete .daily-finish-panel .daily-campaign-button:disabled {
+  cursor: wait;
+  opacity: .65;
+}
+@media (max-width: 620px) {
+  .daily-game-page.is-complete .daily-finish-panel .daily-campaign-button {
+    min-height: 58px;
+    margin: 8px 0 6px;
+    font-size: 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-game-page.is-complete .daily-finish-panel .daily-campaign-button {
+    transition: none;
+  }
+}

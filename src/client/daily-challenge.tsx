@@ -574,6 +574,10 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
               <h2 id="daily-completion-title">Daily challenge complete!</h2>
               {shareAction && <div className="daily-operation-progress" role="progressbar" aria-label={shareAction === 'post' ? 'Publishing your result' : 'Posting your comment'} aria-valuetext="In progress" aria-busy="true"><span /></div>}
               <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
+              <button className="daily-campaign-button" type="button" onClick={onClose} disabled={busy}>
+                <span>PLAY MORE</span>
+                <span className="daily-campaign-button-arrow" aria-hidden="true">→</span>
+              </button>
               {shareMessage && <p ref={shareFeedbackRef} className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
               {error && <p ref={shareFeedbackRef} className="game-message error daily-share-feedback" role="alert">{error}</p>}
               {result && (
@@ -593,9 +597,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                   ) : <p>Sign in to save a ranked result and share it to Reddit.</p>}
                 </section>
               )}
-              <button className="secondary-button daily-campaign-button" type="button" onClick={onClose} disabled={busy}>
-                ← Return to Campaign
-              </button>
             </section>
           )}
         </div>
