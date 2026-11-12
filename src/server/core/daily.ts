@@ -26,6 +26,32 @@ export function formatDailyShareText(
   ].join('\n\n');
 }
 
+export function formatDailyPostContent(
+  dateKey: string,
+  puzzle: { start: string; target: string; optimalMoves: number }
+): { title: string; body: string } {
+  const timestamp = parseDateKey(dateKey);
+  if (timestamp === null) throw new Error('Invalid daily post date.');
+  if (!/^[A-Z]{4}$/.test(puzzle.start) || !/^[A-Z]{4}$/.test(puzzle.target) ||
+      !Number.isSafeInteger(puzzle.optimalMoves) || puzzle.optimalMoves < 1) {
+    throw new Error('Invalid daily post puzzle.');
+  }
+  const dateLabel = new Intl.DateTimeFormat('en-GB', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+  }).format(new Date(timestamp));
+  return {
+    title: `Can you get from ${puzzle.start} to ${puzzle.target}? | WRDLINK Daily`,
+    body: [
+      `**${dateLabel}**`,
+      `**Start:** ${puzzle.start}`,
+      `**Target:** ${puzzle.target}`,
+      `**Optimal:** ${puzzle.optimalMoves} moves`,
+      'Change exactly one letter per move. Every intermediate word must be valid. Do not reuse words.',
+      "Open the post to play today's challenge.",
+    ].join('\\n\\n'),
+  };
+}
+
 export type StreakUpdate = {
   currentStreak: number;
   bestStreak: number;
