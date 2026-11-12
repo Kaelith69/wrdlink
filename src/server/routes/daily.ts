@@ -143,7 +143,7 @@ async function limited(subject: string, action: string, limit: number): Promise<
   return count <= limit;
 }
 
-async function getSharedDailyPuzzle(date: string): Promise<Puzzle> {
+export async function getSharedDailyPuzzle(date: string): Promise<Puzzle> {
   const key = `wrdlink:v2:daily:puzzle:${date}`;
   const readStored = async (): Promise<Puzzle | null> => {
     const raw = await redis.get(key);

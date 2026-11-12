@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { aggregateRankScore, dailyRankScore, earnedBadges, formatDailyShareText, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
+import { aggregateRankScore, dailyRankScore, earnedBadges, formatDailyPostContent, formatDailyShareText, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
 
 const profile = (patch: Partial<DailyProfile> = {}): DailyProfile => ({
   totalCompleted: 0, totalScore: 0, totalMoves: 0,
@@ -107,4 +107,25 @@ void test('daily share copy contains progress only and never exposes the solutio
   assert.equal(message.includes('Solution:'), false);
   assert.equal(message.includes('>!'), false);
   assert.equal(message.includes('reddit.com'), false);
+});
+
+
+void test('daily Reddit post copy is concise and uses the dated shared puzzle details', () => {
+  const post = formatDailyPostContent('2026-11-12', {
+    start: 'LANK', target: 'HELM', optimalMoves: 5,
+  });
+  assert.equal(post.title, 'Can you get from LANK to HELM? | WRDLINK Daily');
+  assert.equal(post.body, [
+    '**12 November 2026**',
+    '**Start:** LANK',
+    '**Target:** HELM',
+    '**Optimal:** 5 moves',
+    'Change exactly one letter per move. Every intermediate word must be valid. Do not reuse words.',
+    "Open the post to play today's challenge.",
+  ].join('\n\n'));
+  assert.equal(post.body.includes('Solution'), false);
+  assert.equal(post.body.includes('>!'), false);
+  assert.throws(() => formatDailyPostContent('2026-13-40', {
+    start: 'LANK', target: 'HELM', optimalMoves: 5,
+  }), /date/i);
 });
