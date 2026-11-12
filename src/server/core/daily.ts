@@ -59,7 +59,7 @@ export function formatDailyPostContent(
     '**Today’s high score is up for grabs. Can you set the record?**',
     'Open this post and tap **PLAY TODAY’S PUZZLE** to enter the game.',
     'Can you solve it? Can you beat the score? Your move.',
-  ].join('\\n\\n');
+  ].join('\n\n');
   return { title, body };
 }
 
