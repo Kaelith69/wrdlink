@@ -36,7 +36,13 @@ async function publishDailyPuzzlePost(subredditName: string) {
     const post = await reddit.submitCustomPost({
       subredditName,
       title,
-      entry: 'game',
+      entry: 'default',
+      postData: {
+        kind: 'daily-challenge',
+        date,
+        start: puzzle.start,
+        target: puzzle.target,
+      },
       textFallback: { text: body },
     });
 
