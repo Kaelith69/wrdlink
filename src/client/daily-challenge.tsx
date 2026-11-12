@@ -357,7 +357,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
         if (data.graceEarned) messages.push('You earned a streak grace token.');
         if (data.newBadges.length) messages.push('New badges: ' + data.newBadges.map((badge) => badgeNames[badge] ?? badge).join(', '));
         setShareMessage(messages.join(' '));
-        await loadBoard();
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not submit that word.');
