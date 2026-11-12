@@ -206,6 +206,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [myRank, setMyRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [shareAction, setShareAction] = useState<'post' | 'comment' | null>(null);
   const [boardLoading, setBoardLoading] = useState(true);
   const [boardError, setBoardError] = useState('');
   const [error, setError] = useState('');
@@ -326,6 +327,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
       return;
     }
     setBusy(true);
+    setShareAction(null);
     setError('');
     const pending = pendingMoveRequest.current;
     const requestId = pending?.date === date && pending.word === word
@@ -355,7 +357,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
         if (data.graceEarned) messages.push('You earned a streak grace token.');
         if (data.newBadges.length) messages.push('New badges: ' + data.newBadges.map((badge) => badgeNames[badge] ?? badge).join(', '));
         setShareMessage(messages.join(' '));
-        await loadBoard();
       }
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not submit that word.');
@@ -367,6 +368,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   async function shareResult(kind: 'post' | 'comment') {
     if (!result || !ranked || busy) return;
     setBusy(true);
+    setShareAction(kind);
     setError('');
     setShareMessage('');
     try {
@@ -382,6 +384,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
       setError(cause instanceof Error ? cause.message : 'Could not share your result.');
     } finally {
       setBusy(false);
+      setShareAction(null);
     }
   }
 
@@ -487,7 +490,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
       </section>
 
       <div className="daily-game-content">
-        <div className="game-workspace">
+        <div className="game-workspace" aria-busy={busy}>
           <section className="route-panel daily-route-panel" aria-label={'Start word ' + puzzle.start + ', target word ' + puzzle.target}>
             <div className="route-end" aria-label={'Start word: ' + puzzle.start}>
               <div className="word-display" aria-hidden="true">{[...puzzle.start].map((letter, index) => <span key={index}>{letter}</span>)}</div>
@@ -516,6 +519,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                 <h2>Your next word</h2>
                 <p>Daily challenge · {date} · Optimal path: {puzzle.optimalMoves} moves</p>
               </div>
+              {busy && <div className="daily-operation-progress" role="progressbar" aria-label="Checking your word" aria-valuetext="In progress" aria-busy="true"><span /></div>}
               <form onSubmit={submitMove}>
                 <label className="sr-only" htmlFor="daily-word-entry">Next four letter word</label>
                 <input
@@ -565,11 +569,12 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           ) : (
             <section className="finish-panel daily-finish-panel" aria-labelledby="daily-completion-title">
               <h2 id="daily-completion-title">Daily challenge complete!</h2>
+              {shareAction && <div className="daily-operation-progress" role="progressbar" aria-label={shareAction === 'post' ? 'Publishing your result' : 'Posting your comment'} aria-valuetext="In progress" aria-busy="true"><span /></div>}
               <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
               {shareMessage && <p ref={shareFeedbackRef} className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
               {error && <p ref={shareFeedbackRef} className="game-message error daily-share-feedback" role="alert">{error}</p>}
               <p className="daily-campaign-prompt">Ready for another round? Your Campaign is waiting.</p>
-              <button className="ink-button finish-next-button daily-campaign-button" type="button" onClick={onClose}>
+              <button className="ink-button finish-next-button daily-campaign-button" type="button" onClick={onClose} disabled={busy}>
                 Play Campaign <span aria-hidden="true">→</span>
               </button>
               {result && (
@@ -582,8 +587,8 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                     <>
                       <p>Sharing publishes under your Reddit account.</p>
                       <div className="campaign-share-actions">
-                        <button type="button" onClick={() => void shareResult('post')} disabled={busy}>Post result as you</button>
-                        <button type="button" onClick={() => void shareResult('comment')} disabled={busy}>Comment as you</button>
+                        <button type="button" onClick={() => void shareResult('post')} disabled={busy}>{shareAction === 'post' ? 'Posting…' : 'Post result as you'}</button>
+                        <button type="button" onClick={() => void shareResult('comment')} disabled={busy}>{shareAction === 'comment' ? 'Commenting…' : 'Comment as you'}</button>
                       </div>
                     </>
                   ) : <p>Sign in to save a ranked result and share it to Reddit.</p>}
@@ -593,7 +598,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           )}
         </div>
 
-        <section className="daily-extras" aria-label="Daily challenge progress and community">
+        {!completed && <section className="daily-extras" aria-label="Daily challenge progress and community">
           <section className="daily-profile card-panel">
             <div><strong>{profile.totalCompleted}</strong><span>DAILY SOLVES</span></div>
             <div><strong>{profile.bestStreak}</strong><span>BEST STREAK</span></div>
@@ -620,7 +625,12 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
               </div>
             </div>
             <p className="daily-muted">{periodLabel} · {moveLabel}</p>
-            {boardLoading ? <p className="daily-loading-message" role="status">Loading community rankings…</p> : boardError ? (
+            {boardLoading ? (
+              <div className="daily-inline-loading" role="status">
+                <div className="daily-progress-track" role="progressbar" aria-label="Loading community rankings" aria-valuetext="In progress" aria-busy="true"><span /></div>
+                <span>Loading community rankings…</span>
+              </div>
+            ) : boardError ? (
               <div className="daily-board-error">
                 <p className="daily-error" role="alert">{boardError}</p>
                 <button className="daily-refresh" type="button" onClick={() => void loadBoard()}>Retry leaderboard</button>
@@ -649,7 +659,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             </div>
             <p className="daily-muted">A grace token protects one missed day. Earn one every seven consecutive completions, up to two. Daily puzzles reset at 00:00 UTC, which is 05:30 IST.</p>
           </section>
-        </section>
+        </section>}
       </div>
     </main>
   );
