@@ -492,11 +492,6 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
 
       <div className="daily-game-content">
         <div className="game-workspace" aria-busy={busy}>
-          {busy && (
-            <div className="daily-operation-progress" role="progressbar" aria-label={shareAction === 'post' ? 'Publishing your result' : shareAction === 'comment' ? 'Posting your comment' : 'Checking your word'} aria-valuetext="In progress" aria-busy="true">
-              <span />
-            </div>
-          )}
           <section className="route-panel daily-route-panel" aria-label={'Start word ' + puzzle.start + ', target word ' + puzzle.target}>
             <div className="route-end" aria-label={'Start word: ' + puzzle.start}>
               <div className="word-display" aria-hidden="true">{[...puzzle.start].map((letter, index) => <span key={index}>{letter}</span>)}</div>
@@ -525,6 +520,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                 <h2>Your next word</h2>
                 <p>Daily challenge · {date} · Optimal path: {puzzle.optimalMoves} moves</p>
               </div>
+              {busy && <div className="daily-operation-progress" role="progressbar" aria-label="Checking your word" aria-valuetext="In progress" aria-busy="true"><span /></div>}
               <form onSubmit={submitMove}>
                 <label className="sr-only" htmlFor="daily-word-entry">Next four letter word</label>
                 <input
@@ -574,11 +570,12 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           ) : (
             <section className="finish-panel daily-finish-panel" aria-labelledby="daily-completion-title">
               <h2 id="daily-completion-title">Daily challenge complete!</h2>
+              {shareAction && <div className="daily-operation-progress" role="progressbar" aria-label={shareAction === 'post' ? 'Publishing your result' : 'Posting your comment'} aria-valuetext="In progress" aria-busy="true"><span /></div>}
               <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
               {shareMessage && <p ref={shareFeedbackRef} className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
               {error && <p ref={shareFeedbackRef} className="game-message error daily-share-feedback" role="alert">{error}</p>}
               <p className="daily-campaign-prompt">Ready for another round? Your Campaign is waiting.</p>
-              <button className="ink-button finish-next-button daily-campaign-button" type="button" onClick={onClose}>
+              <button className="ink-button finish-next-button daily-campaign-button" type="button" onClick={onClose} disabled={busy}>
                 Play Campaign <span aria-hidden="true">→</span>
               </button>
               {result && (
