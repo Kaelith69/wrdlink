@@ -36,5 +36,13 @@
       ]
     },
     "redis": true
+  },
+  "scheduler": {
+    "tasks": {
+      "daily-wrdlink-puzzle": {
+        "endpoint": "/internal/scheduler/daily-puzzle-post",
+        "cron": "0 0 * * *"
+      }
+    }
   }
 }
