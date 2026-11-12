@@ -39,17 +39,28 @@ export function formatDailyPostContent(
   const dateLabel = new Intl.DateTimeFormat('en-GB', {
     day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
   }).format(new Date(timestamp));
-  return {
-    title: `Can you get from ${puzzle.start} to ${puzzle.target}? | WRDLINK Daily`,
-    body: [
-      `**${dateLabel}**`,
-      `**Start:** ${puzzle.start}`,
-      `**Target:** ${puzzle.target}`,
-      `**Optimal:** ${puzzle.optimalMoves} moves`,
-      'Change exactly one letter per move. Every intermediate word must be valid. Do not reuse words.',
-      "Open the post to play today's challenge.",
-    ].join('\n\n'),
-  };
+  const titleOptions = [
+    `Can you transform ${puzzle.start} into ${puzzle.target}? | WRDLINK Daily`,
+    `One letter at a time: ${puzzle.start} → ${puzzle.target} | WRDLINK Daily`,
+    `Today's word ladder is ${puzzle.start} → ${puzzle.target}. Can you solve it?`,
+  ];
+  const dayOfYear = Math.floor(timestamp / DAY_MS);
+  const title = titleOptions[dayOfYear % titleOptions.length]!;
+  const body = [
+    `**WRDLINK DAILY · ${dateLabel}**`,
+    `## ${puzzle.start} → ${puzzle.target}`,
+    'Two words. One letter changes with every move. Can you build the bridge?',
+    '**The rules**',
+    '• Change exactly one letter per move.',
+    '• Every step must be a valid four letter word.',
+    '• Do not reuse words.',
+    `**Your challenge:** Reach **${puzzle.target}** from **${puzzle.start}** in as few moves as possible.`,
+    '**Your streak, best streak and total points are waiting in your personal game stats.**',
+    '**Today’s high score is up for grabs. Can you set the record?**',
+    'Open this post and tap **PLAY TODAY’S PUZZLE** to enter the game.',
+    'Can you solve it? Can you beat the score? Your move.',
+  ].join('\\n\\n');
+  return { title, body };
 }
 
 export type StreakUpdate = {
