@@ -881,3 +881,92 @@
   min-width: 0;
   max-width: 100%;
 }
+
+
+/* A completed Daily run is a focused result state, not the full dashboard.
+   Keep the puzzle, ladder, result and sharing controls. Remove the secondary
+   progression dashboard so the useful actions fit the embedded viewport. */
+.daily-game-page.is-complete .daily-game-content {
+  min-height: 0;
+  flex: 0 0 auto;
+}
+.daily-game-page.is-complete .game-workspace {
+  height: auto;
+  min-height: 0;
+  flex: 0 0 auto;
+}
+.daily-game-page.is-complete .daily-extras {
+  display: none;
+}
+
+/* Indeterminate progress feedback for requests whose duration is unknown. */
+.daily-operation-progress,
+.daily-progress-track {
+  position: relative;
+  width: 100%;
+  height: 7px;
+  overflow: hidden;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 999px;
+  background: var(--paper-strong);
+  box-shadow: 1px 2px 0 var(--line-strong);
+}
+.daily-operation-progress {
+  margin: 0 0 10px;
+}
+.daily-operation-progress > span,
+.daily-progress-track > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  border-radius: inherit;
+  background: var(--mint);
+  animation: daily-progress-sweep 1.25s cubic-bezier(.45, 0, .35, 1) infinite;
+}
+.daily-inline-loading {
+  display: grid;
+  gap: 9px;
+  margin: 14px 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+.daily-progress-track {
+  height: 6px;
+  box-shadow: none;
+}
+@keyframes daily-progress-sweep {
+  from { transform: translateX(-115%); }
+  to { transform: translateX(275%); }
+}
+@media (max-width: 620px) {
+  .daily-game-page.is-complete {
+    height: auto;
+    min-height: 100svh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    -webkit-overflow-scrolling: touch;
+  }
+  .daily-game-page.is-complete .daily-game-content,
+  .daily-game-page.is-complete .game-workspace {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+  .daily-game-page.is-complete .daily-finish-panel {
+    width: 100%;
+    min-width: 0;
+  }
+  .daily-operation-progress {
+    margin-bottom: 7px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-operation-progress > span,
+  .daily-progress-track > span {
+    animation: none;
+    width: 100%;
+    opacity: .72;
+  }
+}
