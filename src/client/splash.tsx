@@ -87,10 +87,12 @@ export function Splash() {
   if (isDailyPost) {
     const profile = preview?.profile;
     const highScoreLabel = previewLoading
-      ? 'Loading'
-      : preview?.hasHighScore && preview.highScore !== null
-        ? `${preview.highScore} pts`
-        : 'UP FOR GRABS';
+      ? 'Loading…'
+      : preview
+        ? preview.hasHighScore && preview.highScore !== null
+          ? `${preview.highScore} pts`
+          : 'UP FOR GRABS'
+        : 'Unavailable';
 
     return (
       <main className="splash-page daily-splash">
@@ -136,6 +138,11 @@ export function Splash() {
               )}
             </div>
           </div>
+          {previewLoading && (
+            <div className="daily-preview-progress" role="status" aria-label="Loading your stats and today's high score">
+              <span />
+            </div>
+          )}
 
           <p className="daily-post-challenge">
             Can you beat today's high score? Can you solve it in fewer moves?
