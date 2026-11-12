@@ -110,19 +110,26 @@ void test('daily share copy contains progress only and never exposes the solutio
 });
 
 
-void test('daily Reddit post copy is concise and uses the dated shared puzzle details', () => {
+void test('daily Reddit post promotes the shared puzzle without revealing its solution', () => {
   const post = formatDailyPostContent('2026-11-12', {
     start: 'LANK', target: 'HELM', optimalMoves: 5,
   });
-  assert.equal(post.title, 'Can you get from LANK to HELM? | WRDLINK Daily');
+  assert.equal(post.title, 'Can you transform LANK into HELM? | WRDLINK Daily');
   assert.equal(post.body, [
-    '**12 November 2026**',
-    '**Start:** LANK',
-    '**Target:** HELM',
-    '**Optimal:** 5 moves',
-    'Change exactly one letter per move. Every intermediate word must be valid. Do not reuse words.',
-    "Open the post to play today's challenge.",
+    '**WRDLINK DAILY · 12 November 2026**',
+    '## LANK → HELM',
+    'Two words. One letter changes with every move. Can you build the bridge?',
+    '**The rules**',
+    '• Change exactly one letter per move.',
+    '• Every step must be a valid four letter word.',
+    '• Do not reuse words.',
+    '**Your challenge:** Reach **HELM** from **LANK** in as few moves as possible.',
+    '**Your streak, best streak and total points are waiting in your personal game stats.**',
+    '**Today’s high score is up for grabs. Can you set the record?**',
+    'Open this post and tap **PLAY TODAY’S PUZZLE** to enter the game.',
+    'Can you solve it? Can you beat the score? Your move.',
   ].join('\n\n'));
+  assert.equal(post.body.includes('Optimal'), false);
   assert.equal(post.body.includes('Solution'), false);
   assert.equal(post.body.includes('>!'), false);
   assert.throws(() => formatDailyPostContent('2026-13-40', {
