@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { Hono } from 'hono';
+import { Hono, type Context } from 'hono';
 import { serve } from '@hono/node-server';
 import { context, createServer, getServerPort, reddit, redis } from '@devvit/web/server';
 import { formatDailyPostContent, utcDateKey } from './core/daily';
@@ -67,7 +67,7 @@ app.post('/internal/scheduler/daily-puzzle-post', async (c) => {
   }
 });
 
-async function publishInitialDailyPost(c: Parameters<Parameters<typeof app.post>[1]>[0]) {
+async function publishInitialDailyPost(c: Context) {
   const subredditName = context.subredditName;
   if (!subredditName) return c.json({ status: 'ignored' });
   try {
