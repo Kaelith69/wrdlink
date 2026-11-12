@@ -266,7 +266,10 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     puzzleLoadStarted.current = true;
     void Promise.resolve().then(() => loadPuzzle());
   }, [loadPuzzle]);
-  useEffect(() => { void Promise.resolve().then(() => loadBoard()); }, [loadBoard]);
+  useEffect(() => {
+    if (loading || completed || !puzzle) return;
+    void Promise.resolve().then(() => loadBoard());
+  }, [loading, completed, puzzle, loadBoard]);
 
   useEffect(() => {
     if (!completed || (!shareMessage && !error)) return;
@@ -573,19 +576,15 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
               <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
               {shareMessage && <p ref={shareFeedbackRef} className="game-message daily-share-feedback" role="status">{shareMessage}</p>}
               {error && <p ref={shareFeedbackRef} className="game-message error daily-share-feedback" role="alert">{error}</p>}
-              <p className="daily-campaign-prompt">Ready for another round? Your Campaign is waiting.</p>
-              <button className="ink-button finish-next-button daily-campaign-button" type="button" onClick={onClose} disabled={busy}>
-                Play Campaign <span aria-hidden="true">→</span>
-              </button>
               {result && (
-                <section className="campaign-share-card" aria-label="Share completed daily puzzle">
+                <section className="campaign-share-card daily-completion-share-card" aria-label="Share completed daily puzzle">
                   <div className="campaign-share-preview">
                     <strong>WRDLINK DAILY · {date}</strong>
                     <b>{result.start} → {result.target}</b>
                   </div>
                   {ranked ? (
                     <>
-                      <p>Sharing publishes under your Reddit account.</p>
+                      <p>Share your result with the community.</p>
                       <div className="campaign-share-actions">
                         <button type="button" onClick={() => void shareResult('post')} disabled={busy}>{shareAction === 'post' ? 'Posting…' : 'Post result as you'}</button>
                         <button type="button" onClick={() => void shareResult('comment')} disabled={busy}>{shareAction === 'comment' ? 'Commenting…' : 'Comment as you'}</button>
@@ -594,6 +593,9 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                   ) : <p>Sign in to save a ranked result and share it to Reddit.</p>}
                 </section>
               )}
+              <button className="secondary-button daily-campaign-button" type="button" onClick={onClose} disabled={busy}>
+                ← Return to Campaign
+              </button>
             </section>
           )}
         </div>
