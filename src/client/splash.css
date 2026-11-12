@@ -418,3 +418,28 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) {
   .daily-play-button span { transition: none; }
 }
+
+
+.daily-preview-progress {
+  position: relative;
+  height: 4px;
+  overflow: hidden;
+  margin-top: 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--mint) 18%, var(--line));
+}
+.daily-preview-progress span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  border-radius: inherit;
+  background: var(--mint);
+  animation: daily-preview-sweep 1.1s ease-in-out infinite alternate;
+}
+@keyframes daily-preview-sweep {
+  from { transform: translateX(-5%); }
+  to { transform: translateX(170%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .daily-preview-progress span { animation: none; width: 100%; }
+}
