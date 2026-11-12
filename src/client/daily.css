@@ -1204,6 +1204,9 @@
     width: 100%;
     grid-template-columns: minmax(0, 1fr) 82px 42px 36px;
     gap: 5px;
+  }
+
+  .daily-game-page {
     scrollbar-gutter: auto;
   }
 
