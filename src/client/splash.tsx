@@ -23,7 +23,7 @@ type DailyPreview = {
   hasHighScore: boolean;
 };
 
-const postData = context.postData as DailyPostData | undefined;
+const postData = context.postData as unknown as DailyPostData | undefined;
 const dailyDate = typeof postData?.date === 'string' ? postData.date : '';
 const dailyStart = typeof postData?.start === 'string' ? postData.start : '';
 const dailyTarget = typeof postData?.target === 'string' ? postData.target : '';
