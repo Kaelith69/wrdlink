@@ -650,11 +650,15 @@ dailyApi.get('/post-preview', async (c) => {
   if (parseDateKey(date) === null || date > utcDateKey()) {
     return c.json({ error: 'Invalid daily challenge date.' }, 400);
   }
-  const [profile, board] = await Promise.all([
+  const dailyPrefix = `wrdlink:v2:leaderboard:daily:${date}`;
+  const [profile, board, moveBoard, completionCount] = await Promise.all([
     context.userId ? readProfile(context.userId) : Promise.resolve(null),
     leaderboard('daily', 'score', date),
+    leaderboard('daily', 'moves', date),
+    redis.zCard(dailyPrefix + ':score'),
   ]);
   const leader = board.entries[0] ?? null;
+  const fewestMoves = moveBoard.entries[0] ?? null;
   return c.json({
     date,
     profile: profile ? {
@@ -665,6 +669,8 @@ dailyApi.get('/post-preview', async (c) => {
     highScore: leader?.score ?? null,
     highScoreMoves: leader?.moves ?? null,
     hasHighScore: Boolean(leader),
+    completionCount,
+    bestMoves: fewestMoves?.moves ?? null,
   });
 });
 

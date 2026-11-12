@@ -443,3 +443,47 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
 @media (prefers-reduced-motion: reduce) {
   .daily-preview-progress span { animation: none; width: 100%; }
 }
+
+
+/* Community records extend the daily challenge card without competing with
+   the personal streak metrics. Keep all six metrics balanced on narrow embeds. */
+.daily-community-stat {
+  border-color: color-mix(in srgb, var(--mint) 42%, var(--line));
+  background: color-mix(in srgb, var(--mint) 7%, var(--paper));
+}
+.daily-community-stat strong {
+  color: var(--mint);
+}
+.daily-post-challenge {
+  margin: 17px 0 0;
+  padding: 13px 15px;
+  border: 1px dashed color-mix(in srgb, var(--mint) 65%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--mint) 9%, var(--paper));
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 850;
+  line-height: 1.5;
+  text-align: center;
+}
+.daily-play-button {
+  width: 100%;
+  min-height: 62px;
+  margin-top: 17px;
+  border-radius: 14px;
+  font-size: 15px;
+  letter-spacing: .045em;
+}
+.daily-post-footnote {
+  margin: 13px 0 0;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
+}
+@media (max-width: 360px) {
+  .daily-post-stats { gap: 6px; }
+  .daily-post-stat { min-height: 66px; padding: 8px; }
+  .daily-post-stat span { font-size: 7px; }
+}
