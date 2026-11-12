@@ -970,3 +970,82 @@
     opacity: .72;
   }
 }
+
+/* Final completed-state viewport contract.
+   The embedded Reddit host fixes #root to the available viewport and clips
+   its overflow. Keep this page viewport-bounded so its own content scrolls
+   instead of growing behind the host's clipping boundary. */
+.daily-game-page.is-complete {
+  box-sizing: border-box;
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  max-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  scroll-padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+}
+
+.daily-game-page.is-complete > .game-header,
+.daily-game-page.is-complete > .daily-guide,
+.daily-game-page.is-complete > .daily-game-content {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.daily-game-page.is-complete .daily-game-content {
+  width: 100%;
+  min-height: 0;
+  overflow: visible;
+}
+
+.daily-game-page.is-complete .game-workspace {
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  overflow: visible;
+}
+
+.daily-game-page.is-complete .daily-finish-panel,
+.daily-game-page.is-complete .campaign-share-card,
+.daily-game-page.is-complete .campaign-share-actions {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.daily-game-page.is-complete .campaign-share-actions button {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 620px) {
+  .daily-game-page.is-complete {
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    padding-bottom: max(16px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .daily-game-page.is-complete .daily-game-content,
+  .daily-game-page.is-complete .game-workspace {
+    height: auto;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .daily-game-page.is-complete .daily-finish-panel {
+    width: 100%;
+    margin-bottom: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .daily-game-page.is-complete {
+    scroll-behavior: auto;
+  }
+}
