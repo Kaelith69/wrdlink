@@ -122,7 +122,7 @@ void test('daily Reddit post copy is concise and uses the dated shared puzzle de
     '**Optimal:** 5 moves',
     'Change exactly one letter per move. Every intermediate word must be valid. Do not reuse words.',
     "Open the post to play today's challenge.",
-  ].join('\\n\\n'));
+  ].join('\n\n'));
   assert.equal(post.body.includes('Solution'), false);
   assert.equal(post.body.includes('>!'), false);
   assert.throws(() => formatDailyPostContent('2026-13-40', {
