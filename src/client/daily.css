@@ -1049,3 +1049,240 @@
     scroll-behavior: auto;
   }
 }
+
+
+/* Final embedded viewport rules.
+   Reddit gives the game a bounded iframe. A content-sized page with
+   overflow-y:auto cannot scroll inside that frame, so keep the page bounded
+   to the viewport and let this element own vertical scrolling. */
+.daily-game-page,
+.daily-game-page.is-complete {
+  width: 100%;
+  height: 100dvh;
+  min-height: 0;
+  max-height: 100dvh;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable;
+}
+
+.daily-game-page.is-complete {
+  padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+}
+
+/* The Reddit embed is wider than a phone breakpoint but narrower than the
+   desktop header design. Stack score and moves vertically before they can
+   collide with the brand badge or the mode switch. */
+@media (max-width: 760px) {
+  .daily-game-page.game-page .game-header {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 8px;
+    padding: 7px 11px;
+  }
+
+  .daily-game-page .wordmark {
+    min-width: 0;
+    gap: 5px;
+  }
+
+  .daily-game-page .wordmark > span:nth-child(2) {
+    display: none;
+  }
+
+  .daily-game-page .daily-header-actions {
+    min-width: 0;
+    justify-self: stretch;
+    justify-content: flex-end;
+    gap: 6px;
+  }
+
+  .daily-game-page .header-count {
+    display: grid;
+    width: 86px;
+    height: 54px;
+    flex: 0 0 86px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+  }
+
+  .daily-game-page .header-count .score-pill,
+  .daily-game-page .header-count .moves-pill {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    height: 26px;
+    flex: 1 1 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+    padding: 0 7px;
+  }
+
+  .daily-game-page .header-count .metric-label {
+    font-size: 7px;
+    letter-spacing: .04em;
+  }
+
+  .daily-game-page .header-count .score-pill strong,
+  .daily-game-page .header-count .moves-pill strong {
+    font-size: 11px;
+  }
+
+  .daily-game-page .daily-header-actions .mode-switch {
+    width: 82px;
+    min-width: 82px;
+    height: 38px;
+    flex: 0 0 82px;
+  }
+
+  .daily-game-page .daily-streak-indicator {
+    width: 52px;
+    min-width: 52px;
+    height: 38px;
+    min-height: 38px;
+    flex: 0 0 52px;
+    padding-inline: 4px;
+    gap: 3px;
+  }
+
+  .daily-game-page .daily-guide-button {
+    width: 38px;
+    min-width: 38px;
+    height: 38px;
+    flex: 0 0 38px;
+  }
+
+  .daily-game-page.is-complete .daily-finish-panel {
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .daily-game-page.is-complete .daily-completion-share-card {
+    margin: 5px 0 0;
+    padding: 9px;
+  }
+
+  .daily-game-page.is-complete .daily-completion-share-card > p {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .daily-game-page.is-complete .daily-completion-share-card .campaign-share-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+
+  .daily-game-page.is-complete .daily-completion-share-card .campaign-share-actions button {
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: 5px;
+    overflow-wrap: anywhere;
+    font-size: 9px;
+  }
+
+  .daily-game-page.is-complete .daily-campaign-button {
+    display: inline-flex;
+    width: fit-content;
+    min-width: 0;
+    min-height: 36px;
+    align-self: center;
+    margin: 3px auto 0;
+    padding: 0 13px;
+    border-width: 1.5px;
+    box-shadow: 2px 2px 0 var(--line-strong);
+    font-size: 10px;
+  }
+}
+
+/* At narrow phone widths, give the brand its own row and put all controls on
+   a second row. This avoids compressing labels or letting controls overlap. */
+@media (max-width: 420px) {
+  .daily-game-page.game-page .game-header {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 6px;
+    height: auto;
+    min-height: 0;
+    flex: 0 0 auto;
+    padding: 8px 9px;
+  }
+
+  .daily-game-page .wordmark {
+    justify-self: start;
+  }
+
+  .daily-game-page .daily-header-actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) 82px 42px 36px;
+    gap: 5px;
+  }
+
+  .daily-game-page .header-count {
+    display: flex;
+    width: auto;
+    height: 38px;
+    min-width: 0;
+    flex: 1 1 auto;
+    flex-direction: row;
+    gap: 4px;
+  }
+
+  .daily-game-page .header-count .score-pill,
+  .daily-game-page .header-count .moves-pill {
+    width: auto;
+    min-width: 0;
+    min-height: 34px;
+    height: 34px;
+    flex: 1 1 0;
+    justify-content: space-between;
+    gap: 3px;
+    padding-inline: 5px;
+  }
+
+  .daily-game-page .header-count .metric-label {
+    font-size: 6px;
+    letter-spacing: .02em;
+  }
+
+  .daily-game-page .header-count .score-pill strong,
+  .daily-game-page .header-count .moves-pill strong {
+    font-size: 10px;
+  }
+
+  .daily-game-page .daily-header-actions .mode-switch {
+    width: 82px;
+    min-width: 82px;
+    flex-basis: 82px;
+  }
+
+  .daily-game-page .daily-streak-indicator {
+    width: 42px;
+    min-width: 42px;
+    flex-basis: 42px;
+    height: 34px;
+    min-height: 34px;
+  }
+
+  .daily-game-page .daily-guide-button {
+    width: 36px;
+    min-width: 36px;
+    flex-basis: 36px;
+    height: 34px;
+  }
+}
+
+/* Keep the completed screen compact without sacrificing the full scrollable
+   ladder or the share actions. Campaign navigation is deliberately secondary. */
+@media (prefers-reduced-motion: reduce) {
+  .daily-game-page {
+    scroll-behavior: auto;
+  }
+}
