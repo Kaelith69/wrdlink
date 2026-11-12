@@ -48,7 +48,7 @@ export function formatDailyPostContent(
       `**Optimal:** ${puzzle.optimalMoves} moves`,
       'Change exactly one letter per move. Every intermediate word must be valid. Do not reuse words.',
       "Open the post to play today's challenge.",
-    ].join('\\n\\n'),
+    ].join('\n\n'),
   };
 }
 
