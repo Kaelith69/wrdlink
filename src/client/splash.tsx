@@ -28,7 +28,7 @@ const dailyDate = typeof postData?.date === 'string' ? postData.date : '';
 const dailyStart = typeof postData?.start === 'string' ? postData.start : '';
 const dailyTarget = typeof postData?.target === 'string' ? postData.target : '';
 const isDailyPost = postData?.kind === 'daily-challenge' &&
-  /^\\d{4}-\\d{2}-\\d{2}$/.test(dailyDate) &&
+  /^\d{4}-\d{2}-\d{2}$/.test(dailyDate) &&
   /^[A-Z]{4}$/.test(dailyStart) &&
   /^[A-Z]{4}$/.test(dailyTarget);
 
@@ -118,15 +118,15 @@ export function Splash() {
           <div className="daily-post-stats">
             <div className="daily-post-stat">
               <span>YOUR CURRENT STREAK</span>
-              <strong>{profile ? `${profile.currentStreak} days` : 'Sign in to track'}</strong>
+              <strong>{previewLoading ? 'Loading…' : profile ? `${profile.currentStreak} days` : preview ? 'Sign in to track' : 'Unavailable'}</strong>
             </div>
             <div className="daily-post-stat">
               <span>YOUR BEST STREAK</span>
-              <strong>{profile ? `${profile.bestStreak} days` : 'Sign in to track'}</strong>
+              <strong>{previewLoading ? 'Loading…' : profile ? `${profile.bestStreak} days` : preview ? 'Sign in to track' : 'Unavailable'}</strong>
             </div>
             <div className="daily-post-stat">
               <span>YOUR TOTAL POINTS</span>
-              <strong>{profile ? profile.totalPoints.toLocaleString('en-US') : 'Sign in to track'}</strong>
+              <strong>{previewLoading ? 'Loading…' : profile ? profile.totalPoints.toLocaleString('en-US') : preview ? 'Sign in to track' : 'Unavailable'}</strong>
             </div>
             <div className="daily-post-stat daily-high-score">
               <span>TODAY'S HIGH SCORE</span>
