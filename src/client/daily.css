@@ -1447,3 +1447,18 @@
   .daily-game-page .daily-profile div:nth-child(even) { border-left:1px solid var(--line); }
   .daily-game-page.is-complete .daily-game-content { width:min(760px,calc(100% - 64px)); }
 }
+
+/* Daily desktop header follows Campaign's spacing and control geometry. */
+@media (min-width: 821px) {
+  .daily-game-page.game-page .game-header {
+    grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;
+    min-height:66px;padding:8px 24px;
+  }
+  .daily-game-page .daily-header-actions { display:flex;min-width:0;align-items:center;gap:10px; }
+  .daily-game-page .daily-streak-indicator {
+    display:inline-flex;min-width:58px;height:40px;min-height:40px;
+    align-items:center;justify-content:center;gap:6px;padding:0 9px;
+  }
+  .daily-game-page .daily-guide-button { width:40px;min-width:40px;height:40px; }
+  .daily-game-page .daily-guide-heading { min-width:0; }
+}
