@@ -1768,3 +1768,14 @@ html.mode-switch-transition::view-transition-new(root) {
   .game-page .chain-list li > span { font-size: 9px; }
   .game-page .chain-list li b { font-size: 13px; }
 }
+
+
+/* Desktop embedded viewport: center Campaign sharing actions without
+   changing the wider Fullscreen layout or the narrow Mobile layout. */
+@media (min-width: 621px) and (max-width: 820px) {
+  .game-page:not(.daily-game-page) .campaign-share-actions {
+    display:flex;
+    justify-content:center;
+    align-items:center;
+  }
+}
