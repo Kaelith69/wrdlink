@@ -1325,3 +1325,125 @@
     transition: none;
   }
 }
+
+
+
+/* Daily desktop layout shares Campaign's component scale and card language.
+   At wide sizes, the puzzle and community dashboard sit side by side. */
+@media (min-width: 821px) {
+  .daily-game-page { min-height:0;height:100dvh;max-height:100dvh;padding-bottom:24px; }
+  .daily-game-page .daily-guide {
+    width:min(1180px,calc(100% - 64px));margin:18px auto 0;padding:13px 17px;
+    border-width:2px;border-radius:13px;box-shadow:3px 4px 0 var(--line-strong);
+  }
+  .daily-game-page .daily-guide-heading h1 { font-size:21px; }
+  .daily-game-page .daily-guide-kicker { font-size:8px; }
+  .daily-game-page .daily-game-content {
+    display:grid;width:min(1180px,calc(100% - 64px));min-width:0;flex:0 0 auto;
+    grid-template-columns:minmax(0,1fr);align-items:start;gap:20px;
+    margin:0 auto;padding:20px 0 32px;
+  }
+  .daily-game-page .daily-game-content > .game-workspace {
+    width:min(700px,100%);min-width:0;min-height:0;height:auto;
+    margin:0 auto;padding:0;
+  }
+  .daily-game-page .daily-route-panel { min-height:0;padding:0 0 17px; }
+  .daily-game-page .daily-route-panel .route-connector { height:40px; }
+  .daily-game-page .chain-panel,.daily-game-page .entry-panel,
+  .daily-game-page .daily-finish-panel { width:100%;margin-top:13px; }
+  .daily-game-page .daily-extras {
+    display:grid;width:100%;min-width:0;grid-template-columns:repeat(2,minmax(0,1fr));
+    align-items:start;gap:13px;margin:0;padding:0;
+  }
+  .daily-game-page .daily-profile {
+    grid-column:1 / -1;grid-template-columns:repeat(4,minmax(0,1fr));
+    gap:8px;padding:14px 10px;
+  }
+  .daily-game-page .daily-profile div { min-width:0;gap:3px; }
+  .daily-game-page .daily-profile div + div { border-left:1px solid var(--line); }
+  .daily-game-page .daily-profile strong { font-size:20px; }
+  .daily-game-page .daily-profile span {
+    font-size:8px;letter-spacing:.07em;overflow-wrap:anywhere;
+  }
+  .daily-game-page .daily-leaderboard,.daily-game-page .daily-achievements {
+    min-width:0;margin:0;padding:16px;border-width:2px;border-radius:16px;
+    box-shadow:3px 4px 0 var(--line-strong);
+  }
+  .daily-game-page .daily-section-heading { align-items:center;flex-wrap:wrap;gap:8px; }
+  .daily-game-page .daily-section-heading h2 { font-size:19px; }
+  .daily-game-page .daily-eyebrow { font-size:8px; }
+  .daily-game-page .daily-rank { font-size:9px; }
+  .daily-game-page .daily-controls {
+    display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr);
+    align-items:center;gap:7px;margin:12px 0 8px;
+  }
+  .daily-game-page .daily-tabs {
+    min-width:0;gap:2px;padding:3px;border-radius:9px;
+  }
+  .daily-game-page .daily-tabs button {
+    min-width:0;flex:1 1 0;padding:7px 5px;border-radius:7px;
+    font-size:9px;white-space:nowrap;
+  }
+  .daily-game-page .daily-muted {
+    font-size:10px;line-height:1.45;overflow-wrap:anywhere;
+  }
+  .daily-game-page .daily-board { gap:5px;margin:10px 0; }
+  .daily-game-page .daily-board li {
+    min-width:0;grid-template-columns:26px minmax(0,1fr) auto;
+    gap:8px;padding:8px;border-radius:8px;
+  }
+  .daily-game-page .daily-board li strong { min-width:0;font-size:11px; }
+  .daily-game-page .daily-board li > span:last-child { font-size:10px; }
+  .daily-game-page .daily-achievement-grid {
+    grid-template-columns:1fr;gap:7px;margin:11px 0;
+  }
+  .daily-game-page .daily-achievement-item {
+    min-width:0;grid-template-columns:27px minmax(0,1fr);
+    gap:8px;padding:9px;border-radius:9px;
+  }
+  .daily-game-page .daily-achievement-icon {
+    width:26px;height:26px;border-radius:7px;
+  }
+  .daily-game-page .daily-achievement-item strong {
+    font-size:10px;overflow-wrap:anywhere;
+  }
+  .daily-game-page .daily-achievement-item small,
+  .daily-game-page .daily-achievement-progress {
+    font-size:9px;overflow-wrap:anywhere;
+  }
+  .daily-game-page .daily-game-content > .game-workspace .finish-panel { margin-top:13px; }
+  .daily-game-page.is-complete .daily-game-content {
+    display:block;width:min(760px,calc(100% - 64px));padding:20px 0 32px;
+  }
+  .daily-game-page.is-complete .daily-game-content > .game-workspace {
+    width:100%;padding:0;
+  }
+  .daily-game-page.is-complete .daily-finish-panel { margin-top:0; }
+  .daily-game-page.is-complete .daily-campaign-button {
+    width:min(100%,340px);min-height:44px;margin:9px auto;font-size:12px;
+  }
+  .daily-game-page.is-complete .daily-completion-share-card {
+    gap:9px;margin:12px 0 0;padding:13px;
+  }
+  .daily-game-page.is-complete .daily-completion-share-card .campaign-share-actions {
+    display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;
+  }
+  .daily-game-page.is-complete .daily-completion-share-card .campaign-share-actions button {
+    min-width:0;min-height:39px;padding:7px 9px;font-size:10px;overflow-wrap:anywhere;
+  }
+}
+@media (min-width: 1100px) {
+  .daily-game-page .daily-game-content {
+    grid-template-columns:minmax(0,1.05fr) minmax(360px,.95fr);
+    align-items:start;gap:24px;
+  }
+  .daily-game-page .daily-game-content > .game-workspace { width:100%;margin:0; }
+  .daily-game-page .daily-extras { grid-template-columns:minmax(0,1fr);gap:13px; }
+  .daily-game-page .daily-profile {
+    grid-column:auto;grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px 8px;padding:14px 10px;
+  }
+  .daily-game-page .daily-profile div + div { border-left:0; }
+  .daily-game-page .daily-profile div:nth-child(even) { border-left:1px solid var(--line); }
+  .daily-game-page.is-complete .daily-game-content { width:min(760px,calc(100% - 64px)); }
+}
