@@ -1462,3 +1462,35 @@
   .daily-game-page .daily-guide-button { width:40px;min-width:40px;height:40px; }
   .daily-game-page .daily-guide-heading { min-width:0; }
 }
+
+
+/* Match Campaign's horizontal word track at every Daily viewport width.
+   This intentionally overrides the older mobile vertical-list rules above. */
+.daily-game-page .chain-panel { min-width:0;max-width:100%; }
+.daily-game-page .chain-list {
+  display:flex;flex-direction:row;align-items:stretch;width:100%;min-width:0;max-width:100%;
+  max-height:none;gap:7px;margin:10px 0 0;padding:0 3px 7px 0;
+  overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;overscroll-behavior-y:none;
+  scrollbar-gutter:auto;scrollbar-width:thin;scroll-snap-type:x proximity;
+  -webkit-overflow-scrolling:touch;
+}
+.daily-game-page .chain-list li {
+  display:grid;flex:0 0 auto;grid-template-columns:22px auto;align-items:center;
+  gap:7px;width:auto;min-width:clamp(88px,26vw,108px);min-height:40px;
+  padding:5px 9px;scroll-snap-align:end;
+}
+.daily-game-page .chain-list li b {font-size:clamp(13px,2vw,16px);letter-spacing:.12em;white-space:nowrap;}
+.daily-game-page .chain-list li.chain-current {
+  border-color:var(--accent);background:var(--paper);box-shadow:inset 0 0 0 1px var(--accent);
+}
+.daily-game-page .chain-list li.chain-current b {color:var(--ink);}
+@media (max-width:620px) {
+  .daily-game-page .chain-panel {padding:12px;max-height:none;}
+  .daily-game-page .chain-list {gap:6px;margin-top:8px;padding-bottom:6px;}
+  .daily-game-page .chain-list li {
+    min-width:clamp(84px,27vw,100px);min-height:38px;grid-template-columns:19px auto;
+    gap:6px;padding:5px 7px;
+  }
+  .daily-game-page .chain-list li > span {font-size:9px;}
+  .daily-game-page .chain-list li b {font-size:13px;}
+}
