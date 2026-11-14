@@ -1779,3 +1779,43 @@ html.mode-switch-transition::view-transition-new(root) {
     align-items:center;
   }
 }
+
+
+/* Campaign mobile header: give the hint control its full content width by
+   letting the wordmark use only its intrinsic width, not the spare grid track. */
+@media (max-width: 620px) {
+  .campaign-game-header {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .campaign-game-header .wordmark {
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .campaign-game-header .header-right {
+    width: max-content;
+    max-width: 100%;
+    justify-self: end;
+  }
+
+  .campaign-game-header .header-hint-button {
+    box-sizing: border-box;
+    width: 54px;
+    min-width: 54px;
+    height: 34px;
+    flex: 0 0 54px;
+    gap: 4px;
+    padding-inline: 5px;
+  }
+
+  .campaign-game-header .header-hint-button svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .campaign-game-header .header-hint-cost {
+    font-size: 9px;
+    white-space: nowrap;
+  }
+}
