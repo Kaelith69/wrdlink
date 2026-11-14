@@ -218,6 +218,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const puzzleLoadStarted = useRef(false);
   const pendingMoveRequest = useRef<{ date: string; word: string; id: string } | null>(null);
   const chainListRef = useRef<HTMLOListElement | null>(null);
+  const entryInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadBoard = useCallback(async () => {
     const requestId = ++boardRequestId.current;
@@ -297,8 +298,9 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   useEffect(() => {
     const list = chainListRef.current;
     if (!list) return;
+    const desktop = window.matchMedia('(min-width: 821px)').matches;
     list.scrollTo({
-      top: list.scrollHeight,
+      [desktop ? 'left' : 'top']: desktop ? list.scrollWidth : list.scrollHeight,
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
     });
   }, [words]);
@@ -350,6 +352,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
         return;
       }
       setEntry('');
+      window.requestAnimationFrame(() => entryInputRef.current?.focus());
       if (data.complete) {
         setCompleted(true);
         setResult(data.result);
@@ -508,7 +511,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             <div className="panel-heading"><h2>Word ladder</h2></div>
             <ol className="chain-list" ref={chainListRef}>
               {words.map((word, index) => (
-                <li className={word === puzzle.target ? 'chain-final' : ''} key={`${word}-${index}`}>
+                <li className={`${word === puzzle.target ? 'chain-final ' : ''}${index === words.length - 1 ? 'chain-current' : ''}`} aria-current={index === words.length - 1 ? 'step' : undefined} key={`${word}-${index}`}>
                   <span>{String(index).padStart(2, '0')}</span>
                   <b>{word}</b>
                 </li>
@@ -526,6 +529,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
               <form onSubmit={submitMove}>
                 <label className="sr-only" htmlFor="daily-word-entry">Next four letter word</label>
                 <input
+                  ref={entryInputRef}
                   id="daily-word-entry"
                   value={entry}
                   onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, 4))}
