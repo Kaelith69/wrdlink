@@ -1515,3 +1515,31 @@
     min-width:0;
   }
 }
+
+
+
+/* Reddit's embedded Desktop viewport can be narrower than the browser
+   window. Center the Daily completion actions throughout that embed range,
+   without changing narrow Mobile or wide Fullscreen presentation. */
+@media (min-width: 621px) and (max-width: 1100px) {
+  main.game-page.daily-game-page.is-complete
+  .daily-finish-panel .daily-completion-share-card .campaign-share-actions {
+    display: flex !important;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center !important;
+    align-items: center;
+    width: 100%;
+    margin-inline: auto;
+    gap: 8px;
+    grid-template-columns: none;
+  }
+
+  main.game-page.daily-game-page.is-complete
+  .daily-finish-panel .daily-completion-share-card .campaign-share-actions > button {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 0;
+    justify-self: center;
+  }
+}
