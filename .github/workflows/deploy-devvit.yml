@@ -1,0 +1,66 @@
+name: Deploy WRDLINK to Reddit
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: devvit-deploy-wrdlink
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Validate, upload, and install on r/wrdlink
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7.0.0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24.18.0
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-fund
+
+      - name: Typecheck
+        run: npm run test:types
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Unit tests
+        run: npm run test:unit
+
+      - name: Build production app
+        run: npm run build
+
+      - name: Configure Devvit authentication
+        env:
+          DEVVIT_TOKEN: ${{ secrets.DEVVIT_TOKEN }}
+          DEVVIT_SESSION_ID: ${{ secrets.DEVVIT_SESSION_ID }}
+        run: |
+          if [ -z "$DEVVIT_TOKEN" ]; then
+            echo "::error::Add the DEVVIT_TOKEN repository secret before deploying."
+            exit 1
+          fi
+          if [ -z "$DEVVIT_SESSION_ID" ]; then
+            echo "::error::Add the DEVVIT_SESSION_ID repository secret before deploying."
+            exit 1
+          fi
+          mkdir -p "$HOME/.devvit"
+          printf '%s' "$DEVVIT_TOKEN" > "$HOME/.devvit/token"
+          printf '%s' "$DEVVIT_SESSION_ID" > "$HOME/.devvit/session-id"
+          chmod 600 "$HOME/.devvit/token" "$HOME/.devvit/session-id"
+
+      - name: Upload app version to Devvit
+        run: npx devvit upload
+
+      - name: Install latest uploaded version on r/wrdlink
+        run: npx devvit install r/wrdlink wrdlink
