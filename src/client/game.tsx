@@ -725,7 +725,6 @@ export function App() {
                 <b>{puzzle.start} → {puzzle.target}</b>
                 <span>{movesUsed} moves · {gameScore} points · Completed</span>
                 <small>{words.join(' → ')}</small>
-                <a href="https://www.reddit.com/r/WRDLINK/" target="_blank" rel="noreferrer">Play WRDLINK ↗</a>
               </div>
               <p>Sharing publishes under your Reddit account.</p>
               <div className="campaign-share-actions">
