@@ -205,9 +205,8 @@ export function App() {
   useEffect(() => {
     const list = chainListRef.current;
     if (!list) return;
-    const desktop = window.matchMedia('(min-width: 821px)').matches;
     list.scrollTo({
-      [desktop ? 'left' : 'top']: desktop ? list.scrollWidth : list.scrollHeight,
+      left: list.scrollWidth,
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
     });
   }, [words]);
