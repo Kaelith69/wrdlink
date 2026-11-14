@@ -153,6 +153,7 @@ export function App() {
   const [helpOpen, setHelpOpen] = useState(false);
   const celebrationTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const chainListRef = useRef<HTMLOListElement | null>(null);
+  const entryInputRef = useRef<HTMLInputElement | null>(null);
   const finishHeadingRef = useRef<HTMLHeadingElement | null>(null);
   const [completionAnnouncement, setCompletionAnnouncement] = useState('');
   const [sessionId, setSessionId] = useState(() => getSessionId());
@@ -204,8 +205,9 @@ export function App() {
   useEffect(() => {
     const list = chainListRef.current;
     if (!list) return;
+    const desktop = window.matchMedia('(min-width: 821px)').matches;
     list.scrollTo({
-      top: list.scrollHeight,
+      [desktop ? 'left' : 'top']: desktop ? list.scrollWidth : list.scrollHeight,
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
     });
   }, [words]);
@@ -413,6 +415,7 @@ export function App() {
       }
       setWords(result.words);
       setEntry('');
+      window.requestAnimationFrame(() => entryInputRef.current?.focus());
       if (result.complete) {
         setStatus('won');
         setCompletionAnnouncement('Level ' + result.level + ' complete. ' + puzzle.target + ' reached in ' + result.movesUsed + ' moves. ' + result.pointsAwarded + ' points awarded.');
@@ -645,7 +648,7 @@ export function App() {
           <div className="panel-heading"><h2>Word ladder</h2></div>
           <ol className="chain-list" ref={chainListRef}>
             {words.map((word, index) => (
-              <li className={word === puzzle.target ? 'chain-final' : ''} key={`${word}-${index}`}>
+              <li className={`${word === puzzle.target ? 'chain-final ' : ''}${index === words.length - 1 ? 'chain-current' : ''}`} aria-current={index === words.length - 1 ? 'step' : undefined} key={`${word}-${index}`}>
                 <span>{String(index).padStart(2, '0')}</span>
                 <b>{word}</b>
               </li>
@@ -661,6 +664,7 @@ export function App() {
             <form ref={entryFormRef} onSubmit={submitMove}>
               <label className="sr-only" htmlFor="word-entry">Next {puzzle.wordLength} letter word</label>
               <input
+                ref={entryInputRef}
                 id="word-entry"
                 value={entry}
                 onChange={(event) => setEntry(event.target.value.replace(/[^a-z]/gi, '').toUpperCase().slice(0, puzzle.wordLength))}
