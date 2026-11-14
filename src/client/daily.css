@@ -1056,7 +1056,7 @@
 /* The Reddit embed is wider than a phone breakpoint but narrower than the
    desktop header design. Stack score and moves vertically before they can
    collide with the brand badge or the mode switch. */
-@media (max-width: 760px) {
+@media (max-width: 620px) {
   .daily-game-page.game-page .game-header {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr);
