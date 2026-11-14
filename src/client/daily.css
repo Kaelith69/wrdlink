@@ -1494,3 +1494,24 @@
   .daily-game-page .chain-list li > span {font-size:9px;}
   .daily-game-page .chain-list li b {font-size:13px;}
 }
+
+
+/* Center Daily completion sharing actions in the desktop Reddit viewport.
+   Keep the buttons at their natural width instead of stretching them into
+   two full-width grid columns. Mobile and Fullscreen remain unchanged. */
+@media (min-width: 821px) {
+  .daily-game-page.is-complete .daily-completion-share-card .campaign-share-actions {
+    display:flex;
+    flex-direction:row;
+    flex-wrap:wrap;
+    justify-content:center;
+    align-items:center;
+    width:100%;
+    gap:8px;
+  }
+  .daily-game-page.is-complete .daily-completion-share-card .campaign-share-actions button {
+    flex:0 0 auto;
+    width:auto;
+    min-width:0;
+  }
+}
