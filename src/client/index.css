@@ -1472,251 +1472,127 @@ html.mode-switch-transition::view-transition-new(root) {
 }
 
 
-/* Desktop Reddit embed layout.
-   Keep the embedded page scrollable and scale the game controls to a
-   deliberate content width. These rules intentionally do not affect mobile. */
+
+/* Unified WRDLINK desktop system. Campaign and Daily share component scale,
+   typography, spacing, card treatment and viewport behaviour. Mobile rules
+   remain isolated below their existing breakpoints. */
 @media (min-width: 821px) {
-  .game-page:not(.daily-game-page) {
-    box-sizing: border-box;
-    width: 100%;
-    height: 100svh;
-    min-height: 0;
-    max-height: 100svh;
-    overflow-x: hidden;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    scrollbar-gutter: stable;
+  .game-page {
+    box-sizing:border-box;display:flex;width:100%;height:100dvh;min-height:0;
+    flex-direction:column;overflow-x:hidden;overflow-y:auto;
+    overscroll-behavior-y:contain;scrollbar-gutter:stable;padding-bottom:24px;
   }
-
-  .campaign-game-header {
-    grid-template-columns: minmax(0, 1fr) auto;
-    min-height: 64px;
-    gap: 12px;
-    padding: 9px clamp(16px, 2.2vw, 32px);
+  .game-page *, .game-page *::before, .game-page *::after { box-sizing:border-box; }
+  .game-header {
+    position:relative;z-index:2;display:grid;width:100%;min-height:68px;flex:0 0 68px;
+    grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;
+    padding:9px clamp(20px,3.6vw,52px);border-bottom-width:2px;
   }
-
-  .campaign-game-header .wordmark {
-    min-width: 0;
-    gap: 8px;
-    font-size: 16px;
+  .wordmark { min-width:0;gap:9px;font-size:16px;white-space:nowrap; }
+  .brand-mark { width:31px;height:31px;border-radius:9px;font-size:17px;box-shadow:2px 3px 0 var(--line-strong); }
+  .level-badge { margin-left:1px;padding:3px 8px;font-size:8px; }
+  .header-right,.daily-header-actions { min-width:0;gap:9px; }
+  .game-header .header-count {
+    display:flex;width:auto;min-width:0;height:36px;flex:0 0 auto;
+    flex-direction:row;gap:7px;
   }
-
-  .campaign-game-header .brand-mark {
-    width: 30px;
-    height: 30px;
-    font-size: 16px;
-    border-radius: 8px;
-    box-shadow: 2px 3px 0 var(--line-strong);
+  .game-header .header-count .score-pill,.game-header .header-count .moves-pill {
+    width:auto;min-width:78px;min-height:36px;gap:7px;padding:0 9px;
+    border-width:1px;border-radius:9px;
   }
-
-  .campaign-game-header .header-right {
-    min-width: 0;
-    gap: 8px;
+  .game-header .header-count .metric-label { font-size:8px;letter-spacing:.07em; }
+  .game-header .header-count .score-pill strong,.game-header .header-count .moves-pill strong { font-size:13px; }
+  .game-header .mode-switch {
+    width:76px;min-width:76px;height:36px;flex:0 0 76px;
+    box-shadow:2px 2px 0 var(--line-strong);
   }
-
-  .campaign-game-header .header-count {
-    gap: 6px;
+  .game-header .header-hint-button,.daily-game-page .daily-streak-indicator {
+    min-width:48px;height:36px;min-height:36px;gap:5px;padding:0 8px;
+    border-radius:9px;box-shadow:2px 2px 0 var(--line-strong);
   }
-
-  .campaign-game-header .header-count .score-pill,
-  .campaign-game-header .header-count .moves-pill {
-    min-width: 76px;
-    min-height: 36px;
-    gap: 6px;
-    padding-inline: 9px;
+  .game-header .header-hint-button svg { width:17px;height:17px; }
+  .game-header .header-hint-cost { font-size:11px; }
+  .game-header .header-help-button {
+    width:34px;min-width:34px;height:36px;border-radius:9px;
+    box-shadow:2px 2px 0 var(--line-strong);font-size:20px;
   }
-
-  .campaign-game-header .mode-switch {
-    width: 76px;
-    min-width: 76px;
-    height: 36px;
-    flex-basis: 76px;
-    box-shadow: 2px 2px 0 var(--line-strong);
+  .game-workspace {
+    width:min(700px,calc(100% - 56px));min-width:0;min-height:0;height:auto;
+    flex:0 0 auto;margin:0 auto;padding:24px 0 32px;
   }
-
-  .campaign-game-header .header-hint-button {
-    min-width: 46px;
-    height: 36px;
-    gap: 4px;
-    padding-inline: 7px;
-    border-radius: 9px;
-    box-shadow: 2px 2px 0 var(--line-strong);
+  .route-panel {
+    grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);
+    align-items:end;gap:12px;padding:0 0 19px;
   }
-
-  .campaign-game-header .header-hint-button svg {
-    width: 18px;
-    height: 18px;
+  .route-end { min-width:0;gap:7px; }
+  .route-label { gap:6px;font-size:9px;letter-spacing:.1em; }
+  .route-connector { height:40px;margin-bottom:4px; }
+  .word-display { max-width:100%;gap:clamp(4px,.55vw,7px); }
+  .word-display span {
+    width:clamp(34px,3.7vw,44px);height:clamp(42px,4.6vw,52px);
+    border-radius:9px;font-size:clamp(21px,2.3vw,27px);
+    box-shadow:2px 3px 0 var(--tile-shadow);
   }
-
-  .campaign-game-header .header-hint-cost {
-    font-size: 11px;
+  .word-display-target span { box-shadow:2px 3px 0 color-mix(in srgb,var(--accent) 55%,var(--line-strong)); }
+  .card-panel,.finish-panel {
+    min-width:0;padding:17px;border-width:2px;border-radius:16px;
+    box-shadow:3px 4px 0 var(--line-strong);
   }
-
-  .campaign-game-header .header-help-button {
-    width: 34px;
-    min-width: 34px;
-    height: 36px;
-    border-radius: 9px;
-    font-size: 20px;
-    box-shadow: 2px 2px 0 var(--line-strong);
+  .panel-heading,.entry-heading { align-items:center;gap:10px; }
+  .panel-heading h2,.entry-heading h2 { font-size:19px; }
+  .chain-panel { margin-top:3px; }
+  .chain-list {
+    max-height:min(34vh,270px);gap:6px;margin-top:12px;padding-right:5px;
   }
-
-  .game-page:not(.daily-game-page) .game-workspace {
-    width: min(640px, calc(100% - 48px));
-    min-width: 0;
-    margin-inline: auto;
-    padding: 24px 0 30px;
+  .chain-list li {
+    min-height:40px;grid-template-columns:30px minmax(0,1fr);
+    gap:8px;padding:4px 10px;border-radius:9px;
   }
-
-  .game-page:not(.daily-game-page) .route-panel {
-    grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
-    align-items: end;
-    gap: 10px;
-    padding-bottom: 22px;
+  .chain-list li b { font-size:16px;letter-spacing:.14em; }
+  .entry-panel { margin-top:13px; }
+  .entry-heading { margin-bottom:11px; }
+  .entry-panel form { grid-template-columns:minmax(0,1fr) 112px;gap:9px; }
+  .entry-panel input {
+    width:100%;min-width:0;height:49px;padding-inline:13px;
+    border-width:2px;border-radius:10px;font-size:18px;box-shadow:2px 3px 0 var(--line);
   }
-
-  .game-page:not(.daily-game-page) .route-end {
-    min-width: 0;
-    gap: 7px;
+  .entry-panel .ink-button {
+    min-width:0;min-height:44px;padding-inline:13px;
+    border-width:2px;border-radius:10px;box-shadow:2px 3px 0 var(--line-strong);
   }
-
-  .game-page:not(.daily-game-page) .route-label {
-    gap: 6px;
-    font-size: 9px;
-    letter-spacing: .1em;
+  .entry-actions { gap:8px;margin-top:10px; }
+  .entry-actions .secondary-button {
+    min-height:37px;padding-inline:12px;border-width:1px;
+    border-radius:9px;font-size:10px;
   }
-
-  .game-page:not(.daily-game-page) .route-connector {
-    height: 42px;
-    margin-bottom: 4px;
+  .finish-panel { margin-top:13px;padding:19px; }
+  .finish-panel h2 { margin:4px 0 7px;font-size:26px;line-height:1.12; }
+  .finish-panel p {
+    max-width:540px;margin-bottom:10px;font-size:13px;line-height:1.5;overflow-wrap:anywhere;
   }
-
-  .game-page:not(.daily-game-page) .word-display {
-    gap: 5px;
+  .finish-panel .finish-bonus { font-size:16px; }
+  .campaign-share-card {
+    min-width:0;gap:9px;margin:12px 0;padding:13px;border-radius:12px;
   }
-
-  .game-page:not(.daily-game-page) .word-display span {
-    width: clamp(34px, 4vw, 44px);
-    height: clamp(42px, 4.8vw, 52px);
-    border-radius: 9px;
-    font-size: clamp(22px, 2.5vw, 28px);
-    box-shadow: 2px 3px 0 var(--tile-shadow);
+  .campaign-share-preview { min-width:0;gap:5px; }
+  .campaign-share-preview b { font-size:18px;overflow-wrap:anywhere; }
+  .campaign-share-preview small { overflow-wrap:anywhere;line-height:1.45; }
+  .campaign-share-actions { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px; }
+  .campaign-share-actions button {
+    min-width:0;min-height:39px;padding:7px 9px;border-radius:8px;
+    font-size:10px;line-height:1.3;overflow-wrap:anywhere;
   }
-
-  .game-page:not(.daily-game-page) .word-display-target span {
-    box-shadow: 2px 3px 0 color-mix(in srgb, var(--accent) 70%, var(--line-strong));
+  .finish-next-button { min-height:44px;margin-top:3px; }
+  .help-dialog {
+    width:min(560px,calc(100vw - 48px));
+    max-height:min(84dvh,760px);padding:22px;
   }
-
-  .game-page:not(.daily-game-page) .card-panel {
-    padding: 17px;
-    border-width: 2px;
-    border-radius: 17px;
-    box-shadow: 3px 4px 0 var(--line-strong);
+}
+@media (min-width: 821px) {
+  .game-page:not(.daily-game-page) .game-workspace { width:min(700px,calc(100% - 56px)); }
+  .game-page:not(.daily-game-page).is-complete .game-workspace {
+    width:min(700px,calc(100% - 56px));padding-top:20px;
   }
-
-  .game-page:not(.daily-game-page) .panel-heading h2,
-  .game-page:not(.daily-game-page) .entry-heading h2 {
-    font-size: 20px;
-  }
-
-  .game-page:not(.daily-game-page) .chain-panel {
-    margin-top: 4px;
-  }
-
-  .game-page:not(.daily-game-page) .chain-list {
-    max-height: min(34vh, 300px);
-    gap: 6px;
-    margin-top: 13px;
-  }
-
-  .game-page:not(.daily-game-page) .chain-list li {
-    min-height: 42px;
-    grid-template-columns: 30px minmax(0, 1fr);
-    padding: 4px 10px;
-    border-radius: 9px;
-  }
-
-  .game-page:not(.daily-game-page) .chain-list li b {
-    font-size: 16px;
-    letter-spacing: .14em;
-  }
-
-  .game-page:not(.daily-game-page) .entry-panel {
-    margin-top: 14px;
-  }
-
-  .game-page:not(.daily-game-page) .entry-panel input {
-    height: 52px;
-    padding-inline: 14px;
-    font-size: 19px;
-  }
-
-  .game-page:not(.daily-game-page) .entry-panel .ink-button {
-    min-height: 46px;
-    padding-inline: 17px;
-  }
-
-  .game-page:not(.daily-game-page) .entry-actions {
-    gap: 8px;
-    margin-top: 10px;
-  }
-
-  .game-page:not(.daily-game-page) .entry-actions .secondary-button {
-    min-height: 40px;
-  }
-
-  .game-page:not(.daily-game-page) .finish-panel {
-    width: 100%;
-    min-width: 0;
-    margin-top: 14px;
-    padding: 17px;
-    border-width: 2px;
-    border-radius: 18px;
-    box-shadow: 3px 4px 0 var(--line-strong);
-  }
-
-  .game-page:not(.daily-game-page) .finish-panel h2 {
-    margin: 4px 0 7px;
-    font-size: 27px;
-    line-height: 1.1;
-  }
-
-  .game-page:not(.daily-game-page) .finish-panel p {
-    margin-bottom: 10px;
-    font-size: 13px;
-    line-height: 1.45;
-  }
-
-  .game-page:not(.daily-game-page) .finish-panel .finish-bonus {
-    font-size: 17px;
-  }
-
-  .game-page:not(.daily-game-page) .campaign-share-card {
-    gap: 8px;
-    margin: 12px 0;
-    padding: 12px;
-    border-radius: 12px;
-  }
-
-  .game-page:not(.daily-game-page) .campaign-share-preview b {
-    font-size: 18px;
-  }
-
-  .game-page:not(.daily-game-page) .campaign-share-actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .game-page:not(.daily-game-page) .campaign-share-actions button {
-    min-width: 0;
-    min-height: 40px;
-    padding-inline: 9px;
-    overflow-wrap: anywhere;
-  }
-
-  .game-page:not(.daily-game-page) .finish-next-button {
-    min-height: 46px;
-    margin-top: 4px;
-  }
+  .game-page:not(.daily-game-page) .finish-panel { width:100%; }
+  .game-page:not(.daily-game-page) .completion-celebration { max-width:100%; }
 }
