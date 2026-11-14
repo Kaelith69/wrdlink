@@ -1470,3 +1470,253 @@ html.mode-switch-transition::view-transition-new(root) {
   html.mode-switch-transition::view-transition-old(root),
   html.mode-switch-transition::view-transition-new(root) { animation: none; }
 }
+
+
+/* Desktop Reddit embed layout.
+   Keep the embedded page scrollable and scale the game controls to a
+   deliberate content width. These rules intentionally do not affect mobile. */
+@media (min-width: 821px) {
+  .game-page:not(.daily-game-page) {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100svh;
+    min-height: 0;
+    max-height: 100svh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .campaign-game-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 64px;
+    gap: 12px;
+    padding: 9px clamp(16px, 2.2vw, 32px);
+  }
+
+  .campaign-game-header .wordmark {
+    min-width: 0;
+    gap: 8px;
+    font-size: 16px;
+  }
+
+  .campaign-game-header .brand-mark {
+    width: 30px;
+    height: 30px;
+    font-size: 16px;
+    border-radius: 8px;
+    box-shadow: 2px 3px 0 var(--line-strong);
+  }
+
+  .campaign-game-header .header-right {
+    min-width: 0;
+    gap: 8px;
+  }
+
+  .campaign-game-header .header-count {
+    gap: 6px;
+  }
+
+  .campaign-game-header .header-count .score-pill,
+  .campaign-game-header .header-count .moves-pill {
+    min-width: 76px;
+    min-height: 36px;
+    gap: 6px;
+    padding-inline: 9px;
+  }
+
+  .campaign-game-header .mode-switch {
+    width: 76px;
+    min-width: 76px;
+    height: 36px;
+    flex-basis: 76px;
+    box-shadow: 2px 2px 0 var(--line-strong);
+  }
+
+  .campaign-game-header .header-hint-button {
+    min-width: 46px;
+    height: 36px;
+    gap: 4px;
+    padding-inline: 7px;
+    border-radius: 9px;
+    box-shadow: 2px 2px 0 var(--line-strong);
+  }
+
+  .campaign-game-header .header-hint-button svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .campaign-game-header .header-hint-cost {
+    font-size: 11px;
+  }
+
+  .campaign-game-header .header-help-button {
+    width: 34px;
+    min-width: 34px;
+    height: 36px;
+    border-radius: 9px;
+    font-size: 20px;
+    box-shadow: 2px 2px 0 var(--line-strong);
+  }
+
+  .game-page:not(.daily-game-page) .game-workspace {
+    width: min(640px, calc(100% - 48px));
+    min-width: 0;
+    margin-inline: auto;
+    padding: 24px 0 30px;
+  }
+
+  .game-page:not(.daily-game-page) .route-panel {
+    grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+    align-items: end;
+    gap: 10px;
+    padding-bottom: 22px;
+  }
+
+  .game-page:not(.daily-game-page) .route-end {
+    min-width: 0;
+    gap: 7px;
+  }
+
+  .game-page:not(.daily-game-page) .route-label {
+    gap: 6px;
+    font-size: 9px;
+    letter-spacing: .1em;
+  }
+
+  .game-page:not(.daily-game-page) .route-connector {
+    height: 42px;
+    margin-bottom: 4px;
+  }
+
+  .game-page:not(.daily-game-page) .word-display {
+    gap: 5px;
+  }
+
+  .game-page:not(.daily-game-page) .word-display span {
+    width: clamp(34px, 4vw, 44px);
+    height: clamp(42px, 4.8vw, 52px);
+    border-radius: 9px;
+    font-size: clamp(22px, 2.5vw, 28px);
+    box-shadow: 2px 3px 0 var(--tile-shadow);
+  }
+
+  .game-page:not(.daily-game-page) .word-display-target span {
+    box-shadow: 2px 3px 0 color-mix(in srgb, var(--accent) 70%, var(--line-strong));
+  }
+
+  .game-page:not(.daily-game-page) .card-panel {
+    padding: 17px;
+    border-width: 2px;
+    border-radius: 17px;
+    box-shadow: 3px 4px 0 var(--line-strong);
+  }
+
+  .game-page:not(.daily-game-page) .panel-heading h2,
+  .game-page:not(.daily-game-page) .entry-heading h2 {
+    font-size: 20px;
+  }
+
+  .game-page:not(.daily-game-page) .chain-panel {
+    margin-top: 4px;
+  }
+
+  .game-page:not(.daily-game-page) .chain-list {
+    max-height: min(34vh, 300px);
+    gap: 6px;
+    margin-top: 13px;
+  }
+
+  .game-page:not(.daily-game-page) .chain-list li {
+    min-height: 42px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    padding: 4px 10px;
+    border-radius: 9px;
+  }
+
+  .game-page:not(.daily-game-page) .chain-list li b {
+    font-size: 16px;
+    letter-spacing: .14em;
+  }
+
+  .game-page:not(.daily-game-page) .entry-panel {
+    margin-top: 14px;
+  }
+
+  .game-page:not(.daily-game-page) .entry-panel input {
+    height: 52px;
+    padding-inline: 14px;
+    font-size: 19px;
+  }
+
+  .game-page:not(.daily-game-page) .entry-panel .ink-button {
+    min-height: 46px;
+    padding-inline: 17px;
+  }
+
+  .game-page:not(.daily-game-page) .entry-actions {
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .game-page:not(.daily-game-page) .entry-actions .secondary-button {
+    min-height: 40px;
+  }
+
+  .game-page:not(.daily-game-page) .finish-panel {
+    width: 100%;
+    min-width: 0;
+    margin-top: 14px;
+    padding: 17px;
+    border-width: 2px;
+    border-radius: 18px;
+    box-shadow: 3px 4px 0 var(--line-strong);
+  }
+
+  .game-page:not(.daily-game-page) .finish-panel h2 {
+    margin: 4px 0 7px;
+    font-size: 27px;
+    line-height: 1.1;
+  }
+
+  .game-page:not(.daily-game-page) .finish-panel p {
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  .game-page:not(.daily-game-page) .finish-panel .finish-bonus {
+    font-size: 17px;
+  }
+
+  .game-page:not(.daily-game-page) .campaign-share-card {
+    gap: 8px;
+    margin: 12px 0;
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .game-page:not(.daily-game-page) .campaign-share-preview b {
+    font-size: 18px;
+  }
+
+  .game-page:not(.daily-game-page) .campaign-share-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .game-page:not(.daily-game-page) .campaign-share-actions button {
+    min-width: 0;
+    min-height: 40px;
+    padding-inline: 9px;
+    overflow-wrap: anywhere;
+  }
+
+  .game-page:not(.daily-game-page) .finish-next-button {
+    min-height: 46px;
+    margin-top: 4px;
+  }
+}

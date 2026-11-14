@@ -1325,3 +1325,304 @@
     transition: none;
   }
 }
+
+
+/* Desktop Reddit embed layout.
+   The game and community panels use a readable column width instead of
+   stretching mobile sized controls across the full desktop viewport. */
+@media (min-width: 761px) {
+  .daily-game-page {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100dvh;
+    min-height: 0;
+    max-height: 100dvh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior-y: contain;
+    scrollbar-gutter: stable;
+  }
+
+  .daily-game-page .daily-guide {
+    width: min(760px, calc(100% - 48px));
+    margin-top: 14px;
+    padding: 12px 16px;
+  }
+
+  .daily-game-page .daily-guide-heading h1 {
+    font-size: 21px;
+  }
+
+  .daily-game-page .daily-game-content {
+    display: flex;
+    width: 100%;
+    min-width: 0;
+    flex: 0 0 auto;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    margin: 0 auto;
+    padding: 16px 24px 30px;
+  }
+
+  .daily-game-page .daily-game-content > .game-workspace {
+    width: min(720px, 100%);
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 8px 0 0;
+  }
+
+  .daily-game-page .daily-route-panel {
+    min-height: 58px;
+    grid-template-columns: minmax(0, 1fr) 48px minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 0 0 14px;
+  }
+
+  .daily-game-page .word-display {
+    gap: 5px;
+  }
+
+  .daily-game-page .word-display span {
+    width: clamp(36px, 3.8vw, 44px);
+    height: clamp(44px, 4.6vw, 52px);
+    border-radius: 9px;
+    font-size: clamp(23px, 2.4vw, 28px);
+    box-shadow: 2px 3px 0 var(--tile-shadow);
+  }
+
+  .daily-game-page .word-display-target span {
+    box-shadow: 2px 3px 0 color-mix(in srgb, var(--accent) 70%, var(--line-strong));
+  }
+
+  .daily-game-page .chain-panel,
+  .daily-game-page .entry-panel,
+  .daily-game-page .daily-finish-panel {
+    width: 100%;
+    min-width: 0;
+    margin-top: 12px;
+    padding: 16px;
+    border-width: 2px;
+    border-radius: 17px;
+    box-shadow: 3px 4px 0 var(--line-strong);
+  }
+
+  .daily-game-page .chain-list {
+    max-height: min(34vh, 280px);
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .daily-game-page .chain-list li {
+    min-height: 40px;
+    grid-template-columns: 30px minmax(0, 1fr);
+    padding: 4px 10px;
+  }
+
+  .daily-game-page .chain-list li b {
+    font-size: 16px;
+  }
+
+  .daily-game-page .entry-heading {
+    margin-bottom: 12px;
+  }
+
+  .daily-game-page .entry-heading h2 {
+    font-size: 20px;
+  }
+
+  .daily-game-page .entry-panel input {
+    height: 52px;
+    font-size: 19px;
+  }
+
+  .daily-game-page .entry-panel .ink-button {
+    min-height: 46px;
+  }
+
+  .daily-game-page .daily-extras {
+    display: grid;
+    width: min(720px, 100%);
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: start;
+    gap: 12px;
+    margin: 0 auto;
+    padding: 0;
+  }
+
+  .daily-game-page .daily-profile {
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 14px 8px;
+  }
+
+  .daily-game-page .daily-profile strong {
+    font-size: 19px;
+  }
+
+  .daily-game-page .daily-profile span {
+    font-size: 8px;
+    letter-spacing: .07em;
+  }
+
+  .daily-game-page .daily-leaderboard,
+  .daily-game-page .daily-achievements {
+    min-width: 0;
+    padding: 16px;
+    box-shadow: 3px 4px 0 var(--line-strong);
+  }
+
+  .daily-game-page .daily-section-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .daily-game-page .daily-section-heading h2 {
+    font-size: 20px;
+  }
+
+  .daily-game-page .daily-controls {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 8px;
+    margin: 12px 0 7px;
+  }
+
+  .daily-game-page .daily-tabs {
+    min-width: 0;
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .daily-game-page .daily-tabs button {
+    min-width: 0;
+    flex: 1 1 auto;
+    padding: 7px 6px;
+    font-size: 10px;
+  }
+
+  .daily-game-page .daily-achievement-grid {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    margin: 10px 0;
+  }
+
+  .daily-game-page .daily-achievement-item {
+    grid-template-columns: 26px minmax(0, 1fr);
+    gap: 7px;
+    padding: 9px;
+  }
+
+  .daily-game-page .daily-achievement-icon {
+    width: 25px;
+    height: 25px;
+  }
+
+  .daily-game-page .daily-game-content > .game-workspace .finish-panel {
+    margin-top: 12px;
+  }
+
+  .daily-game-page.is-complete .daily-game-content {
+    display: flex;
+    width: min(720px, calc(100% - 48px));
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    margin-inline: auto;
+    padding: 12px 0 28px;
+  }
+
+  .daily-game-page.is-complete .daily-game-content > .game-workspace {
+    width: 100%;
+    padding: 0;
+  }
+
+  .daily-game-page.is-complete .daily-finish-panel {
+    margin-top: 12px;
+  }
+
+  .daily-game-page.is-complete .daily-campaign-button {
+    width: min(100%, 360px);
+    min-height: 48px;
+    margin: 8px auto;
+    font-size: 13px;
+  }
+
+  .daily-game-page.is-complete .daily-completion-share-card {
+    gap: 9px;
+    margin: 10px 0 0;
+    padding: 13px;
+  }
+
+  .daily-game-page.is-complete .daily-completion-share-card .campaign-share-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .daily-game-page.is-complete .daily-completion-share-card .campaign-share-actions button {
+    min-width: 0;
+    min-height: 42px;
+    padding-inline: 10px;
+    overflow-wrap: anywhere;
+    font-size: 11px;
+  }
+}
+
+@media (min-width: 1000px) {
+  .daily-game-page .daily-guide {
+    width: min(1120px, calc(100% - 48px));
+  }
+
+  .daily-game-page .daily-game-content {
+    display: grid;
+    width: min(1120px, calc(100% - 48px));
+    grid-template-columns: minmax(0, 1.1fr) minmax(320px, .9fr);
+    align-items: start;
+    gap: 24px;
+    padding: 18px 0 32px;
+  }
+
+  .daily-game-page .daily-game-content > .game-workspace {
+    width: 100%;
+    padding: 4px 0 0;
+  }
+
+  .daily-game-page .daily-extras {
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    margin: 0;
+    padding: 4px 0 0;
+  }
+
+  .daily-game-page .daily-profile {
+    grid-column: auto;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px 4px;
+    padding: 14px 8px;
+  }
+
+  .daily-game-page .daily-profile div + div {
+    border-left: 0;
+  }
+
+  .daily-game-page .daily-profile div:nth-child(even) {
+    border-left: 1px solid var(--line);
+  }
+
+  .daily-game-page .daily-profile span {
+    font-size: 8px;
+  }
+
+  .daily-game-page.is-complete .daily-game-content {
+    display: flex;
+    width: min(760px, calc(100% - 48px));
+    padding: 14px 0 32px;
+  }
+}
