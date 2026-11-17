@@ -149,11 +149,11 @@ void test('the achievement catalogue contains exactly 500 unique entries', () =>
 
 void test('achievement progress is derived from verified completion telemetry', () => {
   const stats = recordAchievementStats(EMPTY_ACHIEVEMENT_STATS, {
-    score: 50, moves: 4, optimalMoves: 4, words: ['COLD', 'CORD', 'CARD', 'WARD', 'WARM'],
-    completedAt: 120_000, startedAt: 30_000, date: '2026-11-17',
+    score: 46, moves: 4, optimalMoves: 4, words: ['COLD', 'CORD', 'CARD', 'WARD', 'WARM'],
+    completedAt: 120_000, startedAt: 70_000, date: '2026-11-17',
   }, { currentStreak: 1, bestStreak: 1, graceEarned: false });
   assert.equal(stats.dailySolves, 1);
-  assert.equal(stats.totalPoints, 50);
+  assert.equal(stats.totalPoints, 46);
   assert.equal(stats.optimalSolves, 1);
   assert.equal(stats.flawlessSolves, 1);
   assert.equal(stats.fastSolves, 1);
