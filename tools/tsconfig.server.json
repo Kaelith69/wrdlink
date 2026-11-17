@@ -4,12 +4,20 @@
     "outDir": "../dist/types/server",
     "tsBuildInfoFile": "../dist/types/server/tsconfig.tsbuildinfo",
     "customConditions": [],
-    "types": ["node"],
+    "types": [
+      "node"
+    ],
     "exactOptionalPropertyTypes": false,
-    "rootDir": "../src/server"
+    "rootDir": "../src/server",
+    "allowImportingTsExtensions": true,
+    "rewriteRelativeImportExtensions": true
   },
-  "include": ["../src/server/**/*"],
-  "exclude": ["../src/server/**/*.test.ts"],
+  "include": [
+    "../src/server/**/*"
+  ],
+  "exclude": [
+    "../src/server/**/*.test.ts"
+  ],
   "references": [
     {
       "path": "./tsconfig.shared.json"
