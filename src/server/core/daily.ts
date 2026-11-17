@@ -1,5 +1,5 @@
 import type { AchievementStats } from '../../shared/daily-achievements.ts';
-import { formatDailyScoreComment } from '../../shared/score-sharing';
+import { formatDailyScoreComment } from '../../shared/score-sharing.ts';
 
 export type DailyProfile = {
   totalCompleted: number;
