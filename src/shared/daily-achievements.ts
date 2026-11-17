@@ -108,7 +108,7 @@ export function recordAchievementStats(
     efficientSolves: previous.efficientSolves + Number(result.moves <= 5),
     enduranceSolves: previous.enduranceSolves + Number(result.moves >= 10),
     totalMoves: previous.totalMoves + result.moves,
-    totalWords: previous.totalWords + Math.max(0, result.words.length - 1),
+    totalWords: previous.totalWords + result.words.length,
     fastSolves: previous.fastSolves + Number(duration <= 60_000),
     patientSolves: previous.patientSolves + Number(duration >= 180_000),
     weekendSolves: previous.weekendSolves + Number(day === 0 || day === 6),
