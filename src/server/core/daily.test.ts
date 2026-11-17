@@ -151,7 +151,7 @@ void test('achievement progress is derived from verified completion telemetry', 
   const stats = recordAchievementStats(EMPTY_ACHIEVEMENT_STATS, {
     score: 50, moves: 4, optimalMoves: 4, words: ['COLD', 'CORD', 'CARD', 'WARD', 'WARM'],
     completedAt: 120_000, startedAt: 30_000, date: '2026-11-17',
-  }, { currentStreak: 1, bestStreak: 1, graceEarned: false } as { currentStreak: number; bestStreak: number; graceEarned: boolean });
+  }, { currentStreak: 1, bestStreak: 1, graceEarned: false });
   assert.equal(stats.dailySolves, 1);
   assert.equal(stats.totalPoints, 50);
   assert.equal(stats.optimalSolves, 1);
