@@ -568,7 +568,7 @@ api.post('/share/campaign/comment', async (c) => {
   if (!state) return c.json({ error: 'A verified completed campaign level was not found.' }, 404);
   const scoreThreadId = await ensureStickyScoreThread(postId);
   const comment = await reddit.submitComment({
-    id: scoreThreadId,
+    id: scoreThreadId as `t1_${string}`,
     text: campaignShareText(state),
     runAs: 'USER',
   });
