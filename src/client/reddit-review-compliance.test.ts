@@ -1,6 +1,5 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
-import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 
 const source = (relativePath: string): string =>
@@ -37,7 +36,7 @@ void test('inline Daily splash does not lock the document or require inner scrol
     ...splashCss.matchAll(/(?:^|\n)\s*(?:html\s*,\s*body\s*,\s*#root|html|body|#root|\.splash-page|\.daily-splash)\s*\{([^}]*)\}/g),
   ].map((match) => match[1] ?? '').join('\n');
   assert.doesNotMatch(rootRuleBlocks, /overflow(?:-y)?\s*:\s*(?:hidden|auto|scroll)|overscroll-behavior(?:-y)?\s*:\s*(?:none|contain)|touch-action\s*:\s*none/i);
-  assert.match(rootRuleBlocks, /\.daily-splash/i.test(rootRuleBlocks) ? /overflow:\s*visible/i : /$a/);
+  assert.match(rootRuleBlocks, /overflow:\s*visible/i);
   assert.match(splashCss, /\.daily-splash\s*\{[^}]*height:\s*auto/s);
   assert.match(splashCss, /\.daily-splash\s*\{[^}]*min-height:\s*100svh/s);
   assert.match(splashCss, /\.daily-splash-stage\s*\{[^}]*max-height:\s*none/s);
