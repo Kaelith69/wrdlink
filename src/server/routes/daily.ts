@@ -19,6 +19,7 @@ import {
   type DailyProfile,
 } from '../core/daily';
 import { createDailyPuzzle, DICTIONARY } from '../data/puzzles';
+import { ensureStickyScoreThread } from '../core/score-comments';
 import { EMPTY_ACHIEVEMENT_STATS, earnedAchievementIds, normalizeAchievementStats, recordAchievementStats } from '../../shared/daily-achievements';
 
 export const dailyApi = new Hono();
@@ -740,8 +741,9 @@ dailyApi.post('/share/comment', async (c) => {
   const result = await verifiedShareRecord(body.date);
   if (!result) return c.json({ error: 'A verified completion for today was not found.' }, 404);
   const profile = await readProfile(userId);
+  const scoreThreadId = await ensureStickyScoreThread(postId);
   const comment = await reddit.submitComment({
-    id: postId,
+    id: scoreThreadId,
     text: formatDailyShareText(result, profile.currentStreak),
     runAs: 'USER',
   });
