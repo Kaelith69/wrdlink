@@ -3,6 +3,7 @@ import { Hono, type Context } from 'hono';
 import { serve } from '@hono/node-server';
 import { context, createServer, getServerPort, reddit, redis } from '@devvit/web/server';
 import { formatDailyPostContent, utcDateKey } from './core/daily';
+import { ensureStickyScoreThread } from './core/score-comments';
 import { api } from './routes/api';
 import { dailyApi, getSharedDailyPuzzle } from './routes/daily';
 
@@ -53,6 +54,11 @@ async function publishDailyPuzzlePost(subredditName: string) {
     }), {
       expiration: new Date(Date.now() + DAILY_POST_TTL_MS),
     });
+    try {
+      await ensureStickyScoreThread(post.id);
+    } catch (error) {
+      console.error('Could not create the WRDLINK Daily score thread. It will be retried when a player shares a score.', error);
+    }
 
     return { status: 'published' as const, date, postId: post.id, permalink: post.permalink };
   } finally {
