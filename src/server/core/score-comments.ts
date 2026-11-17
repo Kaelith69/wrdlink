@@ -34,7 +34,7 @@ export async function ensureStickyScoreThread(postId: string): Promise<string> {
     if (cached) return cached;
 
     const comment = await reddit.submitComment({
-      id: postId,
+      id: postId as `t3_${string}`,
       text: SCORE_THREAD_TEXT,
       runAs: 'APP',
     });
