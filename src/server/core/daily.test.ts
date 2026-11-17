@@ -158,7 +158,7 @@ void test('achievement progress is derived from verified completion telemetry', 
   assert.equal(stats.flawlessSolves, 1);
   assert.equal(stats.fastSolves, 1);
   assert.equal(stats.weekdaySolves, 1);
-  assert.equal(stats.totalWords, 4);
+  assert.equal(stats.totalWords, 5);
   const earned = earnedAchievementIds(stats);
   assert.ok(earned.includes('DAILYSOLVES_0001'));
   assert.ok(earned.includes('OPTIMALSOLVES_0001'));
