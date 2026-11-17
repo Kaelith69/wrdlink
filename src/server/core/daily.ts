@@ -1,4 +1,4 @@
-import type { AchievementStats } from '../../shared/daily-achievements';
+import type { AchievementStats } from '../../shared/daily-achievements.ts';
 
 export type DailyProfile = {
   totalCompleted: number;
