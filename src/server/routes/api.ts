@@ -604,12 +604,15 @@ api.post('/share/campaign/custom-comment', async (c) => {
   if (!userId || !postId) {
     return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 401);
   }
-  if (!isRecord(body) || typeof body.commentary !== 'string' ||
-      !isSessionRequest(body)) {
+  if (!isRecord(body) || typeof body.commentary !== 'string') {
     return c.json({ error: 'A meaningful personal message is required.' }, 400);
   }
+  const commentary = body.commentary;
+  if (!isSessionRequest(body)) {
+    return c.json({ error: 'Invalid campaign share request.' }, 400);
+  }
 
-  const validation = validateMeaningfulCommentary(body.commentary);
+  const validation = validateMeaningfulCommentary(commentary);
   if (!validation.valid) return c.json({ error: validation.message }, 400);
 
   const state = await getVerifiedCampaignCompletion(body);
