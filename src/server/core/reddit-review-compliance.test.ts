@@ -80,7 +80,7 @@ void test('generic Daily score comments are exclusively routed through the stick
 });
 
 void test('custom top level comments require validated commentary and server generated score text', () => {
-  assert.match(campaignRoutes, /validateMeaningfulCommentary\(body\.commentary\)/);
+  assert.match(campaignRoutes, /validateMeaningfulCommentary\(commentary\)/);
   assert.match(dailyRoutes, /validateMeaningfulCommentary\(body\.commentary\)/);
   assert.match(campaignRoutes, /formatCustomScoreComment\(validation\.value,\s*campaignShareText\(state\)\)/);
   assert.match(dailyRoutes, /formatCustomScoreComment\([\s\S]*?formatDailyShareText\(result,\s*profile\.currentStreak\)/);
