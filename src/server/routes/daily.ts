@@ -743,7 +743,7 @@ dailyApi.post('/share/comment', async (c) => {
   const profile = await readProfile(userId);
   const scoreThreadId = await ensureStickyScoreThread(postId);
   const comment = await reddit.submitComment({
-    id: scoreThreadId,
+    id: scoreThreadId as `t1_${string}`,
     text: formatDailyShareText(result, profile.currentStreak),
     runAs: 'USER',
   });
