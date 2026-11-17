@@ -166,28 +166,28 @@ function clearPendingDailyRequestId(date: string, requestId: string): void {
   } catch { /* Session storage is optional. */ }
 }
 
-const badgeNames: Record<string, string> = {
-  FIRST_SOLVE: 'First solve',
-  FIVE_SOLVES: '5 puzzles',
-  TWENTY_FIVE_SOLVES: '25 puzzles',
-  HUNDRED_SOLVES: '100 puzzles',
-  OPTIMAL_PATH: 'Optimal path',
-  PERFECT_SOLVE: 'Perfect solve',
-  STREAK_3: '3 day streak',
-  STREAK_7: '7 day streak',
-  STREAK_30: '30 day streak',
+type AchievementCategory = 'Milestones' | 'Streaks' | 'Precision' | 'Score' | 'Craft';
+
+type Achievement = {
+  id: string;
+  name: string;
+  description: string;
+  category: AchievementCategory;
+  target: number;
+  icon: string;
+  value: (p: DailyProfile) => number;
 };
 
-const achievementGoals = [
-  { id: 'FIRST_SOLVE', target: 1, description: 'Complete your first daily puzzle', value: (p: DailyProfile) => p.totalCompleted },
-  { id: 'FIVE_SOLVES', target: 5, description: 'Complete five daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
-  { id: 'TWENTY_FIVE_SOLVES', target: 25, description: 'Complete 25 daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
-  { id: 'HUNDRED_SOLVES', target: 100, description: 'Complete 100 daily puzzles', value: (p: DailyProfile) => p.totalCompleted },
-  { id: 'STREAK_3', target: 3, description: 'Maintain a three day streak', value: (p: DailyProfile) => p.bestStreak },
-  { id: 'STREAK_7', target: 7, description: 'Maintain a seven day streak', value: (p: DailyProfile) => p.bestStreak },
-  { id: 'STREAK_30', target: 30, description: 'Maintain a 30 day streak', value: (p: DailyProfile) => p.bestStreak },
-  { id: 'OPTIMAL_PATH', target: 1, description: 'Solve a puzzle in the optimal number of moves', value: (p: DailyProfile) => p.badges.includes('OPTIMAL_PATH') ? 1 : 0 },
-  { id: 'PERFECT_SOLVE', target: 1, description: 'Find an optimal path without hints or penalties', value: (p: DailyProfile) => p.badges.includes('PERFECT_SOLVE') ? 1 : 0 },
+const achievementGoals: Achievement[] = [
+  { id: 'FIRST_SOLVE', name: 'First Footing', description: 'Complete a daily puzzle', category: 'Milestones', target: 1, icon: 'Ⅰ', value: p => p.totalCompleted },
+  { id: 'FIVE_SOLVES', name: 'Regular', description: 'Complete five daily puzzles', category: 'Milestones', target: 5, icon: 'Ⅴ', value: p => p.totalCompleted },
+  { id: 'TWENTY_FIVE_SOLVES', name: 'Wordwright', description: 'Complete 25 daily puzzles', category: 'Milestones', target: 25, icon: 'Ⅹ', value: p => p.totalCompleted },
+  { id: 'HUNDRED_SOLVES', name: 'Century', description: 'Complete 100 daily puzzles', category: 'Milestones', target: 100, icon: 'Ⅽ', value: p => p.totalCompleted },
+  { id: 'STREAK_3', name: 'Threefold', description: 'Reach a three day streak', category: 'Streaks', target: 3, icon: '⌁', value: p => p.bestStreak },
+  { id: 'STREAK_7', name: 'Sevenfold', description: 'Reach a seven day streak', category: 'Streaks', target: 7, icon: '⑦', value: p => p.bestStreak },
+  { id: 'STREAK_30', name: 'The Constant', description: 'Reach a 30 day streak', category: 'Streaks', target: 30, icon: '◷', value: p => p.bestStreak },
+  { id: 'OPTIMAL_PATH', name: 'Shortest Bridge', description: 'Solve in the minimum number of moves', category: 'Precision', target: 1, icon: '⌖', value: p => p.badges.includes('OPTIMAL_PATH') ? 1 : 0 },
+  { id: 'PERFECT_SOLVE', name: 'Flawless', description: 'Find an optimal path with no penalties', category: 'Precision', target: 1, icon: '◇', value: p => p.badges.includes('PERFECT_SOLVE') ? 1 : 0 },
 ];
 
 export function DailyChallenge({ sessionId, onClose }: Props) {
@@ -360,7 +360,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
         const messages = [data.message];
         if (data.graceUsed) messages.push('Your streak grace day was used.');
         if (data.graceEarned) messages.push('You earned a streak grace token.');
-        if (data.newBadges.length) messages.push('New badges: ' + data.newBadges.map((badge) => badgeNames[badge] ?? badge).join(', '));
+        if (data.newBadges.length) messages.push('New badges: ' + data.newBadges.map((badge) => achievementGoals.find((goal) => goal.id === badge)?.name ?? badge).join(', '));
         setShareMessage(messages.join(' '));
       }
     } catch (cause) {
@@ -649,21 +649,33 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
             {!boardLoading && !boardError && <button className="daily-refresh" type="button" onClick={() => void loadBoard()}>Refresh leaderboard</button>}
           </section>
 
-          <section className="daily-achievements card-panel">
-            <div className="daily-section-heading"><div><p className="daily-eyebrow">PLAYER PROGRESSION</p><h2>Achievements</h2></div></div>
-            <div className="daily-achievement-grid">
-              {achievementGoals.map((goal) => {
-                const progress = Math.min(goal.target, goal.value(profile));
-                const earned = profile.badges.includes(goal.id);
-                return (
-                  <div className={`daily-achievement-item ${earned ? 'is-earned' : ''}`} key={goal.id}>
-                    <span className="daily-achievement-icon" aria-hidden="true">{earned ? '✦' : '◇'}</span>
-                    <div><strong>{badgeNames[goal.id]}</strong><small>{goal.description}</small><span className="daily-achievement-progress">{progress}/{goal.target}</span></div>
-                  </div>
-                );
-              })}
+          <section className="daily-achievements card-panel" aria-labelledby="daily-achievements-title">
+            <div className="daily-section-heading">
+              <div><p className="daily-eyebrow">COLLECTION</p><h2 id="daily-achievements-title">Achievements</h2></div>
+              <span className="daily-achievement-count">{profile.badges.length} / {achievementGoals.length}</span>
             </div>
-            <p className="daily-muted">A grace token protects one missed day. Earn one every seven consecutive completions, up to two. Daily puzzles reset at 00:00 UTC, which is 05:30 IST.</p>
+            <div className="daily-achievement-grid">
+              {(['Milestones', 'Streaks', 'Precision'] as const).map((category) => (
+                <section className="daily-achievement-group" key={category} aria-label={category}>
+                  <h3>{category}</h3>
+                  {achievementGoals.filter((goal) => goal.category === category).map((goal) => {
+                    const progress = Math.min(goal.target, goal.value(profile));
+                    const earned = profile.badges.includes(goal.id);
+                    return (
+                      <div className={`daily-achievement-item ${earned ? 'is-earned' : ''}`} key={goal.id} aria-label={goal.name + (earned ? ', earned' : ', locked')}>
+                        <span className="daily-achievement-icon" aria-hidden="true">{goal.icon}</span>
+                        <div className="daily-achievement-copy">
+                          <strong>{goal.name}</strong>
+                          <small>{goal.description}</small>
+                          <span className="daily-achievement-progress">{earned ? 'Earned' : progress + ' / ' + goal.target}</span>
+                        </div>
+                        {earned && <span className="daily-achievement-check" aria-label="Earned">✓</span>}
+                      </div>
+                    );
+                  })}
+                </section>
+              ))}
+            </div>
           </section>
         </section>}
       </div>
