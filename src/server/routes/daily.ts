@@ -275,7 +275,8 @@ function parseCompletionJournal(raw: string | null | undefined): CompletionJourn
     if (!Number.isSafeInteger(profile.totalCompleted) || !Number.isSafeInteger(profile.totalScore) ||
         !Number.isSafeInteger(profile.totalMoves) || !Number.isSafeInteger(profile.currentStreak) ||
         !Number.isSafeInteger(profile.bestStreak) || !Number.isSafeInteger(profile.graceTokens) ||
-        !Array.isArray(profile.badges) || !profile.badges.every((badge) => typeof badge === 'string')) return null;
+        !Array.isArray(profile.badges) || !profile.badges.every((badge) => typeof badge === 'string') ||
+        !isRecord(profile.achievementStats)) return null;
     return value as unknown as CompletionJournal;
   } catch {
     return null;
