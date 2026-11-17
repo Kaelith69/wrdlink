@@ -1574,3 +1574,48 @@
     justify-self: center;
   }
 }
+
+
+.daily-achievement-group {
+  border-top: 1px solid var(--line);
+  padding-top: 8px;
+}
+.daily-achievement-group summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 2px;
+  color: var(--ink);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 850;
+  list-style: none;
+}
+.daily-achievement-group summary::-webkit-details-marker { display: none; }
+.daily-achievement-group summary::after {
+  content: '+';
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 15px;
+}
+.daily-achievement-group[open] summary::after { content: '−'; }
+.daily-achievement-group summary span:last-child {
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.daily-achievement-group .daily-achievement-item {
+  grid-template-columns: 48px minmax(0,1fr) auto;
+  opacity: .64;
+}
+.daily-achievement-group .daily-achievement-icon {
+  width: 46px;
+  height: 34px;
+  border-radius: 9px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 850;
+  white-space: nowrap;
+}
+.daily-achievement-group .daily-achievement-item.is-earned { opacity: 1; }
