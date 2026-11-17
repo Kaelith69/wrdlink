@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { DAILY_ACHIEVEMENTS, EMPTY_ACHIEVEMENT_STATS, earnedAchievementIds, normalizeAchievementStats, recordAchievementStats } from '../../shared/daily-achievements';
+import { DAILY_ACHIEVEMENTS, EMPTY_ACHIEVEMENT_STATS, earnedAchievementIds, normalizeAchievementStats, recordAchievementStats } from '../../shared/daily-achievements.ts';
 import test from 'node:test';
 import { aggregateRankScore, dailyRankScore, earnedBadges, formatDailyPostContent, formatDailyShareText, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
 
