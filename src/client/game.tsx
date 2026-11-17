@@ -358,9 +358,14 @@ export function App() {
         body: JSON.stringify({ sessionId, puzzleId: puzzle.id }),
       });
       if (!response.ok) throw new Error(await responseError(response));
+      const payload: unknown = await response.json().catch(() => null);
+      const alreadySubmitted = typeof payload === 'object' && payload !== null &&
+        'alreadySubmitted' in payload && payload.alreadySubmitted === true;
       setCampaignShareMessage(kind === 'post'
         ? 'Your result was posted under your Reddit account.'
-        : 'Your result was commented under your Reddit account.');
+        : alreadySubmitted
+          ? 'Your score is already present as your reply to the pinned WRDLINK score thread.'
+          : 'Your result was commented under your Reddit account.');
     } catch (error) {
       setCampaignShareMessage(error instanceof Error ? error.message : 'Could not share this result.');
     } finally {

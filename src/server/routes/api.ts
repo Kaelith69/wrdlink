@@ -3,7 +3,7 @@ import { Hono } from 'hono';
 import { context, reddit, redis } from '@devvit/web/server';
 import type { HintResponse, InitResponse, MoveValidationResponse, Puzzle } from '../../shared/api';
 import { createRandomPuzzle, DICTIONARY } from '../data/puzzles';
-import { ensureStickyScoreThread } from '../core/score-comments';
+import { submitScoreCommentOnce, ScoreCommentPendingError, ScoreCommentRateLimitError } from '../core/score-comments';
 import {
   assertPuzzleDefinition,
   applyHintCost,
@@ -561,16 +561,24 @@ api.post('/share/campaign/comment', async (c) => {
     return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 401);
   }
   if (!isSessionRequest(body)) return c.json({ error: 'Invalid campaign share request.' }, 400);
-  if (!await allowedRequest(body.sessionId, 'share-comment', 3)) {
-    return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
-  }
   const state = await getVerifiedCampaignCompletion(body);
   if (!state) return c.json({ error: 'A verified completed campaign level was not found.' }, 404);
-  const scoreThreadId = await ensureStickyScoreThread(postId);
-  const comment = await reddit.submitComment({
-    id: scoreThreadId as `t1_${string}`,
-    text: campaignShareText(state),
-    runAs: 'USER',
-  });
-  return c.json({ success: true, commentId: comment.id });
+  try {
+    const submission = await submitScoreCommentOnce({
+      postId,
+      userId,
+      scope: `campaign:${body.sessionId}:${body.puzzleId}`,
+      text: campaignShareText(state),
+      canSubmit: () => allowedRequest(body.sessionId, 'share-comment', 3),
+    });
+    return c.json({ success: true, ...submission });
+  } catch (error) {
+    if (error instanceof ScoreCommentRateLimitError) {
+      return c.json({ error: error.message }, 429);
+    }
+    if (error instanceof ScoreCommentPendingError) {
+      return c.json({ error: error.message }, 409);
+    }
+    throw error;
+  }
 });

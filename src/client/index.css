@@ -1721,7 +1721,7 @@ html.mode-switch-transition::view-transition-new(root) {
   overflow-x: auto;
   overflow-y: hidden;
   overscroll-behavior-x: contain;
-  overscroll-behavior-y: none;
+  overscroll-behavior-y: auto;
   scrollbar-gutter: auto;
   scrollbar-width: thin;
   scroll-snap-type: x proximity;
