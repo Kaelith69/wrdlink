@@ -277,7 +277,15 @@ function parseCompletionJournal(raw: string | null | undefined): CompletionJourn
       Number.isSafeInteger(item.totalMoves) && Number(item.totalMoves) >= 0 &&
       Number.isSafeInteger(item.completedCount) && Number(item.completedCount) >= 0;
     if (!aggregateIsValid(value.weekly) || !aggregateIsValid(value.allTime)) return null;
-    const profile = value.profile as unknown as DailyProfile;
+    const profileRecord = value.profile;
+    profileRecord.achievementStats = normalizeAchievementStats(profileRecord.achievementStats ?? {
+      dailySolves: profileRecord.totalCompleted,
+      totalPoints: profileRecord.totalScore,
+      totalMoves: profileRecord.totalMoves,
+      currentStreak: profileRecord.currentStreak,
+      bestStreak: profileRecord.bestStreak,
+    });
+    const profile = profileRecord as unknown as DailyProfile;
     if (!Number.isSafeInteger(profile.totalCompleted) || !Number.isSafeInteger(profile.totalScore) ||
         !Number.isSafeInteger(profile.totalMoves) || !Number.isSafeInteger(profile.currentStreak) ||
         !Number.isSafeInteger(profile.bestStreak) || !Number.isSafeInteger(profile.graceTokens) ||
