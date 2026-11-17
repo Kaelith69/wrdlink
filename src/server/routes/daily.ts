@@ -212,7 +212,13 @@ async function readProfile(userId: string): Promise<DailyProfile> {
       lastDailyDate: typeof parsed.lastDailyDate === 'string' && parseDateKey(parsed.lastDailyDate) !== null ? parsed.lastDailyDate : null,
       graceTokens: Number.isSafeInteger(parsed.graceTokens) ? Math.max(0, Math.min(2, Number(parsed.graceTokens))) : 0,
       badges: Array.isArray(parsed.badges) ? parsed.badges.filter((item): item is string => typeof item === 'string') : [],
-      achievementStats: normalizeAchievementStats(parsed.achievementStats),
+      achievementStats: normalizeAchievementStats(parsed.achievementStats ?? {
+        dailySolves: parsed.totalCompleted,
+        totalPoints: parsed.totalScore,
+        totalMoves: parsed.totalMoves,
+        currentStreak: parsed.currentStreak,
+        bestStreak: parsed.bestStreak,
+      }),
     };
   } catch {
     return { ...DEFAULT_PROFILE, badges: [] };
