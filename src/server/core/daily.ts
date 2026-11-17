@@ -1,5 +1,4 @@
 import type { AchievementStats } from '../../shared/daily-achievements';
-import { EMPTY_ACHIEVEMENT_STATS } from '../../shared/daily-achievements';
 
 export type DailyProfile = {
   totalCompleted: number;
