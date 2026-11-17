@@ -92,7 +92,7 @@ export function earnedAchievementIds(stats: AchievementStats): string[] {
 export function recordAchievementStats(
   previous: AchievementStats,
   result: { score: number; moves: number; optimalMoves: number; words: string[]; completedAt: number; startedAt?: number; date: string },
-  streak: { currentStreak: number; bestStreak: number },
+  streak: { currentStreak: number; bestStreak: number; graceEarned: boolean },
 ): AchievementStats {
   const duration = Math.max(0, result.completedAt - (result.startedAt ?? result.completedAt));
   const day = new Date(result.date + 'T00:00:00.000Z').getUTCDay();
