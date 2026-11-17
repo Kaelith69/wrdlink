@@ -19,7 +19,7 @@ import {
   type DailyProfile,
 } from '../core/daily';
 import { createDailyPuzzle, DICTIONARY } from '../data/puzzles';
-import { ensureStickyScoreThread } from '../core/score-comments';
+import { submitScoreCommentOnce, ScoreCommentPendingError, ScoreCommentRateLimitError } from '../core/score-comments';
 import { EMPTY_ACHIEVEMENT_STATS, earnedAchievementIds, normalizeAchievementStats, recordAchievementStats } from '../../shared/daily-achievements';
 
 export const dailyApi = new Hono();
@@ -737,15 +737,25 @@ dailyApi.post('/share/comment', async (c) => {
   const userId = context.userId;
   const postId = context.postId;
   if (!userId || !postId) return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 400);
-  if (!await limited(userId, 'share-comment', 3)) return c.json({ error: 'Sharing limit reached. Try again later.' }, 429);
   const result = await verifiedShareRecord(body.date);
   if (!result) return c.json({ error: 'A verified completion for today was not found.' }, 404);
   const profile = await readProfile(userId);
-  const scoreThreadId = await ensureStickyScoreThread(postId);
-  const comment = await reddit.submitComment({
-    id: scoreThreadId as `t1_${string}`,
-    text: formatDailyShareText(result, profile.currentStreak),
-    runAs: 'USER',
-  });
-  return c.json({ success: true, commentId: comment.id });
+  try {
+    const submission = await submitScoreCommentOnce({
+      postId,
+      userId,
+      scope: `daily:${body.date}`,
+      text: formatDailyShareText(result, profile.currentStreak),
+      canSubmit: () => limited(userId, 'share-comment', 3),
+    });
+    return c.json({ success: true, ...submission });
+  } catch (error) {
+    if (error instanceof ScoreCommentRateLimitError) {
+      return c.json({ error: error.message }, 429);
+    }
+    if (error instanceof ScoreCommentPendingError) {
+      return c.json({ error: error.message }, 409);
+    }
+    throw error;
+  }
 });
