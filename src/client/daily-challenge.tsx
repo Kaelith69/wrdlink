@@ -109,9 +109,14 @@ function isDailyMoveResponse(value: unknown): value is {
     Array.isArray(value.newBadges) && value.newBadges.every((badge) => typeof badge === 'string');
 }
 
-function isShareResponse(value: unknown): value is { success: boolean; permalink?: string } {
+function isShareResponse(value: unknown): value is {
+  success: boolean;
+  permalink?: string;
+  alreadySubmitted?: boolean;
+} {
   return isRecord(value) && value.success === true &&
-    (value.permalink === undefined || typeof value.permalink === 'string');
+    (value.permalink === undefined || typeof value.permalink === 'string') &&
+    (value.alreadySubmitted === undefined || typeof value.alreadySubmitted === 'boolean');
 }
 
 async function request<T>(url: string, validate: (value: unknown) => value is T, init?: RequestInit): Promise<T> {
@@ -361,7 +366,9 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
       });
       setShareMessage(kind === 'post'
         ? 'Your result was posted to the community.'
-        : 'Your result was shared as a comment on this game post.');
+        : data.alreadySubmitted
+          ? 'Your score is already present as your reply to the pinned WRDLINK score thread.'
+          : 'Your result was shared as a comment on this game post.');
       if (data.permalink) setShareMessage('Your result was posted. Open it from your Reddit profile.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not share your result.');
