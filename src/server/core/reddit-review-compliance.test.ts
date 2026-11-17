@@ -64,6 +64,11 @@ void test('the app has the moderator scope required to distinguish and pin its s
   assert.ok(scoreComments.includes('await duplicate.undistinguish()'));
 });
 
+void test('campaign and Daily score sharing routes apply an explicit request body limit', () => {
+  assert.ok(campaignRoutes.includes("api.use('/share/campaign/*', scoreShareBodyLimit)"));
+  assert.ok(dailyRoutes.includes("dailyApi.use('/share/*', scoreShareBodyLimit)"));
+});
+
 void test('generic campaign score comments are exclusively routed through the sticky reply helper', () => {
   const routeStart = campaignRoutes.indexOf("api.post('/share/campaign/comment'");
   const routeEnd = campaignRoutes.indexOf("api.post('/share/campaign/custom-comment'", routeStart);
