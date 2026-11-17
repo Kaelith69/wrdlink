@@ -1,4 +1,5 @@
 import type { AchievementStats } from '../../shared/daily-achievements.ts';
+import { formatDailyScoreComment } from '../../shared/score-sharing.ts';
 
 export type DailyProfile = {
   totalCompleted: number;
@@ -17,16 +18,7 @@ export function formatDailyShareText(
   result: { date: string; start: string; target: string; moves: number; score: number },
   currentStreak: number
 ): string {
-  const streakLabel = currentStreak === 1 ? '1 day' : `${currentStreak} days`;
-  return [
-    'WRDLINK Daily Challenge',
-    `Puzzle: ${result.start} → ${result.target}`,
-    `Date: ${result.date}`,
-    `Finished in ${result.moves} moves`,
-    `Streak: ${streakLabel}`,
-    `Points: ${result.score}`,
-    'Think you can beat it? Give today’s puzzle a try!',
-  ].join('\n\n');
+  return formatDailyScoreComment({ ...result, currentStreak });
 }
 
 export function formatDailyPostContent(
