@@ -233,66 +233,97 @@
 
 .daily-achievement-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px;
-  margin: 14px 0;
+  gap: 16px;
+  margin: 16px 0 0;
+}
+
+.daily-achievement-group {
+  display: grid;
+  gap: 6px;
+}
+
+.daily-achievement-group h3 {
+  margin: 0 0 3px;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 850;
+  letter-spacing: .13em;
+  text-transform: uppercase;
 }
 
 .daily-achievement-item {
+  position: relative;
   display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
-  align-items: start;
-  gap: 9px;
-  padding: 11px;
-  border: 1px solid var(--line);
-  border-radius: 11px;
-  background: var(--paper-strong);
-  opacity: .72;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 9px 2px;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  opacity: .58;
 }
 
 .daily-achievement-item.is-earned {
-  border-color: var(--success);
-  background: var(--success-bg);
   opacity: 1;
 }
 
 .daily-achievement-icon {
   display: grid;
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   place-items: center;
-  border-radius: 8px;
-  background: var(--paper);
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: transparent;
   color: var(--muted);
-  font-size: 16px;
-  font-weight: 950;
+  font-family: Georgia, serif;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .daily-achievement-item.is-earned .daily-achievement-icon {
-  background: var(--success);
-  color: #fff;
+  border-color: var(--success);
+  background: var(--success-bg);
+  color: var(--success);
 }
 
-.daily-achievement-item > div {
+.daily-achievement-copy {
   display: grid;
   min-width: 0;
-  gap: 4px;
+  gap: 3px;
 }
 
 .daily-achievement-item strong {
-  font-size: 11px;
-  font-weight: 950;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 850;
 }
 
 .daily-achievement-item small,
 .daily-achievement-progress {
   color: var(--muted);
-  font-size: 9px;
+  font-size: 10px;
   line-height: 1.35;
 }
 
 .daily-achievement-progress {
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+.daily-achievement-check {
+  color: var(--success);
+  font-size: 14px;
   font-weight: 900;
+}
+
+.daily-achievement-count {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
   font-variant-numeric: tabular-nums;
 }
 
