@@ -3,7 +3,18 @@ import { Hono } from 'hono';
 import { context, reddit, redis } from '@devvit/web/server';
 import type { HintResponse, InitResponse, MoveValidationResponse, Puzzle } from '../../shared/api';
 import { createRandomPuzzle, DICTIONARY } from '../data/puzzles';
-import { submitScoreCommentOnce, ScoreCommentPendingError, ScoreCommentRateLimitError } from '../core/score-comments';
+import {
+  submitScoreCommentOnce,
+  submitCustomScoreCommentOnce,
+  ScoreCommentPendingError,
+  ScoreCommentRateLimitError,
+  ScoreCommentThreadError,
+} from '../core/score-comments';
+import {
+  formatCampaignScoreComment,
+  formatCustomScoreComment,
+  validateMeaningfulCommentary,
+} from '../../shared/score-sharing';
 import {
   assertPuzzleDefinition,
   applyHintCost,
@@ -505,14 +516,14 @@ api.post('/hint', async (c) => {
 
 
 function campaignShareText(state: SessionState): string {
-  return [
-    `WRDLINK Campaign · Level ${state.level}`,
-    `${state.puzzle.start} → ${state.puzzle.target}`,
-    `Moves: ${state.words.length - 1} · Score: ${state.gameScore}`,
-    'Status: Completed',
-    `Solution: >!${state.words.join(' → ')}!<`,
-    `Play WRDLINK: https://www.reddit.com/r/WRDLINK/`,
-  ].join('\\n\\n');
+  return formatCampaignScoreComment({
+    level: state.level,
+    start: state.puzzle.start,
+    target: state.puzzle.target,
+    moves: state.words.length - 1,
+    score: state.gameScore,
+    words: state.words,
+  });
 }
 
 async function getVerifiedCampaignCompletion(body: unknown): Promise<SessionState | null> {
@@ -578,6 +589,51 @@ api.post('/share/campaign/comment', async (c) => {
     }
     if (error instanceof ScoreCommentPendingError) {
       return c.json({ error: error.message }, 409);
+    }
+    if (error instanceof ScoreCommentThreadError) {
+      return c.json({ error: error.message }, 503);
+    }
+    throw error;
+  }
+});
+
+api.post('/share/campaign/custom-comment', async (c) => {
+  const body: unknown = await readJson(c);
+  const userId = context.userId;
+  const postId = context.postId;
+  if (!userId || !postId) {
+    return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 401);
+  }
+  if (!isRecord(body) || typeof body.commentary !== 'string' ||
+      !isSessionRequest(body)) {
+    return c.json({ error: 'A meaningful personal message is required.' }, 400);
+  }
+
+  const validation = validateMeaningfulCommentary(body.commentary);
+  if (!validation.valid) return c.json({ error: validation.message }, 400);
+
+  const state = await getVerifiedCampaignCompletion(body);
+  if (!state) return c.json({ error: 'A verified completed campaign level was not found.' }, 404);
+
+  try {
+    const text = formatCustomScoreComment(validation.value, campaignShareText(state));
+    const submission = await submitCustomScoreCommentOnce({
+      postId,
+      userId,
+      scope: `campaign:${body.sessionId}:${body.puzzleId}`,
+      text,
+      canSubmit: () => allowedRequest(body.sessionId, 'share-comment', 3),
+    });
+    return c.json({ success: true, ...submission });
+  } catch (error) {
+    if (error instanceof ScoreCommentRateLimitError) {
+      return c.json({ error: error.message }, 429);
+    }
+    if (error instanceof ScoreCommentPendingError) {
+      return c.json({ error: error.message }, 409);
+    }
+    if (error instanceof ScoreCommentThreadError) {
+      return c.json({ error: error.message }, 503);
     }
     throw error;
   }
