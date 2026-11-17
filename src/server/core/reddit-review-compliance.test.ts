@@ -25,8 +25,8 @@ const config = JSON.parse(source('../../../devvit.json')) as {
 void test('Devvit keeps the inline launch and expanded game as distinct entrypoints', () => {
   assert.equal(config.post.entrypoints.default?.entry, 'splash.html');
   assert.equal(config.post.entrypoints.game?.entry, 'game.html');
-  assert.match(source('./splash.html'), /splash\.tsx/);
-  assert.match(source('./game.html'), /game\.tsx/);
+  assert.match(source('../../client/splash.html'), /splash\.tsx/);
+  assert.match(source('../../client/game.html'), /game\.tsx/);
   assert.ok(config.permissions.reddit.asUser.includes('SUBMIT_COMMENT'));
 });
 
@@ -52,7 +52,7 @@ void test('inline splash contains no wheel, touch, pointer, or keyboard scroll i
 void test('vertical internal scrolling remains in the expanded game styles only', () => {
   assert.match(gameCss, /\.game-workspace[\s\S]*?overflow-y:\s*auto/);
   assert.match(dailyCss, /\.daily-game-page[\s\S]*?overflow-y:\s*auto/);
-  assert.match(dailyCss, /\.daily-extras\s*\{[^}]*overflow:\s*visible/s);
+  assert.match(dailyCss, /\.daily-game-page\s+\.daily-extras\s*\{[^}]*overflow:\s*visible/s);
   assert.match(gameCss, /\.game-page[\s\S]*?overflow:\s*hidden/);
 });
 
