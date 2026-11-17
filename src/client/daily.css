@@ -1501,7 +1501,7 @@
 .daily-game-page .chain-list {
   display:flex;flex-direction:row;align-items:stretch;width:100%;min-width:0;max-width:100%;
   max-height:none;gap:7px;margin:10px 0 0;padding:0 3px 7px 0;
-  overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;overscroll-behavior-y:none;
+  overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;overscroll-behavior-y:auto;
   scrollbar-gutter:auto;scrollbar-width:thin;scroll-snap-type:x proximity;
   -webkit-overflow-scrolling:touch;
 }
@@ -1619,3 +1619,15 @@
   white-space: nowrap;
 }
 .daily-achievement-group .daily-achievement-item.is-earned { opacity: 1; }
+
+
+/* Expanded Daily mode uses the page as its only vertical scroll owner.
+   Let long leaderboards and achievement groups extend the page instead of
+   trapping wheel or touch input inside a second vertical scroll panel. */
+@media (min-width: 821px) {
+  .daily-game-page .daily-extras {
+    max-height: none;
+    overflow: visible;
+    overscroll-behavior: auto;
+  }
+}
