@@ -569,10 +569,10 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                   </div>
                   {ranked ? (
                     <>
-                      <p>Share your result with the community.</p>
+                      <p>Posting creates a Reddit post. Commenting adds your score as a reply to the pinned WRDLINK score thread. Both actions are manual and appear under your username.</p>
                       <div className="campaign-share-actions">
                         <button type="button" onClick={() => void shareResult('post')} disabled={busy}>{shareAction === 'post' ? 'Posting…' : 'Post result as you'}</button>
-                        <button type="button" onClick={() => void shareResult('comment')} disabled={busy}>{shareAction === 'comment' ? 'Commenting…' : 'Comment as you'}</button>
+                        <button type="button" onClick={() => void shareResult('comment')} disabled={busy}>{shareAction === 'comment' ? 'Commenting…' : 'Comment my score as me'}</button>
                       </div>
                     </>
                   ) : <p>Sign in to save a ranked result and share it to Reddit.</p>}
