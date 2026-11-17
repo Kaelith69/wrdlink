@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
+import { scoreShareBodyLimit } from '../core/request-limits';
 import { context, reddit, redis } from '@devvit/web/server';
 import type { HintResponse, InitResponse, MoveValidationResponse, Puzzle } from '../../shared/api';
 import { createRandomPuzzle, DICTIONARY } from '../data/puzzles';
@@ -27,6 +28,7 @@ import {
 } from '../core/game';
 
 export const api = new Hono();
+api.use('/share/campaign/*', scoreShareBodyLimit);
 
 api.onError((error, context) => {
   console.error('WRDLINK API request failed:', error);

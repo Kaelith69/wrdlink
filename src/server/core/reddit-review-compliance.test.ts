@@ -18,7 +18,7 @@ const dailyRoutes = source('../routes/daily.ts');
 const serverIndex = source('../index.ts');
 const config = JSON.parse(source('../../../devvit.json')) as {
   post: { entrypoints: Record<string, { entry: string }> };
-  permissions: { reddit: { asUser: string[] } };
+  permissions: { reddit: { scope: 'user' | 'moderator'; asUser: string[] } };
   triggers: Record<string, string>;
 };
 
@@ -28,6 +28,7 @@ void test('Devvit keeps the inline launch and expanded game as distinct entrypoi
   assert.match(source('../../client/splash.html'), /splash\.tsx/);
   assert.match(source('../../client/game.html'), /game\.tsx/);
   assert.ok(config.permissions.reddit.asUser.includes('SUBMIT_COMMENT'));
+  assert.equal(config.permissions.reddit.scope, 'moderator');
 });
 
 void test('inline Daily splash does not lock the document or require inner scrolling', () => {
@@ -54,6 +55,18 @@ void test('vertical internal scrolling remains in the expanded game styles only'
   assert.match(dailyCss, /\.daily-game-page[\s\S]*?overflow-y:\s*auto/);
   assert.match(dailyCss, /\.daily-game-page\s+\.daily-extras\s*\{[^}]*overflow:\s*visible/s);
   assert.match(gameCss, /\.game-page[\s\S]*?overflow:\s*hidden/);
+});
+
+void test('the app has the moderator scope required to distinguish and pin its score thread', () => {
+  assert.equal(config.permissions.reddit.scope, 'moderator');
+  assert.ok(scoreComments.includes("text: SCORE_THREAD_TEXT,\n        runAs: 'APP'"));
+  assert.ok(scoreComments.includes('await comment.distinguish(true)'));
+  assert.ok(scoreComments.includes('await duplicate.undistinguish()'));
+});
+
+void test('campaign and Daily score sharing routes apply an explicit request body limit', () => {
+  assert.ok(campaignRoutes.includes("api.use('/share/campaign/*', scoreShareBodyLimit)"));
+  assert.ok(dailyRoutes.includes("dailyApi.use('/share/*', scoreShareBodyLimit)"));
 });
 
 void test('generic campaign score comments are exclusively routed through the sticky reply helper', () => {

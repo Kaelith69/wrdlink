@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Hono } from 'hono';
+import { scoreShareBodyLimit } from '../core/request-limits';
 import { context, reddit, redis } from '@devvit/web/server';
 import type { Puzzle } from '../../shared/api';
 import {
@@ -30,6 +31,7 @@ import { formatCustomScoreComment, validateMeaningfulCommentary } from '../../sh
 import { EMPTY_ACHIEVEMENT_STATS, earnedAchievementIds, normalizeAchievementStats, recordAchievementStats } from '../../shared/daily-achievements';
 
 export const dailyApi = new Hono();
+dailyApi.use('/share/*', scoreShareBodyLimit);
 
 type DailyState = {
   puzzle: Puzzle;

@@ -32,7 +32,8 @@
       "asUser": [
         "SUBMIT_POST",
         "SUBMIT_COMMENT"
-      ]
+      ],
+      "scope": "moderator"
     },
     "redis": true
   },
