@@ -48,8 +48,9 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   display: flex;
   min-height: 100vh;
   min-height: 100svh;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: visible;
+  overscroll-behavior: auto;
+  touch-action: pan-y;
   align-items: center;
   justify-content: center;
   padding: 42px 20px 76px;
@@ -170,12 +171,12 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
 .logo-row-tangerine .logo-tile:nth-child(3) { --tile-rotation: 2deg; }
 .logo-row-tangerine .logo-tile:nth-child(4) { --tile-rotation: -1deg; }
 @media (max-width: 420px) {
-  .splash-page { padding: 28px 14px 66px; }
-  .splash-stage { padding: 25px 15px 27px; border-radius: 19px; box-shadow: 5px 6px 0 var(--line-strong); }
-  .logo-lockup { gap: 7px; padding-bottom: 20px; }
-  .splash-subtitle { margin-top: 17px; font-size: 9px; letter-spacing: .14em; }
-  .start-button { min-width: 174px; min-height: 49px; margin-top: 22px; }
-  .splash-progress { bottom: 21px; }
+  .splash-page { min-height: 0; padding: 12px 10px 42px; }
+  .splash-stage { padding: 18px 13px 20px; border-radius: 16px; box-shadow: 4px 5px 0 var(--line-strong); }
+  .logo-lockup { gap: 6px; padding-bottom: 14px; }
+  .splash-subtitle { margin-top: 12px; font-size: 9px; letter-spacing: .14em; }
+  .start-button { min-width: 174px; min-height: 46px; margin-top: 14px; }
+  .splash-progress { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0ms !important; transition-duration: .01ms !important; }
@@ -196,9 +197,11 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
 .start-button {
   visibility: visible;
 }
-.splash-page {
+ .splash-page {
   min-width: 0;
-  overscroll-behavior-y: contain;
+  overflow: visible;
+  overscroll-behavior: auto;
+  touch-action: pan-y;
 }
 @media (max-height: 560px) {
   .splash-page {
@@ -223,7 +226,7 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
 /* Daily post launch card: puzzle first, record second, one unmistakable action. */
 .daily-splash {
   align-items: center;
-  padding: 12px 10px;
+  padding: 8px 10px;
 }
 .daily-splash-stage {
   width: min(560px, 100%);
