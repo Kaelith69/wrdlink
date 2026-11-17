@@ -1,10 +1,11 @@
 import assert from 'node:assert/strict';
+import { DAILY_ACHIEVEMENTS, EMPTY_ACHIEVEMENT_STATS, earnedAchievementIds, normalizeAchievementStats, recordAchievementStats } from '../../shared/daily-achievements.ts';
 import test from 'node:test';
 import { aggregateRankScore, dailyRankScore, earnedBadges, formatDailyPostContent, formatDailyShareText, isoWeekKey, updateDailyStreak, utcDateKey, type DailyProfile } from './daily.ts';
 
 const profile = (patch: Partial<DailyProfile> = {}): DailyProfile => ({
   totalCompleted: 0, totalScore: 0, totalMoves: 0,
-  currentStreak: 0, bestStreak: 0, lastDailyDate: null, graceTokens: 0, badges: [],
+  currentStreak: 0, bestStreak: 0, lastDailyDate: null, graceTokens: 0, badges: [], achievementStats: { ...EMPTY_ACHIEVEMENT_STATS },
   ...patch,
 });
 
@@ -136,4 +137,38 @@ void test('daily Reddit post promotes the shared puzzle without revealing its so
   assert.throws(() => formatDailyPostContent('2026-13-40', {
     start: 'LANK', target: 'HELM', optimalMoves: 5,
   }), /date/i);
+});
+
+
+void test('the achievement catalogue contains exactly 500 unique entries', () => {
+  assert.equal(DAILY_ACHIEVEMENTS.length, 500);
+  assert.equal(new Set(DAILY_ACHIEVEMENTS.map((item) => item.id)).size, 500);
+  assert.equal(new Set(DAILY_ACHIEVEMENTS.map((item) => item.name)).size, 500);
+  assert.equal(new Set(DAILY_ACHIEVEMENTS.map((item) => item.icon)).size, 500);
+});
+
+void test('achievement progress is derived from verified completion telemetry', () => {
+  const stats = recordAchievementStats(EMPTY_ACHIEVEMENT_STATS, {
+    score: 46, moves: 4, optimalMoves: 4, words: ['COLD', 'CORD', 'CARD', 'WARD', 'WARM'],
+    completedAt: 120_000, startedAt: 70_000, date: '2026-11-17',
+  }, { currentStreak: 1, bestStreak: 1, graceEarned: false });
+  assert.equal(stats.dailySolves, 1);
+  assert.equal(stats.totalPoints, 46);
+  assert.equal(stats.optimalSolves, 1);
+  assert.equal(stats.flawlessSolves, 1);
+  assert.equal(stats.fastSolves, 1);
+  assert.equal(stats.weekdaySolves, 1);
+  assert.equal(stats.totalWords, 5);
+  const earned = earnedAchievementIds(stats);
+  assert.ok(earned.includes('DAILYSOLVES_0001'));
+  assert.ok(earned.includes('OPTIMALSOLVES_0001'));
+  assert.ok(earned.includes('ELITESCORES_0001'));
+  assert.equal(earned.includes('DAILYSOLVES_0002'), false);
+});
+
+void test('achievement stat normalization safely handles old or malformed profiles', () => {
+  const stats = normalizeAchievementStats({ dailySolves: 12, totalPoints: -1, fastSolves: 'many' });
+  assert.equal(stats.dailySolves, 12);
+  assert.equal(stats.totalPoints, 0);
+  assert.equal(stats.fastSolves, 0);
 });

@@ -1,3 +1,5 @@
+import type { AchievementStats } from '../../shared/daily-achievements.ts';
+
 export type DailyProfile = {
   totalCompleted: number;
   totalScore: number;
@@ -7,6 +9,7 @@ export type DailyProfile = {
   lastDailyDate: string | null;
   graceTokens: number;
   badges: string[];
+  achievementStats: AchievementStats;
 };
 
 

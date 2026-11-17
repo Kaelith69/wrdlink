@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import './daily.css';
+import { DAILY_ACHIEVEMENTS, normalizeAchievementStats } from '../shared/daily-achievements';
 
 type DailyResult = {
   date: string;
@@ -23,6 +24,7 @@ type DailyProfile = {
   lastDailyDate: string | null;
   graceTokens: number;
   badges: string[];
+  achievementStats: ReturnType<typeof normalizeAchievementStats>;
 };
 
 type BoardEntry = {
@@ -42,7 +44,7 @@ type Props = { sessionId: string; onClose: () => void };
 
 const emptyProfile: DailyProfile = {
   totalCompleted: 0, totalScore: 0, totalMoves: 0,
-  currentStreak: 0, bestStreak: 0, lastDailyDate: null, graceTokens: 0, badges: [],
+  currentStreak: 0, bestStreak: 0, lastDailyDate: null, graceTokens: 0, badges: [], achievementStats: normalizeAchievementStats(null),
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -64,7 +66,7 @@ function isDailyProfile(value: unknown): value is DailyProfile {
     typeof value.currentStreak === 'number' && typeof value.bestStreak === 'number' &&
     (typeof value.lastDailyDate === 'string' || value.lastDailyDate === null) &&
     typeof value.graceTokens === 'number' && Array.isArray(value.badges) &&
-    value.badges.every((badge) => typeof badge === 'string');
+    value.badges.every((badge) => typeof badge === 'string') && isRecord(value.achievementStats);
 }
 
 function isBoardResponse(value: unknown): value is BoardResponse {
@@ -165,30 +167,6 @@ function clearPendingDailyRequestId(date: string, requestId: string): void {
     if (isRecord(parsed) && parsed.id === requestId) window.sessionStorage.removeItem(key);
   } catch { /* Session storage is optional. */ }
 }
-
-type AchievementCategory = 'Milestones' | 'Streaks' | 'Precision' | 'Score' | 'Craft';
-
-type Achievement = {
-  id: string;
-  name: string;
-  description: string;
-  category: AchievementCategory;
-  target: number;
-  icon: string;
-  value: (p: DailyProfile) => number;
-};
-
-const achievementGoals: Achievement[] = [
-  { id: 'FIRST_SOLVE', name: 'First Footing', description: 'Complete a daily puzzle', category: 'Milestones', target: 1, icon: 'Ⅰ', value: p => p.totalCompleted },
-  { id: 'FIVE_SOLVES', name: 'Regular', description: 'Complete five daily puzzles', category: 'Milestones', target: 5, icon: 'Ⅴ', value: p => p.totalCompleted },
-  { id: 'TWENTY_FIVE_SOLVES', name: 'Wordwright', description: 'Complete 25 daily puzzles', category: 'Milestones', target: 25, icon: 'Ⅹ', value: p => p.totalCompleted },
-  { id: 'HUNDRED_SOLVES', name: 'Century', description: 'Complete 100 daily puzzles', category: 'Milestones', target: 100, icon: 'Ⅽ', value: p => p.totalCompleted },
-  { id: 'STREAK_3', name: 'Threefold', description: 'Reach a three day streak', category: 'Streaks', target: 3, icon: '⌁', value: p => p.bestStreak },
-  { id: 'STREAK_7', name: 'Sevenfold', description: 'Reach a seven day streak', category: 'Streaks', target: 7, icon: '⑦', value: p => p.bestStreak },
-  { id: 'STREAK_30', name: 'The Constant', description: 'Reach a 30 day streak', category: 'Streaks', target: 30, icon: '◷', value: p => p.bestStreak },
-  { id: 'OPTIMAL_PATH', name: 'Shortest Bridge', description: 'Solve in the minimum number of moves', category: 'Precision', target: 1, icon: '⌖', value: p => p.badges.includes('OPTIMAL_PATH') ? 1 : 0 },
-  { id: 'PERFECT_SOLVE', name: 'Flawless', description: 'Find an optimal path with no penalties', category: 'Precision', target: 1, icon: '◇', value: p => p.badges.includes('PERFECT_SOLVE') ? 1 : 0 },
-];
 
 export function DailyChallenge({ sessionId, onClose }: Props) {
   const [date, setDate] = useState('');
@@ -360,7 +338,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
         const messages = [data.message];
         if (data.graceUsed) messages.push('Your streak grace day was used.');
         if (data.graceEarned) messages.push('You earned a streak grace token.');
-        if (data.newBadges.length) messages.push('New badges: ' + data.newBadges.map((badge) => achievementGoals.find((goal) => goal.id === badge)?.name ?? badge).join(', '));
+        if (data.newBadges.length) messages.push('New badges: ' + data.newBadges.map((badge) => DAILY_ACHIEVEMENTS.find((goal) => goal.id === badge)?.name ?? badge).join(', '));
         setShareMessage(messages.join(' '));
       }
     } catch (cause) {
@@ -652,29 +630,33 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           <section className="daily-achievements card-panel" aria-labelledby="daily-achievements-title">
             <div className="daily-section-heading">
               <div><p className="daily-eyebrow">COLLECTION</p><h2 id="daily-achievements-title">Achievements</h2></div>
-              <span className="daily-achievement-count">{profile.badges.length} / {achievementGoals.length}</span>
+              <span className="daily-achievement-count">{DAILY_ACHIEVEMENTS.filter((item) => profile.badges.includes(item.id)).length} / {DAILY_ACHIEVEMENTS.length}</span>
             </div>
             <div className="daily-achievement-grid">
-              {(['Milestones', 'Streaks', 'Precision'] as const).map((category) => (
-                <section className="daily-achievement-group" key={category} aria-label={category}>
-                  <h3>{category}</h3>
-                  {achievementGoals.filter((goal) => goal.category === category).map((goal) => {
-                    const progress = Math.min(goal.target, goal.value(profile));
-                    const earned = profile.badges.includes(goal.id);
-                    return (
-                      <div className={`daily-achievement-item ${earned ? 'is-earned' : ''}`} key={goal.id} aria-label={goal.name + (earned ? ', earned' : ', locked')}>
-                        <span className="daily-achievement-icon" aria-hidden="true">{goal.icon}</span>
-                        <div className="daily-achievement-copy">
-                          <strong>{goal.name}</strong>
-                          <small>{goal.description}</small>
-                          <span className="daily-achievement-progress">{earned ? 'Earned' : progress + ' / ' + goal.target}</span>
+              {(['Consistency', 'Scoring', 'Precision', 'Technique', 'Vocabulary', 'Time'] as const).map((category) => {
+                const achievements = DAILY_ACHIEVEMENTS.filter((item) => item.category === category);
+                const earnedCount = achievements.filter((item) => profile.achievementStats[item.stat] >= item.target).length;
+                return (
+                  <details className="daily-achievement-group" key={category}>
+                    <summary><span>{category}</span><span>{earnedCount} / {achievements.length}</span></summary>
+                    {achievements.map((goal) => {
+                      const progress = Math.min(goal.target, profile.achievementStats[goal.stat]);
+                      const earned = progress >= goal.target;
+                      return (
+                        <div className={`daily-achievement-item ${earned ? 'is-earned' : ''}`} key={goal.id} aria-label={goal.name + (earned ? ', earned' : ', locked')}>
+                          <span className="daily-achievement-icon" aria-hidden="true">{goal.icon}</span>
+                          <div className="daily-achievement-copy">
+                            <strong>{goal.name}</strong>
+                            <small>{goal.description}</small>
+                            <span className="daily-achievement-progress">{earned ? 'Earned' : progress.toLocaleString() + ' / ' + goal.target.toLocaleString()}</span>
+                          </div>
+                          {earned && <span className="daily-achievement-check" aria-label="Earned">✓</span>}
                         </div>
-                        {earned && <span className="daily-achievement-check" aria-label="Earned">✓</span>}
-                      </div>
-                    );
-                  })}
-                </section>
-              ))}
+                      );
+                    })}
+                  </details>
+                );
+              })}
             </div>
           </section>
         </section>}
