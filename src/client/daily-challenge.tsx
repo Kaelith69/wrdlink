@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import './daily.css';
 import { DAILY_ACHIEVEMENTS, normalizeAchievementStats } from '../shared/daily-achievements';
+import {
+  formatDailyScoreComment,
+  formatCustomScoreComment,
+  validateMeaningfulCommentary,
+} from '../shared/score-sharing';
+import { ScoreCommentConfirmation } from './score-comment-confirmation';
 
 type DailyResult = {
   date: string;
@@ -189,7 +195,10 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
   const [myRank, setMyRank] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
-  const [shareAction, setShareAction] = useState<'post' | 'comment' | null>(null);
+  const [shareAction, setShareAction] = useState<'post' | 'comment' | 'custom' | null>(null);
+  const [scoreCommentDialog, setScoreCommentDialog] = useState<'score' | 'personal' | null>(null);
+  const [dailyCommentary, setDailyCommentary] = useState('');
+  const [dailyCommentaryOpen, setDailyCommentaryOpen] = useState(false);
   const [boardLoading, setBoardLoading] = useState(true);
   const [boardError, setBoardError] = useState('');
   const [error, setError] = useState('');
@@ -353,28 +362,77 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
     }
   }
 
-  async function shareResult(kind: 'post' | 'comment') {
+  async function shareDailyPost() {
     if (!result || !ranked || busy) return;
     setBusy(true);
-    setShareAction(kind);
+    setShareAction('post');
     setError('');
     setShareMessage('');
     try {
-      const data = await request(`/api/daily/share/${kind}`, isShareResponse, {
+      const data = await request('/api/daily/share/post', isShareResponse, {
         method: 'POST',
         body: JSON.stringify({ date }),
       });
-      setShareMessage(kind === 'post'
-        ? 'Your result was posted to the community.'
-        : data.alreadySubmitted
-          ? 'Your score is already present as your reply to the pinned WRDLINK score thread.'
-          : 'Your result was shared as a comment on this game post.');
+      setShareMessage('Your result was posted to the community under your Reddit account.');
       if (data.permalink) setShareMessage('Your result was posted. Open it from your Reddit profile.');
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Could not share your result.');
     } finally {
       setBusy(false);
       setShareAction(null);
+    }
+  }
+
+  async function shareDailyComment(kind: 'comment' | 'custom-comment', commentary?: string) {
+    if (!result || !ranked || busy) return;
+    setBusy(true);
+    setShareAction(kind === 'comment' ? 'comment' : 'custom');
+    setError('');
+    setShareMessage('');
+    try {
+      const data = await request(`/api/daily/share/${kind}`, isShareResponse, {
+        method: 'POST',
+        body: JSON.stringify({ date, ...(commentary ? { commentary } : {}) }),
+      });
+      setShareMessage(kind === 'custom-comment'
+        ? data.alreadySubmitted
+          ? 'Your personal comment is already present on this game post.'
+          : 'Your personal comment was posted under your Reddit account.'
+        : data.alreadySubmitted
+          ? 'Your score is already present as your reply to the pinned WRDLINK score thread.'
+          : 'Your score was shared as a reply to the pinned WRDLINK score thread.');
+      setScoreCommentDialog(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Could not share your result.');
+      setScoreCommentDialog(null);
+    } finally {
+      setBusy(false);
+      setShareAction(null);
+    }
+  }
+
+  const dailyScoreComment = result ? formatDailyScoreComment({
+    date: result.date,
+    start: result.start,
+    target: result.target,
+    moves: result.moves,
+    score: result.score,
+    currentStreak: profile.currentStreak,
+  }) : '';
+  const dailyCommentaryValidation = validateMeaningfulCommentary(dailyCommentary);
+
+  function previewDailyComment(): void {
+    if (!dailyCommentaryValidation.valid || busy || !completed) return;
+    setScoreCommentDialog('personal');
+  }
+
+  function confirmDailyComment(): void {
+    if (scoreCommentDialog === 'score') {
+      void shareDailyComment('comment');
+      return;
+    }
+    if (scoreCommentDialog === 'personal' && dailyCommentaryValidation.valid) {
+      void shareDailyComment('custom-comment', dailyCommentaryValidation.value);
     }
   }
 
@@ -560,7 +618,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
           ) : (
             <section className="finish-panel daily-finish-panel" aria-labelledby="daily-completion-title">
               <h2 id="daily-completion-title">Daily challenge complete!</h2>
-              {shareAction && <div className="daily-operation-progress" role="progressbar" aria-label={shareAction === 'post' ? 'Publishing your result' : 'Posting your comment'} aria-valuetext="In progress" aria-busy="true"><span /></div>}
+              {shareAction && <div className="daily-operation-progress" role="progressbar" aria-label={shareAction === 'post' ? 'Publishing your result' : shareAction === 'custom' ? 'Posting your personal comment' : 'Posting your score comment'} aria-valuetext="In progress" aria-busy="true"><span /></div>}
               <p className="finish-bonus">{result?.moves ?? words.length - 1} moves · {result?.score ?? score} points · Optimal: {puzzle.optimalMoves} moves</p>
               <button className="daily-campaign-button" type="button" onClick={onClose} disabled={busy}>
                 <span>PLAY MORE</span>
@@ -576,11 +634,47 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
                   </div>
                   {ranked ? (
                     <>
-                      <p>Posting creates a Reddit post. Commenting adds your score as a reply to the pinned WRDLINK score thread. Both actions are manual and appear under your username.</p>
+                      <p>Posting creates a Reddit post. A generic score comment is a reply to the pinned WRDLINK score thread. Both actions are separate, manual and public under your Reddit username.</p>
                       <div className="campaign-share-actions">
-                        <button type="button" onClick={() => void shareResult('post')} disabled={busy}>{shareAction === 'post' ? 'Posting…' : 'Post result as you'}</button>
-                        <button type="button" onClick={() => void shareResult('comment')} disabled={busy}>{shareAction === 'comment' ? 'Commenting…' : 'Comment my score as me'}</button>
+                        <button type="button" onClick={() => void shareDailyPost()} disabled={busy}>{shareAction === 'post' ? 'Posting…' : 'Post result as you'}</button>
+                        <button type="button" onClick={() => setScoreCommentDialog('score')} disabled={busy}>Comment my score</button>
+                        <button type="button" onClick={() => setDailyCommentaryOpen((open) => !open)} disabled={busy}>Add a personal message</button>
                       </div>
+                      {dailyCommentaryOpen && (
+                        <div className="score-commentary-editor">
+                          <label htmlFor="daily-score-commentary">Your personal message</label>
+                          <textarea
+                            id="daily-score-commentary"
+                            rows={3}
+                            maxLength={500}
+                            value={dailyCommentary}
+                            onChange={(event) => setDailyCommentary(event.target.value)}
+                            placeholder="What did you enjoy or find challenging about today’s puzzle?"
+                            disabled={busy}
+                          />
+                          <p>{dailyCommentaryValidation.valid
+                            ? 'Your message will appear above your score as a top level comment.'
+                            : dailyCommentaryValidation.message}</p>
+                          <button
+                            className="secondary-button"
+                            type="button"
+                            onClick={previewDailyComment}
+                            disabled={busy || !dailyCommentaryValidation.valid}
+                          >
+                            Preview personal comment
+                          </button>
+                        </div>
+                      )}
+                      <ScoreCommentConfirmation
+                        open={scoreCommentDialog !== null}
+                        title={scoreCommentDialog === 'personal' ? 'Post a personal comment as me' : 'Comment my score as me'}
+                        preview={scoreCommentDialog === 'personal' && dailyCommentaryValidation.valid
+                          ? formatCustomScoreComment(dailyCommentaryValidation.value, dailyScoreComment)
+                          : dailyScoreComment}
+                        busy={busy}
+                        onCancel={() => setScoreCommentDialog(null)}
+                        onConfirm={confirmDailyComment}
+                      />
                     </>
                   ) : <p>Sign in to save a ranked result and share it to Reddit.</p>}
                 </section>

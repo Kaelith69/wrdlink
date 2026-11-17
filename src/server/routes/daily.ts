@@ -19,7 +19,14 @@ import {
   type DailyProfile,
 } from '../core/daily';
 import { createDailyPuzzle, DICTIONARY } from '../data/puzzles';
-import { submitScoreCommentOnce, ScoreCommentPendingError, ScoreCommentRateLimitError } from '../core/score-comments';
+import {
+  submitScoreCommentOnce,
+  submitCustomScoreCommentOnce,
+  ScoreCommentPendingError,
+  ScoreCommentRateLimitError,
+  ScoreCommentThreadError,
+} from '../core/score-comments';
+import { formatCustomScoreComment, validateMeaningfulCommentary } from '../../shared/score-sharing';
 import { EMPTY_ACHIEVEMENT_STATS, earnedAchievementIds, normalizeAchievementStats, recordAchievementStats } from '../../shared/daily-achievements';
 
 export const dailyApi = new Hono();
@@ -755,6 +762,55 @@ dailyApi.post('/share/comment', async (c) => {
     }
     if (error instanceof ScoreCommentPendingError) {
       return c.json({ error: error.message }, 409);
+    }
+    if (error instanceof ScoreCommentThreadError) {
+      return c.json({ error: error.message }, 503);
+    }
+    throw error;
+  }
+});
+
+dailyApi.post('/share/custom-comment', async (c) => {
+  const body: unknown = await c.req.json().catch(() => null);
+  if (!isRecord(body) || typeof body.date !== 'string' ||
+      typeof body.commentary !== 'string') {
+    return c.json({ error: 'A meaningful personal message is required.' }, 400);
+  }
+  const userId = context.userId;
+  const postId = context.postId;
+  if (!userId || !postId) {
+    return c.json({ error: 'Open WRDLINK from its Reddit post to share a comment.' }, 401);
+  }
+
+  const validation = validateMeaningfulCommentary(body.commentary);
+  if (!validation.valid) return c.json({ error: validation.message }, 400);
+
+  const result = await verifiedShareRecord(body.date);
+  if (!result) return c.json({ error: 'A verified completion for today was not found.' }, 404);
+  const profile = await readProfile(userId);
+
+  try {
+    const text = formatCustomScoreComment(
+      validation.value,
+      formatDailyShareText(result, profile.currentStreak)
+    );
+    const submission = await submitCustomScoreCommentOnce({
+      postId,
+      userId,
+      scope: `daily:${body.date}`,
+      text,
+      canSubmit: () => limited(userId, 'share-comment', 3),
+    });
+    return c.json({ success: true, ...submission });
+  } catch (error) {
+    if (error instanceof ScoreCommentRateLimitError) {
+      return c.json({ error: error.message }, 429);
+    }
+    if (error instanceof ScoreCommentPendingError) {
+      return c.json({ error: error.message }, 409);
+    }
+    if (error instanceof ScoreCommentThreadError) {
+      return c.json({ error: error.message }, 503);
     }
     throw error;
   }

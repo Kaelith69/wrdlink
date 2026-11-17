@@ -1,8 +1,12 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { reddit, redis } from '@devvit/web/server';
 
-const LOCK_TTL_MS = 30_000;
-const SCORE_THREAD_TEXT = [
+const THREAD_LOCK_TTL_MS = 30_000;
+const THREAD_CACHE_TTL_SECONDS = 60 * 24 * 60 * 60;
+const SUBMISSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+const SUBMISSION_INDEX_TTL_SECONDS = SUBMISSION_TTL_SECONDS + 24 * 60 * 60;
+
+export const SCORE_THREAD_TEXT = [
   '**WRDLINK score sharing thread**',
   '',
   'Post your automatically formatted game scores as replies here. Score comments are submitted only when a player chooses to comment, and appear under their Reddit username.',
@@ -13,7 +17,7 @@ type ScoreSubmissionState =
   | { status: 'submitted'; commentId: string };
 
 export class ScoreCommentPendingError extends Error {
-  constructor(message = 'A previous score comment request may already have reached Reddit. Check the pinned WRDLINK score thread before trying again. WRDLINK will not automatically send a possible duplicate.') {
+  constructor(message = 'A previous score comment request may already have reached Reddit. Check the WRDLINK comment thread before trying again. WRDLINK will not automatically send a possible duplicate.') {
     super(message);
     this.name = 'ScoreCommentPendingError';
   }
@@ -26,11 +30,31 @@ export class ScoreCommentRateLimitError extends Error {
   }
 }
 
-function scoreSubmissionKey(postId: string, userId: string, scope: string): string {
+export class ScoreCommentThreadError extends Error {
+  constructor(message = 'The WRDLINK score thread is unavailable. No score comment was submitted. Please try again later.') {
+    super(message);
+    this.name = 'ScoreCommentThreadError';
+  }
+}
+
+function scoreSubmissionKey(
+  postId: string,
+  userId: string,
+  scope: string,
+  destination: 'sticky-reply' | 'custom-top-level'
+): string {
   const digest = createHash('sha256')
-    .update([postId, userId, scope].join('|'))
+    .update([postId, userId, destination, scope].join('|'))
     .digest('hex');
   return `wrdlink:v1:score-submission:${digest}`;
+}
+
+function scoreSubmissionIndexKey(postId: string): string {
+  return `wrdlink:v1:score-submission-index:${postId}`;
+}
+
+function scoreThreadKey(postId: string): string {
+  return `wrdlink:v1:score-thread:${postId}`;
 }
 
 function parseSubmissionState(raw: string): ScoreSubmissionState | null {
@@ -49,104 +73,304 @@ function parseSubmissionState(raw: string): ScoreSubmissionState | null {
   return null;
 }
 
-async function findExistingScoreReply(
+async function findExistingComment(
   postId: string,
-  parentCommentId: string,
+  parentId: string,
   userId: string,
   text: string
 ): Promise<string | null> {
-  const replies = await reddit.getComments({
-    postId: postId as `t3_${string}`,
-    commentId: parentCommentId as `t1_${string}`,
-    limit: 1000,
-    pageSize: 100,
-  }).all();
+  const listing = parentId.startsWith('t1_')
+    ? reddit.getComments({
+        postId: postId as `t3_${string}`,
+        commentId: parentId as `t1_${string}`,
+        limit: 1000,
+        pageSize: 100,
+      })
+    : reddit.getComments({
+        postId: postId as `t3_${string}`,
+        limit: 1000,
+        pageSize: 100,
+      });
 
-  const existing = replies.find((comment) =>
-    comment.parentId === parentCommentId &&
+  const comments = await listing.all();
+  const existing = comments.find((comment) =>
+    comment.postId === postId &&
+    comment.parentId === parentId &&
     comment.authorId === userId &&
-    comment.body === text
+    comment.body === text &&
+    !comment.removed &&
+    !comment.spam
   );
   return existing?.id ?? null;
 }
 
-async function cachedStickyThread(postId: string, key: string): Promise<string | null> {
+async function readCachedStickyThread(postId: string): Promise<string | null> {
+  const key = scoreThreadKey(postId);
   const cachedId = await redis.get(key);
   if (!cachedId) return null;
 
   try {
     const comment = await reddit.getCommentById(cachedId as `t1_${string}`);
-    if (comment.parentId !== postId || comment.body !== SCORE_THREAD_TEXT) return null;
+    const validParent =
+      comment.id === cachedId &&
+      comment.postId === postId &&
+      comment.parentId === postId &&
+      comment.body === SCORE_THREAD_TEXT &&
+      !comment.removed &&
+      !comment.spam;
+    if (!validParent) {
+      await redis.del(key);
+      return null;
+    }
+
     if (!comment.stickied || !comment.isDistinguished()) {
       await comment.distinguish(true);
     }
     return comment.id;
   } catch {
-    // A deleted or unavailable cached comment must be recovered from the post.
+    await redis.del(key);
     return null;
   }
 }
 
 export async function ensureStickyScoreThread(postId: string): Promise<string> {
-  const key = `wrdlink:v1:score-thread:${postId}`;
-  const cached = await cachedStickyThread(postId, key);
+  const cached = await readCachedStickyThread(postId);
   if (cached) return cached;
 
+  const key = scoreThreadKey(postId);
   const lockKey = key + ':lock';
   const token = randomUUID();
   const acquired = await redis.set(lockKey, token, {
     nx: true,
-    expiration: new Date(Date.now() + LOCK_TTL_MS),
+    expiration: new Date(Date.now() + THREAD_LOCK_TTL_MS),
   });
 
   if (acquired !== 'OK') {
-    for (let attempt = 0; attempt < 40; attempt += 1) {
-      const winnerId = await redis.get(key);
-      if (winnerId) {
-        const winner = await cachedStickyThread(postId, key);
-        if (winner) return winner;
-      }
+    for (let attempt = 0; attempt < 60; attempt += 1) {
+      const winner = await readCachedStickyThread(postId);
+      if (winner) return winner;
       await new Promise((resolve) => setTimeout(resolve, 100));
     }
-    throw new Error('The WRDLINK score thread is being created. Please retry shortly.');
+    throw new ScoreCommentThreadError('The WRDLINK score thread is being repaired. No score comment was submitted. Please retry shortly.');
   }
 
   try {
-    const secondCheck = await cachedStickyThread(postId, key);
+    const secondCheck = await readCachedStickyThread(postId);
     if (secondCheck) return secondCheck;
 
-    // Recover the original pinned thread after Redis expiry or a cache reset.
-    // Never create a replacement until the post has been checked for the marker.
-    const comments = await reddit.getComments({
-      postId: postId as `t3_${string}`,
-      limit: 1000,
-      pageSize: 100,
-    }).all();
+    let comments;
+    try {
+      comments = await reddit.getComments({
+        postId: postId as `t3_${string}`,
+        limit: 1000,
+        pageSize: 100,
+      }).all();
+    } catch (error) {
+      console.error('Could not inspect the WRDLINK post before repairing its score thread:', error);
+      throw new ScoreCommentThreadError();
+    }
+
     const matchingThreads = comments.filter((comment) =>
-      comment.parentId === postId && comment.body === SCORE_THREAD_TEXT
+      comment.postId === postId &&
+      comment.parentId === postId &&
+      comment.body === SCORE_THREAD_TEXT &&
+      !comment.removed &&
+      !comment.spam
     );
+
     const existingThread =
       matchingThreads.find((comment) => comment.stickied && comment.isDistinguished()) ??
       matchingThreads[0];
 
     if (existingThread) {
-      if (!existingThread.stickied || !existingThread.isDistinguished()) {
-        await existingThread.distinguish(true);
+      try {
+        if (!existingThread.stickied || !existingThread.isDistinguished()) {
+          await existingThread.distinguish(true);
+        }
+
+        // Repair legacy duplicate marker comments. Exactly one matching thread
+        // remains distinguished and pinned; failures stop score publication.
+        for (const duplicate of matchingThreads) {
+          if (duplicate.id === existingThread.id) continue;
+          if (duplicate.stickied || duplicate.isDistinguished()) {
+            await duplicate.undistinguish();
+          }
+        }
+      } catch (error) {
+        console.error('Could not establish one WRDLINK sticky score thread:', error);
+        throw new ScoreCommentThreadError();
       }
-      await redis.set(key, existingThread.id);
+
+      await redis.set(key, existingThread.id, {
+        expiration: new Date(Date.now() + THREAD_CACHE_TTL_SECONDS * 1000),
+      });
       return existingThread.id;
     }
 
-    const comment = await reddit.submitComment({
-      id: postId as `t3_${string}`,
-      text: SCORE_THREAD_TEXT,
-      runAs: 'APP',
-    });
-    await comment.distinguish(true);
-    await redis.set(key, comment.id);
-    return comment.id;
+    try {
+      const comment = await reddit.submitComment({
+        id: postId as `t3_${string}`,
+        text: SCORE_THREAD_TEXT,
+        runAs: 'APP',
+      });
+      await comment.distinguish(true);
+      await redis.set(key, comment.id, {
+        expiration: new Date(Date.now() + THREAD_CACHE_TTL_SECONDS * 1000),
+      });
+      return comment.id;
+    } catch (error) {
+      console.error('Could not create or pin the WRDLINK score thread:', error);
+      throw new ScoreCommentThreadError();
+    }
   } finally {
     if (await redis.get(lockKey) === token) await redis.del(lockKey);
+  }
+}
+
+async function persistSubmission(
+  postId: string,
+  key: string,
+  commentId: string
+): Promise<void> {
+  await redis.set(key, JSON.stringify({ status: 'submitted', commentId }), {
+    expiration: new Date(Date.now() + SUBMISSION_TTL_SECONDS * 1000),
+  });
+  await redis.hSet(scoreSubmissionIndexKey(postId), { [commentId]: key });
+  await redis.expire(
+    scoreSubmissionIndexKey(postId),
+    SUBMISSION_INDEX_TTL_SECONDS
+  );
+}
+
+async function clearSubmission(
+  postId: string,
+  key: string,
+  commentId?: string
+): Promise<void> {
+  await redis.del(key);
+  if (commentId) {
+    await redis.hDel(scoreSubmissionIndexKey(postId), [commentId]);
+  }
+}
+
+async function verifyCachedSubmittedComment(options: {
+  postId: string;
+  parentId: string;
+  userId: string;
+  text: string;
+  commentId: string;
+}): Promise<'valid' | 'removed'> {
+  const { postId, parentId, userId, text, commentId } = options;
+  try {
+    const comment = await reddit.getCommentById(commentId as `t1_${string}`);
+    if (
+      comment.postId !== postId ||
+      comment.parentId !== parentId ||
+      comment.authorId !== userId ||
+      comment.body !== text
+    ) {
+      throw new ScoreCommentPendingError();
+    }
+    return comment.removed || comment.spam ? 'removed' : 'valid';
+  } catch (error) {
+    if (error instanceof ScoreCommentPendingError) throw error;
+    throw new ScoreCommentPendingError(
+      'WRDLINK could not verify the previous Reddit comment. Check your comment history before trying again.'
+    );
+  }
+}
+
+async function submitUserCommentOnce(options: {
+  postId: string;
+  parentId: string;
+  userId: string;
+  scope: string;
+  destination: 'sticky-reply' | 'custom-top-level';
+  text: string;
+  canSubmit: () => Promise<boolean>;
+}): Promise<{ commentId: string; alreadySubmitted: boolean }> {
+  const { postId, parentId, userId, scope, destination, text, canSubmit } = options;
+  const key = scoreSubmissionKey(postId, userId, scope, destination);
+
+  const reconcilePending = async (
+    state: ScoreSubmissionState | null
+  ): Promise<{ commentId: string; alreadySubmitted: boolean } | null> => {
+    if (!state) return null;
+
+    if (state.status === 'submitted') {
+      const status = await verifyCachedSubmittedComment({
+        postId, parentId, userId, text, commentId: state.commentId,
+      });
+      if (status === 'valid') {
+        return { commentId: state.commentId, alreadySubmitted: true };
+      }
+      await clearSubmission(postId, key, state.commentId);
+      return null;
+    }
+
+    try {
+      const existingId = await findExistingComment(postId, parentId, userId, text);
+      if (!existingId) return null;
+      await persistSubmission(postId, key, existingId);
+      return { commentId: existingId, alreadySubmitted: true };
+    } catch (error) {
+      console.error('Could not reconcile a pending WRDLINK comment:', error);
+      throw new ScoreCommentPendingError();
+    }
+  };
+
+  const raw = await redis.get(key);
+  if (raw) {
+    const state = parseSubmissionState(raw);
+    if (!state) throw new ScoreCommentPendingError();
+    const cached = await reconcilePending(state);
+    if (cached) return cached;
+    if (state.status === 'pending') throw new ScoreCommentPendingError();
+  }
+
+  // Redis can be reset independently of Reddit. Reconcile against the actual
+  // post before creating a new user action.
+  try {
+    const existingId = await findExistingComment(postId, parentId, userId, text);
+    if (existingId) {
+      await persistSubmission(postId, key, existingId);
+      return { commentId: existingId, alreadySubmitted: true };
+    }
+  } catch (error) {
+    console.error('Could not inspect Reddit before score sharing:', error);
+    throw new ScoreCommentPendingError();
+  }
+
+  const claimed = await redis.set(key, JSON.stringify({ status: 'pending' }), {
+    nx: true,
+    expiration: new Date(Date.now() + SUBMISSION_TTL_SECONDS * 1000),
+  });
+  if (claimed !== 'OK') {
+    const raced = await redis.get(key);
+    const state = raced ? parseSubmissionState(raced) : null;
+    const recovered = await reconcilePending(state);
+    if (recovered) return recovered;
+    throw new ScoreCommentPendingError();
+  }
+
+  if (!await canSubmit()) {
+    await redis.del(key);
+    throw new ScoreCommentRateLimitError();
+  }
+
+  try {
+    const comment = await reddit.submitComment({
+      id: parentId as `t1_${string}` | `t3_${string}`,
+      text,
+      runAs: 'USER',
+    });
+    await persistSubmission(postId, key, comment.id);
+    return { commentId: comment.id, alreadySubmitted: false };
+  } catch (error) {
+    // Retain the pending marker after uncertain outcomes. The next explicit
+    // attempt first searches Reddit, preventing an accidental duplicate.
+    console.error('WRDLINK user comment outcome is uncertain:', error);
+    throw new ScoreCommentPendingError();
   }
 }
 
@@ -157,74 +381,49 @@ export async function submitScoreCommentOnce(options: {
   text: string;
   canSubmit: () => Promise<boolean>;
 }): Promise<{ commentId: string; alreadySubmitted: boolean }> {
-  const { postId, userId, scope, text, canSubmit } = options;
-  const parentCommentId = await ensureStickyScoreThread(postId);
-  const key = scoreSubmissionKey(postId, userId, scope);
+  const parentId = await ensureStickyScoreThread(options.postId);
+  return submitUserCommentOnce({
+    ...options,
+    parentId,
+    destination: 'sticky-reply',
+  });
+}
 
-  const completeFromCache = async (
-    state: ScoreSubmissionState | null
-  ): Promise<{ commentId: string; alreadySubmitted: boolean } | null> => {
-    if (!state) return null;
-    if (state.status === 'submitted') {
-      return { commentId: state.commentId, alreadySubmitted: true };
-    }
-
-    try {
-      const existingId = await findExistingScoreReply(postId, parentCommentId, userId, text);
-      if (existingId) {
-        await redis.set(key, JSON.stringify({ status: 'submitted', commentId: existingId }));
-        return { commentId: existingId, alreadySubmitted: true };
-      }
-    } catch (error) {
-      console.error('Could not reconcile a pending WRDLINK score comment:', error);
-    }
-    throw new ScoreCommentPendingError();
-  };
-
-  const raw = await redis.get(key);
-  if (raw) {
-    const state = parseSubmissionState(raw);
-    if (!state) throw new ScoreCommentPendingError();
-    const cachedResult = await completeFromCache(state);
-    if (cachedResult) return cachedResult;
+export async function submitCustomScoreCommentOnce(options: {
+  postId: string;
+  userId: string;
+  scope: string;
+  text: string;
+  canSubmit: () => Promise<boolean>;
+}): Promise<{ commentId: string; alreadySubmitted: boolean }> {
+  const post = await reddit.getPostById(options.postId as `t3_${string}`);
+  if (post.removed || post.spam) {
+    throw new ScoreCommentThreadError('This Reddit post is no longer available for comments.');
   }
+  return submitUserCommentOnce({
+    ...options,
+    parentId: options.postId,
+    destination: 'custom-top-level',
+  });
+}
 
-  // Also reconcile against Reddit before creating a record. This covers old
-  // successful comments if the app's Redis cache was cleared or migrated.
-  try {
-    const existingId = await findExistingScoreReply(postId, parentCommentId, userId, text);
-    if (existingId) {
-      await redis.set(key, JSON.stringify({ status: 'submitted', commentId: existingId }));
-      return { commentId: existingId, alreadySubmitted: true };
-    }
-  } catch (error) {
-    console.error('Could not check the WRDLINK score thread before sharing:', error);
-    throw new ScoreCommentPendingError();
-  }
+export async function cleanupDeletedScoreComment(
+  postId: string,
+  commentId: string
+): Promise<void> {
+  const indexKey = scoreSubmissionIndexKey(postId);
+  const submissionKey = await redis.hGet(indexKey, commentId);
+  if (submissionKey) await redis.del(submissionKey);
+  await redis.hDel(indexKey, [commentId]);
 
-  if (!await canSubmit()) throw new ScoreCommentRateLimitError();
+  const threadKey = scoreThreadKey(postId);
+  if (await redis.get(threadKey) === commentId) await redis.del(threadKey);
+}
 
-  const claimed = await redis.set(key, JSON.stringify({ status: 'pending' }), { nx: true });
-  if (claimed !== 'OK') {
-    const raced = await redis.get(key);
-    const state = raced ? parseSubmissionState(raced) : null;
-    const cachedResult = await completeFromCache(state);
-    if (cachedResult) return cachedResult;
-    throw new ScoreCommentPendingError();
-  }
-
-  try {
-    const comment = await reddit.submitComment({
-      id: parentCommentId as `t1_${string}`,
-      text,
-      runAs: 'USER',
-    });
-    await redis.set(key, JSON.stringify({ status: 'submitted', commentId: comment.id }));
-    return { commentId: comment.id, alreadySubmitted: false };
-  } catch (error) {
-    // Keep the pending marker. A network timeout can occur after Reddit has
-    // accepted the comment, so retrying automatically could create a duplicate.
-    console.error('WRDLINK score comment outcome is uncertain:', error);
-    throw new ScoreCommentPendingError();
-  }
+export async function cleanupDeletedScorePost(postId: string): Promise<void> {
+  const indexKey = scoreSubmissionIndexKey(postId);
+  const indexed = await redis.hGetAll(indexKey);
+  const submissionKeys = indexed ? Object.values(indexed) : [];
+  await Promise.all(submissionKeys.map((key) => redis.del(key)));
+  await Promise.all([indexKey, scoreThreadKey(postId), scoreThreadKey(postId) + ':lock'].map((key) => redis.del(key)));
 }

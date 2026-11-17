@@ -5,6 +5,8 @@ import { StrictMode, useCallback, useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import type { InitResponse, MoveValidationResponse, Puzzle } from '../shared/api';
+import { formatCampaignScoreComment, formatCustomScoreComment, validateMeaningfulCommentary } from '../shared/score-sharing';
+import { ScoreCommentConfirmation } from './score-comment-confirmation';
 
 type GameStatus = 'playing' | 'won' | 'error';
 
@@ -159,6 +161,9 @@ export function App() {
   const [sessionId, setSessionId] = useState(() => getSessionId());
   const [dailyOpen, setDailyOpen] = useState(true);
   const [campaignShareMessage, setCampaignShareMessage] = useState('');
+  const [scoreCommentDialog, setScoreCommentDialog] = useState<'score' | 'personal' | null>(null);
+  const [campaignCommentary, setCampaignCommentary] = useState('');
+  const [campaignCommentaryOpen, setCampaignCommentaryOpen] = useState(false);
 
   const [useVirtualKeyboard, setUseVirtualKeyboard] = useState(false);
   const entryFormRef = useRef<HTMLFormElement | null>(null);
@@ -347,7 +352,7 @@ export function App() {
     }
   }
 
-  async function shareCampaign(kind: 'post' | 'comment') {
+  async function shareCampaign(kind: 'post' | 'comment' | 'custom-comment', commentary?: string) {
     if (!puzzle || status !== 'won' || busy) return;
     setBusy(true);
     setCampaignShareMessage('');
@@ -355,7 +360,11 @@ export function App() {
       const response = await fetchWithTimeout('/api/share/campaign/' + kind, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, puzzleId: puzzle.id }),
+        body: JSON.stringify({
+          sessionId,
+          puzzleId: puzzle.id,
+          ...(commentary ? { commentary } : {}),
+        }),
       });
       if (!response.ok) throw new Error(await responseError(response));
       const payload: unknown = await response.json().catch(() => null);
@@ -363,13 +372,44 @@ export function App() {
         'alreadySubmitted' in payload && payload.alreadySubmitted === true;
       setCampaignShareMessage(kind === 'post'
         ? 'Your result was posted under your Reddit account.'
-        : alreadySubmitted
-          ? 'Your score is already present as your reply to the pinned WRDLINK score thread.'
-          : 'Your result was commented under your Reddit account.');
+        : kind === 'custom-comment'
+          ? alreadySubmitted
+            ? 'Your personal comment is already present on this game post.'
+            : 'Your personal comment was posted under your Reddit account.'
+          : alreadySubmitted
+            ? 'Your score is already present as your reply to the pinned WRDLINK score thread.'
+            : 'Your score was commented under your Reddit account.');
+      if (kind !== 'post') setScoreCommentDialog(null);
     } catch (error) {
       setCampaignShareMessage(error instanceof Error ? error.message : 'Could not share this result.');
+      if (kind !== 'post') setScoreCommentDialog(null);
     } finally {
       setBusy(false);
+    }
+  }
+
+  const campaignScoreComment = puzzle ? formatCampaignScoreComment({
+    level,
+    start: puzzle.start,
+    target: puzzle.target,
+    moves: movesUsed,
+    score: gameScore,
+    words,
+  }) : '';
+  const campaignCommentaryValidation = validateMeaningfulCommentary(campaignCommentary);
+
+  function previewCampaignComment(): void {
+    if (!campaignCommentaryValidation.valid || busy || status !== 'won') return;
+    setScoreCommentDialog('personal');
+  }
+
+  function confirmCampaignComment(): void {
+    if (scoreCommentDialog === 'score') {
+      void shareCampaign('comment');
+      return;
+    }
+    if (scoreCommentDialog === 'personal' && campaignCommentaryValidation.valid) {
+      void shareCampaign('custom-comment', campaignCommentaryValidation.value);
     }
   }
 
@@ -734,12 +774,48 @@ export function App() {
                 <span>{movesUsed} moves · {gameScore} points · Completed</span>
                 <small>{words.join(' → ')}</small>
               </div>
-              <p>Posting creates a Reddit post. Commenting adds your score as a reply to the pinned WRDLINK score thread. Both actions are manual and appear under your username.</p>
+              <p>Posting creates a Reddit post. A generic score comment is a reply to the pinned WRDLINK score thread. Both actions are separate, manual and public under your Reddit username.</p>
               <div className="campaign-share-actions">
                 <button type="button" onClick={() => void shareCampaign('post')} disabled={busy}>Post result as you</button>
-                <button type="button" onClick={() => void shareCampaign('comment')} disabled={busy}>Comment my score as me</button>
+                <button type="button" onClick={() => setScoreCommentDialog('score')} disabled={busy}>Comment my score</button>
+                <button type="button" onClick={() => setCampaignCommentaryOpen((open) => !open)} disabled={busy}>Add a personal message</button>
               </div>
+              {campaignCommentaryOpen && (
+                <div className="score-commentary-editor">
+                  <label htmlFor="campaign-score-commentary">Your personal message</label>
+                  <textarea
+                    id="campaign-score-commentary"
+                    rows={3}
+                    maxLength={500}
+                    value={campaignCommentary}
+                    onChange={(event) => setCampaignCommentary(event.target.value)}
+                    placeholder="What did you enjoy or find challenging about this puzzle?"
+                    disabled={busy}
+                  />
+                  <p>{campaignCommentaryValidation.valid
+                    ? 'Your message will appear above your score as a top level comment.'
+                    : campaignCommentaryValidation.message}</p>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={previewCampaignComment}
+                    disabled={busy || !campaignCommentaryValidation.valid}
+                  >
+                    Preview personal comment
+                  </button>
+                </div>
+              )}
               {campaignShareMessage && <p className="campaign-share-message" role="status">{campaignShareMessage}</p>}
+              <ScoreCommentConfirmation
+                open={scoreCommentDialog !== null}
+                title={scoreCommentDialog === 'personal' ? 'Post a personal comment as me' : 'Comment my score as me'}
+                preview={scoreCommentDialog === 'personal' && campaignCommentaryValidation.valid
+                  ? formatCustomScoreComment(campaignCommentaryValidation.value, campaignScoreComment)
+                  : campaignScoreComment}
+                busy={busy}
+                onCancel={() => setScoreCommentDialog(null)}
+                onConfirm={confirmCampaignComment}
+              />
             </section>
             <button className="ink-button finish-next-button" type="button" onClick={() => void startNextLevel()} disabled={busy}>
               Next level · {level + 1} <span aria-hidden="true">→</span>
