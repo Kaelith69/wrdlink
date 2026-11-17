@@ -67,7 +67,7 @@ jobs:
         run: |
           # Devvit can accept an upload before its version is ready for installation.
           # Retry only that transient processing response, not permanent failures.
-          for attempt in {1..12}; do
+          for attempt in {1..18}; do
             set +e
             output="$(npx devvit install r/wrdlink wrdlink 2>&1)"
             status=$?
@@ -84,11 +84,11 @@ jobs:
               exit "$status"
             fi
 
-            if [ "$attempt" -eq 12 ]; then
-              echo "::error::The uploaded Devvit version was still processing after 12 attempts."
+            if [ "$attempt" -eq 18 ]; then
+              echo "::error::The uploaded Devvit version was still processing after 18 attempts."
               exit "$status"
             fi
 
-            echo "Uploaded version is still processing. Retrying in 10 seconds (attempt $attempt of 12)."
-            sleep 10
+            echo "Uploaded version is still processing. Retrying in 15 seconds (attempt $attempt of 18)."
+            sleep 15
           done
