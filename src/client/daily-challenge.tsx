@@ -360,7 +360,7 @@ export function DailyChallenge({ sessionId, onClose }: Props) {
         const messages = [data.message];
         if (data.graceUsed) messages.push('Your streak grace day was used.');
         if (data.graceEarned) messages.push('You earned a streak grace token.');
-        if (data.newBadges.length) messages.push('New badges: ' + data.newBadges.map((badge) => badgeNames[badge] ?? badge).join(', '));
+        if (data.newBadges.length) messages.push('New badges: ' + data.newBadges.map((badge) => achievementGoals.find((goal) => goal.id === badge)?.name ?? badge).join(', '));
         setShareMessage(messages.join(' '));
       }
     } catch (cause) {
