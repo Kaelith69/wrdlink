@@ -1819,3 +1819,98 @@ html.mode-switch-transition::view-transition-new(root) {
     white-space: nowrap;
   }
 }
+
+
+/* Score sharing confirmation. These controls are only mounted in the
+   Expanded game entrypoint, never in the inline launch webview. */
+.score-comment-confirmation {
+  z-index: 50;
+}
+
+.score-comment-dialog {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 560px);
+  max-height: min(88dvh, 780px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.score-comment-dialog h2 {
+  margin: 0;
+}
+
+.score-comment-dialog > p {
+  margin: 0;
+}
+
+.score-comment-preview {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: 13px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--paper-strong);
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.score-comment-actions {
+  margin-top: 3px;
+}
+
+.score-commentary-editor {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding-top: 5px;
+  border-top: 1px solid var(--line);
+}
+
+.score-commentary-editor label {
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.score-commentary-editor textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 82px;
+  padding: 10px 12px;
+  border: 2px solid var(--line-strong);
+  border-radius: 10px;
+  background: var(--paper-strong);
+  color: var(--ink);
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.score-commentary-editor textarea:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.score-commentary-editor > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.score-commentary-editor > button {
+  min-height: 40px;
+  justify-self: start;
+}
