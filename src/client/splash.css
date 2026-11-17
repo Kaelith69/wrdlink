@@ -40,6 +40,8 @@
 }
 * { box-sizing: border-box; }
 html, body, #root { min-width: 320px; min-height: 100%; margin: 0; }
+/* Inline Reddit entry point: keep vertical feed gestures and browser zoom native.
+   The launch screen has no internal scroll container or gesture interception. */
 body { background: var(--canvas); color: var(--ink); }
 button { font: inherit; -webkit-tap-highlight-color: transparent; }
 button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
@@ -50,7 +52,7 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   min-height: 100svh;
   overflow: visible;
   overscroll-behavior: auto;
-  touch-action: pan-y;
+  touch-action: auto;
   align-items: center;
   justify-content: center;
   padding: 42px 20px 76px;
@@ -201,7 +203,7 @@ button:focus-visible { outline: 3px solid var(--violet); outline-offset: 4px; }
   min-width: 0;
   overflow: visible;
   overscroll-behavior: auto;
-  touch-action: pan-y;
+  touch-action: auto;
 }
 @media (max-height: 560px) {
   .splash-page {
