@@ -19,6 +19,7 @@ import {
   type DailyProfile,
 } from '../core/daily';
 import { createDailyPuzzle, DICTIONARY } from '../data/puzzles';
+import { EMPTY_ACHIEVEMENT_STATS, earnedAchievementIds, normalizeAchievementStats, recordAchievementStats } from '../../shared/daily-achievements';
 
 export const dailyApi = new Hono();
 
@@ -45,6 +46,7 @@ type DailyResult = {
   optimalMoves: number;
   hintsUsed: number;
   completedAt: number;
+  startedAt?: number;
 };
 
 const SESSION_PATTERN = /^(?:[a-f0-9-]{20,80}|session-[a-z0-9-]{10,80})$/i;
@@ -60,6 +62,7 @@ const DEFAULT_PROFILE: DailyProfile = {
   lastDailyDate: null,
   graceTokens: 0,
   badges: [],
+  achievementStats: { ...EMPTY_ACHIEVEMENT_STATS },
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -209,6 +212,7 @@ async function readProfile(userId: string): Promise<DailyProfile> {
       lastDailyDate: typeof parsed.lastDailyDate === 'string' && parseDateKey(parsed.lastDailyDate) !== null ? parsed.lastDailyDate : null,
       graceTokens: Number.isSafeInteger(parsed.graceTokens) ? Math.max(0, Math.min(2, Number(parsed.graceTokens))) : 0,
       badges: Array.isArray(parsed.badges) ? parsed.badges.filter((item): item is string => typeof item === 'string') : [],
+      achievementStats: normalizeAchievementStats(parsed.achievementStats),
     };
   } catch {
     return { ...DEFAULT_PROFILE, badges: [] };
@@ -321,6 +325,7 @@ async function saveVerifiedCompletion(
         optimalMoves: state.puzzle.optimalMoves,
         hintsUsed: 0,
         completedAt: state.completedAt ?? Date.now(),
+        startedAt: state.startedAt,
       };
       const previousProfile = await readProfile(userId);
       const streak = updateDailyStreak(previousProfile, date);
@@ -333,8 +338,12 @@ async function saveVerifiedCompletion(
         lastDailyDate: streak.lastDailyDate,
         graceTokens: streak.graceTokens,
         badges: previousProfile.badges,
+        achievementStats: recordAchievementStats(previousProfile.achievementStats, result, streak),
       };
-      profile.badges = earnedBadges(profile, result.moves, result.optimalMoves, result.hintsUsed, result.score);
+      profile.badges = [...new Set([
+        ...earnedBadges(profile, result.moves, result.optimalMoves, result.hintsUsed, result.score),
+        ...earnedAchievementIds(profile.achievementStats),
+      ])];
       const newBadges = profile.badges.filter((badge) => !previousProfile.badges.includes(badge));
 
       const week = isoWeekKey(date);
