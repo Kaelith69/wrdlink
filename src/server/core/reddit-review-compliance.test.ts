@@ -59,9 +59,9 @@ void test('vertical internal scrolling remains in the expanded game styles only'
 
 void test('the app has the moderator scope required to distinguish and pin its score thread', () => {
   assert.equal(config.permissions.reddit.scope, 'moderator');
-  assert.match(scoreComments, /text: SCORE_THREAD_TEXT,[\\s\\S]*?runAs: 'APP'/);
-  assert.match(scoreComments, /await comment\\.distinguish\\(true\\)/);
-  assert.match(scoreComments, /await duplicate\\.undistinguish\\(\\)/);
+  assert.ok(scoreComments.includes("text: SCORE_THREAD_TEXT,\n        runAs: 'APP'"));
+  assert.ok(scoreComments.includes('await comment.distinguish(true)'));
+  assert.ok(scoreComments.includes('await duplicate.undistinguish()'));
 });
 
 void test('generic campaign score comments are exclusively routed through the sticky reply helper', () => {
