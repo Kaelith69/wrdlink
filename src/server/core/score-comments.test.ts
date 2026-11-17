@@ -194,8 +194,9 @@ void test('concurrent identical score requests create at most one player score c
   assert.equal(playerScores.length, 1);
   assert.equal(threads.length, 1);
   assert.ok(outcomes.some((outcome) => outcome.status === 'fulfilled'));
-  assert.ok(outcomes.some((outcome) =>
-    outcome.status === 'rejected' && outcome.reason instanceof ScoreCommentPendingError
+  assert.ok(outcomes.every((outcome) =>
+    outcome.status === 'fulfilled' ||
+    (outcome.status === 'rejected' && outcome.reason instanceof ScoreCommentPendingError)
   ));
 });
 
