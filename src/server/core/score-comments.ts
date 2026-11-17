@@ -425,5 +425,5 @@ export async function cleanupDeletedScorePost(postId: string): Promise<void> {
   const indexed = await redis.hGetAll(indexKey);
   const submissionKeys = indexed ? Object.values(indexed) : [];
   await Promise.all(submissionKeys.map((key) => redis.del(key)));
-  await redis.del(indexKey, scoreThreadKey(postId), scoreThreadKey(postId) + ':lock');
+  await Promise.all([indexKey, scoreThreadKey(postId), scoreThreadKey(postId) + ':lock'].map((key) => redis.del(key)));
 }
