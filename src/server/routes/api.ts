@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { context, reddit, redis } from '@devvit/web/server';
 import type { HintResponse, InitResponse, MoveValidationResponse, Puzzle } from '../../shared/api';
 import { createRandomPuzzle, DICTIONARY } from '../data/puzzles';
+import { ensureStickyScoreThread } from '../core/score-comments';
 import {
   assertPuzzleDefinition,
   applyHintCost,
@@ -565,8 +566,9 @@ api.post('/share/campaign/comment', async (c) => {
   }
   const state = await getVerifiedCampaignCompletion(body);
   if (!state) return c.json({ error: 'A verified completed campaign level was not found.' }, 404);
+  const scoreThreadId = await ensureStickyScoreThread(postId);
   const comment = await reddit.submitComment({
-    id: postId,
+    id: scoreThreadId as `t1_${string}`,
     text: campaignShareText(state),
     runAs: 'USER',
   });

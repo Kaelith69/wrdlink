@@ -63,4 +63,32 @@ jobs:
         run: npx devvit upload
 
       - name: Install latest uploaded version on r/wrdlink
-        run: npx devvit install r/wrdlink wrdlink
+        shell: bash
+        run: |
+          # Devvit can accept an upload before its version is ready for installation.
+          # Retry only that transient processing response, not permanent failures.
+          for attempt in {1..18}; do
+            set +e
+            output="$(npx devvit install r/wrdlink wrdlink 2>&1)"
+            status=$?
+            set -e
+            printf '%s\\n' "$output"
+
+            if [ "$status" -eq 0 ]; then
+              echo "Devvit installation completed."
+              exit 0
+            fi
+
+            if ! printf '%s' "$output" | grep -Eqi "isn't ready to be installed yet|finish processing"; then
+              echo "::error::Devvit installation failed for a non transient reason."
+              exit "$status"
+            fi
+
+            if [ "$attempt" -eq 18 ]; then
+              echo "::error::The uploaded Devvit version was still processing after 18 attempts."
+              exit "$status"
+            fi
+
+            echo "Uploaded version is still processing. Retrying in 15 seconds (attempt $attempt of 18)."
+            sleep 15
+          done

@@ -729,10 +729,10 @@ export function App() {
                 <span>{movesUsed} moves · {gameScore} points · Completed</span>
                 <small>{words.join(' → ')}</small>
               </div>
-              <p>Sharing publishes under your Reddit account.</p>
+              <p>Posting creates a Reddit post. Commenting adds your score as a reply to the pinned WRDLINK score thread. Both actions are manual and appear under your username.</p>
               <div className="campaign-share-actions">
                 <button type="button" onClick={() => void shareCampaign('post')} disabled={busy}>Post result as you</button>
-                <button type="button" onClick={() => void shareCampaign('comment')} disabled={busy}>Comment as you</button>
+                <button type="button" onClick={() => void shareCampaign('comment')} disabled={busy}>Comment my score as me</button>
               </div>
               {campaignShareMessage && <p className="campaign-share-message" role="status">{campaignShareMessage}</p>}
             </section>
