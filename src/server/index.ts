@@ -3,7 +3,7 @@ import { Hono, type Context } from 'hono';
 import { serve } from '@hono/node-server';
 import { context, createServer, getServerPort, reddit, redis } from '@devvit/web/server';
 import { formatDailyPostContent, utcDateKey } from './core/daily';
-import { ensureStickyScoreThread } from './core/score-comments';
+import { cleanupDeletedScoreComment, cleanupDeletedScorePost, ensureStickyScoreThread } from './core/score-comments';
 import { api } from './routes/api';
 import { dailyApi, getSharedDailyPuzzle } from './routes/daily';
 
@@ -90,6 +90,42 @@ async function publishInitialDailyPost(c: Context) {
     return c.json({ status: 'error' }, 500);
   }
 }
+
+app.post('/internal/triggers/on-comment-delete', async (c) => {
+  const body: unknown = await c.req.json().catch(() => null);
+  if (typeof body !== 'object' || body === null ||
+      !('commentId' in body) || typeof body.commentId !== 'string' ||
+      !('postId' in body) || typeof body.postId !== 'string' ||
+      !/^t1_[a-z0-9]+$/i.test(body.commentId) ||
+      !/^t3_[a-z0-9]+$/i.test(body.postId)) {
+    return c.json({ status: 'ignored' }, 400);
+  }
+
+  try {
+    await cleanupDeletedScoreComment(body.postId, body.commentId);
+    return c.json({ status: 'ok' });
+  } catch (error) {
+    console.error('WRDLINK could not clean up deleted score comment data:', error);
+    return c.json({ status: 'error' }, 500);
+  }
+});
+
+app.post('/internal/triggers/on-post-delete', async (c) => {
+  const body: unknown = await c.req.json().catch(() => null);
+  if (typeof body !== 'object' || body === null ||
+      !('postId' in body) || typeof body.postId !== 'string' ||
+      !/^t3_[a-z0-9]+$/i.test(body.postId)) {
+    return c.json({ status: 'ignored' }, 400);
+  }
+
+  try {
+    await cleanupDeletedScorePost(body.postId);
+    return c.json({ status: 'ok' });
+  } catch (error) {
+    console.error('WRDLINK could not clean up deleted post score data:', error);
+    return c.json({ status: 'error' }, 500);
+  }
+});
 
 app.post('/internal/triggers/on-app-install', publishInitialDailyPost);
 app.post('/internal/triggers/on-app-upgrade', publishInitialDailyPost);
