@@ -16,7 +16,7 @@ export type AchievementStats = {
   shortSolves: number;
   mediumSolves: number;
   longSolves: number;
-  highStreak: number;
+  graceTokensEarned: number;
   currentStreak: number;
   bestStreak: number;
 };
@@ -26,7 +26,7 @@ export const EMPTY_ACHIEVEMENT_STATS: AchievementStats = {
   eliteScores: 0, strongScores: 0, efficientSolves: 0, enduranceSolves: 0,
   totalMoves: 0, totalWords: 0, fastSolves: 0, patientSolves: 0,
   weekendSolves: 0, weekdaySolves: 0, shortSolves: 0, mediumSolves: 0,
-  longSolves: 0, highStreak: 0, currentStreak: 0, bestStreak: 0,
+  longSolves: 0, graceTokensEarned: 0, currentStreak: 0, bestStreak: 0,
 };
 
 const THRESHOLDS = [1, 2, 3, 4, 5, 7, 10, 12, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150, 200, 250, 300, 400, 500, 750, 1000] as const;
@@ -52,7 +52,7 @@ const TRACKS = [
   { key: 'shortSolves', title: 'Swift Ladder', category: 'Technique', icon: '🪜', description: 'Finish in three moves or fewer.' },
   { key: 'mediumSolves', title: 'Steady Climber', category: 'Technique', icon: '🧗', description: 'Finish in four to six moves.' },
   { key: 'longSolves', title: 'Deep Explorer', category: 'Technique', icon: '🗺️', description: 'Finish in seven to nine moves.' },
-  { key: 'highStreak', title: 'Streak Record', category: 'Consistency', icon: '🏆', description: 'Reach a new best streak milestone.' },
+  { key: 'graceTokensEarned', title: 'Grace Keeper', category: 'Consistency', icon: '🛡️', description: 'Earn streak protection tokens.' },
 ] as const;
 
 export type Achievement = {
@@ -91,10 +91,10 @@ export function earnedAchievementIds(stats: AchievementStats): string[] {
 
 export function recordAchievementStats(
   previous: AchievementStats,
-  result: { score: number; moves: number; optimalMoves: number; words: string[]; completedAt: number; startedAt: number; date: string },
+  result: { score: number; moves: number; optimalMoves: number; words: string[]; completedAt: number; startedAt?: number; date: string },
   streak: { currentStreak: number; bestStreak: number },
 ): AchievementStats {
-  const duration = Math.max(0, result.completedAt - result.startedAt);
+  const duration = Math.max(0, result.completedAt - (result.startedAt ?? result.completedAt));
   const day = new Date(result.date + 'T00:00:00.000Z').getUTCDay();
   const maximumScore = Math.max(0, 25 - result.optimalMoves) + 25;
   const next: AchievementStats = {
@@ -116,7 +116,7 @@ export function recordAchievementStats(
     shortSolves: previous.shortSolves + Number(result.moves <= 3),
     mediumSolves: previous.mediumSolves + Number(result.moves >= 4 && result.moves <= 6),
     longSolves: previous.longSolves + Number(result.moves >= 7 && result.moves <= 9),
-    highStreak: Math.max(previous.highStreak, streak.bestStreak),
+    graceTokensEarned: previous.graceTokensEarned + Number(streak.graceEarned),
     currentStreak: streak.currentStreak,
     bestStreak: streak.bestStreak,
   };
